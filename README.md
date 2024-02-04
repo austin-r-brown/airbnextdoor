@@ -25,7 +25,7 @@ SEND_TO_EMAILS=email.to.send.to.@domain.com
 ### For the SIB (Email) Api Key:
 - Sign up for a Brevo account at https://brevo.com (I was able to do a free account for this)
 - Go to the API keys page (https://app.brevo.com/settings/keys/api) and click 'Generate a new API key'
-- 
+
 ### For the Airbnb Listing Id:
 - Use the part of the URL after the `airbnb.com/rooms/` and before the first question mark. (`www.airbnb.com/rooms/{{THIS_IS_THE_LISTING_ID}}?...`)
 
