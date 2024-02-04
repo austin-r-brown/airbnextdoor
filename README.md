@@ -1,6 +1,8 @@
 # airbnextdoor
 
-This application is designed to send email updates when the booked dates change on a specified Airbnb listing. To use, you will first need to create a .env file.
+This application is designed to send email updates when the booked dates change on a specified Airbnb listing. To use, you will first need to install the latest version of Node (https://nodejs.org/en/download).
+
+Next, you will need to create a .env file.
 
 Here is the .env structure:
 
@@ -26,6 +28,7 @@ SEND_TO_EMAILS=email.to.send.to.@domain.com
 
 ### For the Send To Emails:
 - Either single email address or multiple emails separated by comma can be specified here for the notifications to be sent to
+
 
 That's it. After running `npm install` and `npm start` the application should be ready to go. You'll want it running on a machine that is always on. I have this running on my Plex Server. The booking data retrieved from Airbnb is saved to the hard disk and will be restored automatically if the script should be restarted.
 
