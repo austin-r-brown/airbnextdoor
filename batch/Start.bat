@@ -1,2 +1,4 @@
 cd ..
-npm start
+
+call npm start
+cmd /k
