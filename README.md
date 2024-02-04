@@ -4,7 +4,7 @@ This application is designed to send email updates when the booked dates change 
 
 Next, you will need to create a .env file.
 
-Here is the .env structure:
+Here is how it should look:
 
 ```
 AIRBNB_API_KEY=Api Key Goes Here
