@@ -40,5 +40,7 @@ SEND_TO_EMAILS=email.to.send.to.@domain.com
 That's it. The application should be ready to go. You'll want it running on a machine that is always on. I have this running on my Plex Server. The booking data retrieved from Airbnb is saved to the hard disk and will be restored automatically should the application be restarted.
 
 
-### A couple other things to note
-This is a beta application in very early testing stages, and it is only a best approximation using the data from the calendar shown when booking your stay. For example, if multiple stays are already booked back to back before running this for the first time, or if multiple stays are booked back to back within however many minutes that the interval is set to, then the application will register it as a single booking.
+### A few other things to note
+- This is a beta application in very early testing stages, and it is only a best approximation using the data from the calendar shown when booking your stay.
+- If multiple stays are already booked back to back before running this for the first time, or if multiple stays are booked back to back within however many minutes that the interval is set to, then the application will register it as a single booking.
+- Depending on the listing, dates may be blocked off after a certain number of months in the future. Since it is specific to the listing and I haven't yet found a good way to determine this number, you will have to set it manually in the .env file. Otherwise, if the dates are blocked off it will register as a booking that keeps getting longer every day.
