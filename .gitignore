@@ -2,6 +2,6 @@
 Thumbs.db
 
 .env
-services/bookings.json
+bookings.json
 
 node_modules
