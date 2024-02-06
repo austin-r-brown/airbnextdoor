@@ -42,11 +42,6 @@ const debouncedSend = (delay: number) => {
 };
 
 const sendEmail = (emails: string[], bookings: Booking[]) => {
-  if (!SIB_API_KEY || !SEND_FROM_EMAIL || !SEND_TO_EMAILS) {
-    console.error('SIB API Key and Email Addresses must be provided in .env file to send emails.');
-    return;
-  }
-
   const currentBookings = bookings.length
     ? '<h3>Current Bookings:</h3>' +
       bookings
@@ -63,16 +58,22 @@ const sendEmail = (emails: string[], bookings: Booking[]) => {
   console.info('******************** Sending Emails: ********************');
   console.info(joinedEmails);
 
-  smtpEmailConfig.htmlContent = joinedEmails;
+  if (!SIB_API_KEY || !SEND_FROM_EMAIL || !SEND_TO_EMAILS) {
+    console.error(`
+    SIB API Key and Email Addresses must be provided in .env file to send emails.
+    `);
+  } else {
+    smtpEmailConfig.htmlContent = joinedEmails;
 
-  emailApi.sendTransacEmail(smtpEmailConfig).then(
-    (data: any) => {
-      console.info(`Email Sent successfully. Returned data: ${JSON.stringify(data)}`);
-    },
-    (err: Error) => {
-      console.error(err);
-    }
-  );
+    emailApi.sendTransacEmail(smtpEmailConfig).then(
+      (data: any) => {
+        console.info(`Email Sent successfully. Returned data: ${JSON.stringify(data)}`);
+      },
+      (err: Error) => {
+        console.error(err);
+      }
+    );
+  }
 };
 
 export const debouncedSendEmail = debouncedSend(1000);

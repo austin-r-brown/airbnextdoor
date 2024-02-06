@@ -14,17 +14,17 @@ import {
 } from './date.helpers';
 
 require('dotenv').config();
-const { AIRBNB_API_KEY, AIRBNB_LISTING_ID, MONTHS } = process.env;
+const { AIRBNB_LISTING_ID, MONTHS } = process.env;
 
 // ---------------------------- API Config ----------------------------- //
-const sha256Hash = '8f08e03c7bd16fcad3c92a3592c19a8b559a0d0855a84028d1163d4733ed9ade';
 const operationName = 'PdpAvailabilityCalendar';
+const sha256Hash = '8f08e03c7bd16fcad3c92a3592c19a8b559a0d0855a84028d1163d4733ed9ade';
 
 const airbnbApiConfig: AirbnbApiConfig = {
   method: 'get',
   url: `https://www.airbnb.com/api/v3/${operationName}/${sha256Hash}`,
   headers: {
-    'X-Airbnb-Api-Key': AIRBNB_API_KEY!,
+    'X-Airbnb-Api-Key': 'd306zoyjsyarp7ifhu67rjxn52tv0t20',
   },
   params: {
     operationName,
@@ -306,9 +306,8 @@ const run = () => {
 };
 
 (() => {
-  if (!AIRBNB_API_KEY || !AIRBNB_LISTING_ID) {
-    console.error('Airbnb API Key and Listing ID must be provided in .env file.');
-    return;
+  if (!AIRBNB_LISTING_ID) {
+    throw new Error('Airbnb Listing ID must be provided in .env file.');
   }
 
   const previousBookings = restoreFromDb();

@@ -11,27 +11,14 @@ This application is designed to send email updates when the booked dates change 
 - Here is what the file contents should look like. Some of these values will need to be filled in which I will guide you through below.
 
 ```
-AIRBNB_API_KEY=
 SIB_API_KEY=
-
 AIRBNB_LISTING_ID=
-MONTHS=3
-INTERVAL_MINS=5
 SEND_FROM_EMAIL=
 SEND_TO_EMAILS=
+
+MONTHS=3
+INTERVAL_MINS=5
 ```
-
-### AIRBNB_API_KEY
-This is the API key needed for the app to talk to Airbnb. You do not need to be signed in to Airbnb to retrieve this. 
-- Go to to any Airbnb Listing in a desktop Chrome browser
-- Open up the Chrome Developer console and select the Network tab
-- In the 'Filter' box, type `method:GET` and click Fetch/XHR
-- Refresh the page. There should now be a list of items below the filtering you just set. Click any of the filtered items that appear
-- Scroll nearly all the way to the bottom of the Headers tab until you find something labeled `X-Airbnb-Api-Key`
-- To the right of that label should be a long string of numbers and letters. Copy and paste this immediately to the right of the equals sign for `AIRBNB_API_KEY` in your .env file
-
-![alt text](https://i.ibb.co/y6L000j/Screenshot-2024-02-05-at-10-46-49-AM.png)
-
 
 ### SIB_API_KEY
 This is the API key needed for the app to send notification emails.
@@ -45,14 +32,6 @@ This is the ID for the Airbnb listing that you would like to track
 - Copy the part of the URL after the `airbnb.com/rooms/` and before the first question mark. (`www.airbnb.com/rooms/{THIS IS THE LISTING ID}?...`)
 
 
-### MONTHS
-This number determines how many months from today's date that will be checked for booked dates. Depending on the listing, dates may be blocked off after a certain number of months in the future. Since it is specific to the listing and I haven't yet found a good way to determine this number, you may have to just manually check to see how many months in advance your desired Airbnb listing allows you to book. Otherwise, if the dates are blocked off and the app is checking those dates, it will register as a booking that keeps getting longer every day.
-
-
-### INTERVAL_MINS
-This number determines how many minutes the app will wait between each time it checks for new bookings.
-
-
 ### SEND_FROM_EMAIL
 The email address you would like the emails to appear to have been sent from.
 
@@ -61,7 +40,15 @@ The email address you would like the emails to appear to have been sent from.
 The email address you would like the notifications to be sent to. Either single email address or multiple emails separated by comma can be entered here.
 
 
-That's it. The application should be ready to go. Now you may run the `npm start` command from your terminal, or if on Windows simply open the `Start.bat` file in the folder labeled 'setup'. You'll want it running on a machine that is always on. I have this running on my Plex Server. The booking data retrieved from Airbnb is saved to the hard disk and will be restored automatically should the application be restarted.
+### MONTHS
+This number determines how many months from today's date that will be checked for booked dates. Depending on the listing, dates may be blocked off after a certain number of months in the future. Since it is specific to the listing and I haven't yet found a good way to determine this number, you may have to just manually check to see how many months in advance your desired Airbnb listing allows you to book. Otherwise, if the dates are blocked off and the app is checking those dates, it will register as a booking that keeps getting longer every day.
+
+
+### INTERVAL_MINS
+This number determines how many minutes the app will wait between each time it checks for new bookings.
+
+
+Once you've filled these in and saved to the .env file, the application should be ready to go. Now you may run the `npm start` command from your terminal, or if on Windows simply open the `Start.bat` file in the folder labeled 'setup'. You'll want it running on a machine that is always on. I have this running on my Plex Server. The booking data retrieved from Airbnb is saved to the hard disk and will be restored automatically should the application be restarted.
 
 
 ### A couple other things to note

@@ -2,13 +2,12 @@ const fs = require('fs');
 
 const fileName = '.env';
 
-const env = `AIRBNB_API_KEY=\r\n` +
-    `SIB_API_KEY=\r\n` + `\r\n` +
+const env = `SIB_API_KEY=\r\n` +
     `AIRBNB_LISTING_ID=\r\n` +
-    `MONTHS=3\r\n` +
-    `INTERVAL_MINS=5\r\n` +
     `SEND_FROM_EMAIL=\r\n` +
-    `SEND_TO_EMAILS=\r\n`;
+    `SEND_TO_EMAILS=\r\n\r\n` +
+    `MONTHS=3\r\n` +
+    `INTERVAL_MINS=5\r\n`;
 
 const createEnv = () => {
   if (!fs.existsSync(fileName)) {
