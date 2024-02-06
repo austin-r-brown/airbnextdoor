@@ -5,11 +5,11 @@ import { Booking, EmailConfig } from '../types';
 require('dotenv').config();
 const { SIB_API_KEY, SEND_FROM_EMAIL, SEND_TO_EMAILS } = process.env;
 const emailApi = new SibApiV3Sdk.TransactionalEmailsApi();
-SibApiV3Sdk.ApiClient.instance.authentications['api-key'].apiKey = SIB_API_KEY;
+SibApiV3Sdk.ApiClient.instance.authentications['api-key'].apiKey = SIB_API_KEY?.trim();
 
 const smtpEmailConfig: EmailConfig = {
-  sender: { email: SEND_FROM_EMAIL! },
-  to: SEND_TO_EMAILS!.split(',').map((e) => ({ email: e.trim() })),
+  sender: { email: SEND_FROM_EMAIL?.trim() ?? '' },
+  to: SEND_TO_EMAILS?.trim().split(',').map((e) => ({ email: e.trim() })) ?? [],
   subject: 'Nextdoor Airbnb Updates',
 };
 

@@ -12,7 +12,7 @@ This application is designed to send email updates when the booked dates change 
 
 ```
 SIB_API_KEY=
-AIRBNB_LISTING_ID=
+AIRBNB_URL=
 SEND_FROM_EMAIL=
 SEND_TO_EMAILS=
 
@@ -24,12 +24,13 @@ INTERVAL_MINS=5
 This is the API key needed for the app to send notification emails.
 - Sign up for a Brevo account at https://brevo.com (I was able to do a free account for this)
 - Go to the API keys page (https://app.brevo.com/settings/keys/api) and click 'Generate a new API key'
-- Copy and paste the API key your created immediately to the right of the equals sign for `SIB_API_KEY` in your .env file
+- Copy the API key you created and paste it to the right of the equals sign for `SIB_API_KEY` in your .env file
 
 
-### AIRBNB_LISTING_ID
-This is the ID for the Airbnb listing that you would like to track
-- Copy the part of the URL after the `airbnb.com/rooms/` and before the first question mark. (`www.airbnb.com/rooms/{THIS IS THE LISTING ID}?...`)
+### AIRBNB_URL
+This is the URL for the Airbnb listing that you would like to track.
+- Copy the URL and paste it to the right of the equals sign for `AIRBNB_URL` in your .env file
+- Alternatively, if you have the listing ID you can use that here instead
 
 
 ### SEND_FROM_EMAIL

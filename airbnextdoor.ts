@@ -1,5 +1,12 @@
 import axios, { AxiosResponse } from 'axios';
-import { Booking, MerlinCalendarDay, AirbnbApiConfig, AirbnbRequestVars, MerlinCalendarMonth } from './types';
+import {
+  Booking,
+  MerlinCalendarDay,
+  AirbnbApiConfig,
+  AirbnbRequestVars,
+  MerlinCalendarMonth,
+  AirbnbUserConfig,
+} from './types';
 import { restoreFromDb, debouncedSaveToDb } from './services/db.service';
 import { debouncedSendEmail, formatDateForEmail, formatBookingForEmail } from './services/email.service';
 import {
@@ -14,13 +21,14 @@ import {
 } from './date.helpers';
 
 require('dotenv').config();
-const { AIRBNB_LISTING_ID, MONTHS } = process.env;
+const { AIRBNB_URL, MONTHS } = process.env;
 
-// ---------------------------- API Config ----------------------------- //
+// ---------------------------- Airbnb Config ----------------------------- //
+const userConfig: AirbnbUserConfig = {} as AirbnbUserConfig;
 const operationName = 'PdpAvailabilityCalendar';
 const sha256Hash = '8f08e03c7bd16fcad3c92a3592c19a8b559a0d0855a84028d1163d4733ed9ade';
 
-const airbnbApiConfig: AirbnbApiConfig = {
+const apiConfig: AirbnbApiConfig = {
   method: 'get',
   url: `https://www.airbnb.com/api/v3/${operationName}/${sha256Hash}`,
   headers: {
@@ -215,6 +223,25 @@ const removeCancelledBookings = (dates: MerlinCalendarDay[]) => {
   toRemove.forEach((index, i) => bookings.splice(index - i, 1));
 };
 
+const guestChangeNotification = (todayIso: string) => {
+  const startingToday: Booking[] = [];
+  const endingToday: Booking[] = [];
+  bookings.forEach((b) => {
+    if (b.firstNight === todayIso) {
+      startingToday.push(b);
+    } else if (offsetDay(b.lastNight, 1) === todayIso) {
+      endingToday.push(b);
+    }
+  });
+
+  if (endingToday.length) {
+    sendEmail(`<b>Bookings Ending Today:</b> ${endingToday.map(formatBookingForEmail)}`);
+  }
+  if (startingToday.length) {
+    sendEmail(`<b>Bookings Starting Today:</b> ${startingToday.map(formatBookingForEmail)}`);
+  }
+};
+
 const handleSuccess = (dates: MerlinCalendarDay[]) => {
   const datesStr = JSON.stringify(dates);
 
@@ -245,38 +272,22 @@ const run = () => {
   const todayIso = setToday();
 
   if (isCloseToHour(9)) {
-    const startingToday: Booking[] = [];
-    const endingToday: Booking[] = [];
-    bookings.forEach((b) => {
-      if (b.firstNight === todayIso) {
-        startingToday.push(b);
-      } else if (offsetDay(b.lastNight, 1) === todayIso) {
-        endingToday.push(b);
-      }
-    });
-
-    if (endingToday.length) {
-      sendEmail(`<b>Bookings Ending Today:</b> ${endingToday.map(formatBookingForEmail)}`);
-    }
-    if (startingToday.length) {
-      sendEmail(`<b>Bookings Starting Today:</b> ${startingToday.map(formatBookingForEmail)}`);
-    }
+    guestChangeNotification(todayIso);
   }
 
-  const months = Number(MONTHS || 3);
   const [y, m] = todayIso.split('-');
   const requestVariables: AirbnbRequestVars = {
     request: {
-      count: months + 1,
-      listingId: AIRBNB_LISTING_ID!,
+      count: userConfig.months + 1,
+      listingId: userConfig.listingId,
       month: Number(m),
       year: Number(y),
     },
   };
-  airbnbApiConfig.params.variables = JSON.stringify(requestVariables);
+  apiConfig.params.variables = JSON.stringify(requestVariables);
 
   axios
-    .request(airbnbApiConfig)
+    .request(apiConfig)
     .then((response) => {
       try {
         const { calendarMonths } = response.data.data.merlin.pdpAvailabilityCalendar;
@@ -284,7 +295,7 @@ const run = () => {
           .flatMap((m: MerlinCalendarMonth) => m.days)
           .filter((d: MerlinCalendarDay) => {
             const current = new Date(d.calendarDate);
-            const xMonthsFromToday = new Date(offsetMonth(today, months));
+            const xMonthsFromToday = new Date(offsetMonth(today, userConfig.months));
             return current >= today && current < xMonthsFromToday;
           });
 
@@ -306,9 +317,18 @@ const run = () => {
 };
 
 (() => {
-  if (!AIRBNB_LISTING_ID) {
-    throw new Error('Airbnb Listing ID must be provided in .env file.');
+  if (AIRBNB_URL) {
+    const trimmed = AIRBNB_URL.trim();
+    const isId = Array.from(trimmed).every((c) => Number.isInteger(Number.parseInt(c)));
+    const [, idFromUrl] = !isId ? trimmed.match(/airbnb\.com\/rooms\/(\d+)(\?.*)?/) ?? [] : [];
+    userConfig.listingId = isId ? trimmed : idFromUrl;
   }
+
+  if (!userConfig.listingId) {
+    throw new Error('Valid Airbnb URL or Listing ID must be provided in .env file.');
+  }
+
+  userConfig.months = Number(MONTHS) || 3;
 
   const previousBookings = restoreFromDb();
   if (previousBookings.length) {

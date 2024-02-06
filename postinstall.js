@@ -3,7 +3,7 @@ const fs = require('fs');
 const fileName = '.env';
 
 const env = `SIB_API_KEY=\r\n` +
-    `AIRBNB_LISTING_ID=\r\n` +
+    `AIRBNB_URL=\r\n` +
     `SEND_FROM_EMAIL=\r\n` +
     `SEND_TO_EMAILS=\r\n\r\n` +
     `MONTHS=3\r\n` +

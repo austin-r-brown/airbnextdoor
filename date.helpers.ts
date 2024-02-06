@@ -3,7 +3,7 @@ import { Booking, DateString } from './types';
 require('dotenv').config();
 const { INTERVAL_MINS } = process.env;
 
-export const INTERVAL: number = Number(INTERVAL_MINS || 5) * 60000;
+export const INTERVAL: number = (Number(INTERVAL_MINS) || 5) * 60000;
 const MS_IN_DAY: number = 86400000;
 
 export const getIsoDate = (date: Date): string => date.toISOString().split('T')[0];
