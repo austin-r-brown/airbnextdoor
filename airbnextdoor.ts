@@ -1,341 +1,321 @@
 import axios, { AxiosResponse } from 'axios';
-import {
-  Booking,
-  MerlinCalendarDay,
-  AirbnbApiConfig,
-  AirbnbRequestVars,
-  MerlinCalendarMonth,
-  AirbnbUserConfig,
-} from './types';
-import { restoreFromDb, debouncedSaveToDb } from './services/db.service';
-import { debouncedSendEmail, formatDateForEmail, formatBookingForEmail } from './services/email.service';
+import { Booking, MerlinCalendarDay, AirbnbApiConfig, AirbnbRequestVars, MerlinCalendarMonth } from './types';
 import {
   INTERVAL,
-  getIsoDate,
-  getTodayIso,
   isCloseToHour,
   countDaysBetween,
   offsetDay,
   offsetMonth,
   getInBetweenBookings,
+  Today,
 } from './date.helpers';
+import { DbService } from './services/db.service';
+import { EmailService } from './services/email.service';
 
 require('dotenv').config();
 const { AIRBNB_URL, MONTHS } = process.env;
-
-// ---------------------------- Airbnb Config ----------------------------- //
-const userConfig: AirbnbUserConfig = {} as AirbnbUserConfig;
 const operationName = 'PdpAvailabilityCalendar';
 const sha256Hash = '8f08e03c7bd16fcad3c92a3592c19a8b559a0d0855a84028d1163d4733ed9ade';
 
-const apiConfig: AirbnbApiConfig = {
-  method: 'get',
-  url: `https://www.airbnb.com/api/v3/${operationName}/${sha256Hash}`,
-  headers: {
-    'X-Airbnb-Api-Key': 'd306zoyjsyarp7ifhu67rjxn52tv0t20',
-  },
-  params: {
-    operationName,
-    locale: 'en',
-    currency: 'USD',
-    extensions: JSON.stringify({
-      persistedQuery: {
-        version: 1,
-        sha256Hash,
-      },
-    }),
-  },
-};
-// ------------------------------------------------------------------ //
+class App {
+  private readonly db: DbService = new DbService();
+  private readonly email: EmailService = new EmailService();
 
-let today: Date;
+  private readonly today: Today = new Today();
 
-const setToday = (): string => {
-  const todayIso = getTodayIso();
-  today = new Date(todayIso);
-  return todayIso;
-};
+  private bookings: Booking[] = [];
+  private previousDatesStr?: string;
 
-let bookings: Booking[] = [];
+  private months: number;
+  private listingId: string;
 
-let previousDatesStr: string;
-let lastErrorMessage: string | null = null;
-
-const sendErrorEmail = (message: string) => {
-  const commonErrors = ['network socket disconnected'];
-
-  if (message !== lastErrorMessage && !commonErrors.find((e) => message.toLowerCase().includes(e))) {
-    sendEmail(message);
-  }
-
-  if (!lastErrorMessage) {
-    // Send en email if error hasn't been resolved in 10 mins
-    lastErrorMessage = message;
-    setTimeout(() => {
-      if (lastErrorMessage) {
-        sendEmail(`<h4>The following error has not been resolved:</h4>${lastErrorMessage}`);
-      }
-    }, Math.max(INTERVAL * 2, 600000));
-  }
-};
-
-const sendEmail = (message: string) => {
-  const sorted = bookings.sort((a, b) => new Date(a.firstNight).valueOf() - new Date(b.firstNight).valueOf());
-  debouncedSaveToDb(sorted);
-
-  const currentBookings = bookings.filter((b) => b.lastNight >= offsetDay(today, -1));
-  debouncedSendEmail(message, currentBookings);
-};
-
-const addBookings = (newBookings: Booking[]) => {
-  newBookings.forEach((b) => {
-    const alreadyExists = bookings.find((c) => {
-      if (b.lastNight === c.lastNight) {
-        const isSame = b.firstNight === c.firstNight;
-        const isActive = b.firstNight === getIsoDate(today) && new Date(c.firstNight) < today;
-        return isActive || isSame;
-      }
-    });
-    if (!alreadyExists) {
-      bookings.push(b);
-      sendEmail(`<b>New Booking:</b> ${formatBookingForEmail(b)}`);
-    }
-  });
-};
-
-const checkAgainstExistingBookings = (firstNight: string, lastNight: string, minNights: number) => {
-  const newBooking = { firstNight, lastNight };
-  const newFirstNight = new Date(firstNight);
-  const newLastNight = new Date(lastNight);
-  const totalNights = countDaysBetween(newFirstNight, newLastNight) + 1;
-  const encompassedBookings: Booking[] = [];
-
-  if (totalNights >= minNights) {
-    // Check against existing bookings
-    for (let b of bookings) {
-      const currentFirstNight = new Date(b.firstNight);
-      const currentLastNight = new Date(b.lastNight);
-
-      if (b.firstNight === firstNight) {
-        if (b.lastNight === lastNight) {
-          // Booking already exists
-          return;
-        }
-        const endDateIsLater = newLastNight > currentLastNight;
-        if (endDateIsLater && countDaysBetween(newLastNight, currentLastNight) >= minNights) {
-          // New booking starts right after existing booking
-          newBooking.firstNight = offsetDay(b.lastNight, 1);
-          break;
-        } else {
-          // Existing booking has changed length
-          const changeType = endDateIsLater ? 'Lengthened' : 'Shortened';
-          sendEmail(
-            `<b>Booking ${changeType}:</b> ${formatBookingForEmail(
-              b
-            )}<br>End Date is now: ${formatDateForEmail(offsetDay(lastNight, 1))}`
-          );
-          b.lastNight = lastNight;
-          return;
-        }
-      } else if (b.lastNight === lastNight) {
-        const startDateIsSooner = newFirstNight < currentFirstNight;
-        if (startDateIsSooner && countDaysBetween(newFirstNight, currentFirstNight) >= minNights) {
-          // New booking starts right before existing booking
-          newBooking.lastNight = offsetDay(b.firstNight, -1);
-          break;
-        } else {
-          if (currentFirstNight > today) {
-            // Existing booking has changed length
-            const changeType = startDateIsSooner ? 'Lengthened' : 'Shortened';
-            sendEmail(
-              `<b>Booking ${changeType}:</b> ${formatBookingForEmail(
-                b
-              )}<br>Start Date is now: ${formatDateForEmail(firstNight)}`
-            );
-            b.firstNight = firstNight;
-          }
-          return;
-        }
-      } else if (currentFirstNight > newFirstNight && currentLastNight < newLastNight) {
-        // Newly found booking is actually encompassing several others
-        encompassedBookings.push(b);
-      }
-    }
-
-    if (encompassedBookings.length) {
-      addBookings(getInBetweenBookings(newBooking, encompassedBookings));
-    } else {
-      addBookings([newBooking]);
-    }
-  }
-};
-
-const checkForNewBookings = (dates: MerlinCalendarDay[]) => {
-  let minNights: number = 1;
-  let currentBookingStart: string | null = null;
-  let currentBookingEnd: string | null = null;
-
-  dates.forEach((day) => {
-    const booked = !(day.availableForCheckin || day.availableForCheckout);
-    if (booked) {
-      // If a booking is in progress, update the end date
-      if (currentBookingStart !== null) {
-        currentBookingEnd = day.calendarDate;
-      } else {
-        // Otherwise, start a new booking
-        minNights = Number(day.minNights);
-        currentBookingStart = day.calendarDate;
-        currentBookingEnd = day.calendarDate;
-      }
-    } else {
-      // If a booking was in progress and now it's not, save it
-      if (currentBookingStart && currentBookingEnd) {
-        checkAgainstExistingBookings(currentBookingStart, currentBookingEnd, minNights);
-        currentBookingStart = null;
-        currentBookingEnd = null;
-      }
-    }
-  });
-
-  // Add a booking if a booking was in progress at the end of the loop
-  if (currentBookingStart && currentBookingEnd) {
-    checkAgainstExistingBookings(currentBookingStart, currentBookingEnd, minNights);
-  }
-};
-
-const removeCancelledBookings = (dates: MerlinCalendarDay[]) => {
-  const toRemove: number[] = [];
-
-  bookings.forEach((b, i) => {
-    const isPastBooking = new Date(b.lastNight) < today;
-    if (!isPastBooking) {
-      const foundStartOrEnd = dates.find((day) => {
-        const booked = !(day.availableForCheckin || day.availableForCheckout);
-        return booked && [b.firstNight, b.lastNight].includes(day.calendarDate);
-      });
-      if (!foundStartOrEnd) {
-        toRemove.push(i);
-        sendEmail(`<b>Booking Cancelled:</b> ${formatBookingForEmail(b)}`);
-      }
-    }
-  });
-
-  toRemove.forEach((index, i) => bookings.splice(index - i, 1));
-};
-
-const guestChangeNotification = (todayIso: string) => {
-  const startingToday: Booking[] = [];
-  const endingToday: Booking[] = [];
-  bookings.forEach((b) => {
-    if (b.firstNight === todayIso) {
-      startingToday.push(b);
-    } else if (offsetDay(b.lastNight, 1) === todayIso) {
-      endingToday.push(b);
-    }
-  });
-
-  if (endingToday.length) {
-    sendEmail(`<b>Bookings Ending Today:</b> ${endingToday.map(formatBookingForEmail)}`);
-  }
-  if (startingToday.length) {
-    sendEmail(`<b>Bookings Starting Today:</b> ${startingToday.map(formatBookingForEmail)}`);
-  }
-};
-
-const handleSuccess = (dates: MerlinCalendarDay[]) => {
-  const datesStr = JSON.stringify(dates);
-
-  if (datesStr !== previousDatesStr) {
-    removeCancelledBookings(dates);
-    checkForNewBookings(dates);
-    previousDatesStr = datesStr;
-  }
-
-  lastErrorMessage = null;
-  console.info(`Airbnb API Request Successful at ${new Date().toLocaleString()}`);
-};
-
-const handleError = (err: Error, response?: AxiosResponse) => {
-  console.error(err);
-  if (response) {
-    sendErrorEmail(
-      `<b>Error:</b> Airbnb API response is in unexpected format.<br><br>${JSON.stringify(response.data)}`
-    );
-  } else {
-    sendErrorEmail(
-      `<b>Error:</b> Airbnb API responded with an error.<br><br>${JSON.stringify(err?.message || err)}`
-    );
-  }
-};
-
-const run = () => {
-  const todayIso = setToday();
-
-  if (isCloseToHour(9)) {
-    guestChangeNotification(todayIso);
-  }
-
-  const [y, m] = todayIso.split('-');
-  const requestVariables: AirbnbRequestVars = {
-    request: {
-      count: userConfig.months + 1,
-      listingId: userConfig.listingId,
-      month: Number(m),
-      year: Number(y),
+  private apiConfig: AirbnbApiConfig = {
+    method: 'get',
+    url: `https://www.airbnb.com/api/v3/${operationName}/${sha256Hash}`,
+    headers: {
+      'X-Airbnb-Api-Key': 'd306zoyjsyarp7ifhu67rjxn52tv0t20',
+    },
+    params: {
+      operationName,
+      locale: 'en',
+      currency: 'USD',
+      extensions: JSON.stringify({
+        persistedQuery: {
+          version: 1,
+          sha256Hash,
+        },
+      }),
     },
   };
-  apiConfig.params.variables = JSON.stringify(requestVariables);
 
-  axios
-    .request(apiConfig)
-    .then((response) => {
-      try {
-        const { calendarMonths } = response.data.data.merlin.pdpAvailabilityCalendar;
-        const dates = calendarMonths
-          .flatMap((m: MerlinCalendarMonth) => m.days)
-          .filter((d: MerlinCalendarDay) => {
-            const current = new Date(d.calendarDate);
-            const xMonthsFromToday = new Date(offsetMonth(today, userConfig.months));
-            return current >= today && current < xMonthsFromToday;
-          });
+  constructor() {
+    const listingId = this.getListingId();
 
-        handleSuccess(dates);
-      } catch (err: any) {
-        const errors = response?.data?.errors;
+    if (!listingId) {
+      throw new Error('Valid Airbnb URL or Listing ID must be provided in .env file.');
+    }
 
-        if (errors?.length) {
-          errors.forEach((e: any) => {
-            const message = e?.extensions?.response?.body?.error_message || e?.message;
-            handleError(message ? { message } : e);
-          });
-        } else {
-          handleError(err, response);
+    this.listingId = listingId;
+    this.months = Number(MONTHS) || 3;
+
+    const previousBookings = this.db.restore();
+    if (previousBookings.length) {
+      this.bookings = previousBookings;
+      console.info('Restored previous bookings:', this.bookings);
+    }
+
+    this.run();
+    setInterval(this.run, INTERVAL);
+  }
+
+  private getListingId(): string | void {
+    if (AIRBNB_URL) {
+      const trimmed = AIRBNB_URL.trim();
+      const isId = Array.from(trimmed).every((c) => Number.isInteger(Number.parseInt(c)));
+      const [, idFromUrl] = !isId ? trimmed.match(/airbnb\.com\/rooms\/(\d+)(\?.*)?/) ?? [] : [];
+      return isId ? trimmed : idFromUrl;
+    }
+  }
+
+  private sendEmail(message: string) {
+    const sorted = this.bookings.sort(
+      (a, b) => new Date(a.firstNight).valueOf() - new Date(b.firstNight).valueOf()
+    );
+    this.db.save(sorted);
+
+    const currentBookings = this.bookings.filter((b) => b.lastNight >= offsetDay(this.today.date, -1));
+    this.email.send(message, currentBookings);
+  }
+
+  private addBookings(newBookings: Booking[]) {
+    newBookings.forEach((b) => {
+      const alreadyExists = this.bookings.find((c) => {
+        if (b.lastNight === c.lastNight) {
+          const isSame = b.firstNight === c.firstNight;
+          const isActive = b.firstNight === this.today.iso && c.firstNight < this.today.iso;
+          return isActive || isSame;
+        }
+      });
+      if (!alreadyExists) {
+        this.bookings.push(b);
+        this.sendEmail(`<b>New Booking:</b> ${this.email.formatBooking(b)}`);
+      }
+    });
+  }
+
+  private checkAgainstExistingBookings(firstNight: string, lastNight: string, minNights: number) {
+    const newBooking = { firstNight, lastNight };
+    const newFirstNight = new Date(firstNight);
+    const newLastNight = new Date(lastNight);
+    const totalNights = countDaysBetween(newFirstNight, newLastNight) + 1;
+    const encompassedBookings: Booking[] = [];
+
+    if (totalNights >= minNights) {
+      for (let b of this.bookings) {
+        const currentFirstNight = new Date(b.firstNight);
+        const currentLastNight = new Date(b.lastNight);
+
+        if (b.firstNight === firstNight) {
+          if (b.lastNight === lastNight) {
+            // Booking already exists
+            return;
+          }
+          const endDateIsLater = newLastNight > currentLastNight;
+          if (endDateIsLater && countDaysBetween(newLastNight, currentLastNight) >= minNights) {
+            // New booking starts right after existing booking
+            newBooking.firstNight = offsetDay(b.lastNight, 1);
+            break;
+          } else {
+            // Existing booking has changed length
+            const changeType = endDateIsLater ? 'Lengthened' : 'Shortened';
+            this.sendEmail(
+              `<b>Booking ${changeType}:</b> ${this.email.formatBooking(
+                b
+              )}<br>End Date is now: ${this.email.formatDate(offsetDay(lastNight, 1))}`
+            );
+            b.lastNight = lastNight;
+            return;
+          }
+        } else if (b.lastNight === lastNight) {
+          const startDateIsSooner = newFirstNight < currentFirstNight;
+          if (startDateIsSooner && countDaysBetween(newFirstNight, currentFirstNight) >= minNights) {
+            // New booking starts right before existing booking
+            newBooking.lastNight = offsetDay(b.firstNight, -1);
+            break;
+          } else {
+            if (currentFirstNight > this.today.date) {
+              // Existing booking has changed length
+              const changeType = startDateIsSooner ? 'Lengthened' : 'Shortened';
+              this.sendEmail(
+                `<b>Booking ${changeType}:</b> ${this.email.formatBooking(
+                  b
+                )}<br>Start Date is now: ${this.email.formatDate(firstNight)}`
+              );
+              b.firstNight = firstNight;
+            }
+            return;
+          }
+        } else if (currentFirstNight > newFirstNight && currentLastNight < newLastNight) {
+          // Newly found booking is actually encompassing several others
+          encompassedBookings.push(b);
         }
       }
-    })
-    .catch(handleError);
-};
 
-(() => {
-  if (AIRBNB_URL) {
-    const trimmed = AIRBNB_URL.trim();
-    const isId = Array.from(trimmed).every((c) => Number.isInteger(Number.parseInt(c)));
-    const [, idFromUrl] = !isId ? trimmed.match(/airbnb\.com\/rooms\/(\d+)(\?.*)?/) ?? [] : [];
-    userConfig.listingId = isId ? trimmed : idFromUrl;
+      if (encompassedBookings.length) {
+        this.addBookings(getInBetweenBookings(newBooking, encompassedBookings));
+      } else {
+        this.addBookings([newBooking]);
+      }
+    }
   }
 
-  if (!userConfig.listingId) {
-    throw new Error('Valid Airbnb URL or Listing ID must be provided in .env file.');
+  private checkForNewBookings(dates: MerlinCalendarDay[]) {
+    let minNights: number = 1;
+    let currentBookingStart: string | null = null;
+    let currentBookingEnd: string | null = null;
+
+    dates.forEach((day) => {
+      const booked = !(day.availableForCheckin || day.availableForCheckout);
+      if (booked) {
+        // If a booking is in progress, update the end date
+        if (currentBookingStart !== null) {
+          currentBookingEnd = day.calendarDate;
+        } else {
+          // Otherwise, start a new booking
+          minNights = Number(day.minNights);
+          currentBookingStart = day.calendarDate;
+          currentBookingEnd = day.calendarDate;
+        }
+      } else {
+        // If a booking was in progress and now it's not, save it
+        if (currentBookingStart && currentBookingEnd) {
+          this.checkAgainstExistingBookings(currentBookingStart, currentBookingEnd, minNights);
+          currentBookingStart = null;
+          currentBookingEnd = null;
+        }
+      }
+    });
+
+    // Add a booking if a booking was in progress at the end of the loop
+    if (currentBookingStart && currentBookingEnd) {
+      this.checkAgainstExistingBookings(currentBookingStart, currentBookingEnd, minNights);
+    }
   }
 
-  userConfig.months = Number(MONTHS) || 3;
+  private removeCancelledBookings(dates: MerlinCalendarDay[]) {
+    const toRemove: number[] = [];
 
-  const previousBookings = restoreFromDb();
-  if (previousBookings.length) {
-    bookings = previousBookings;
-    console.info('Restored previous bookings:', bookings);
+    this.bookings.forEach((b, i) => {
+      const isPastBooking = b.lastNight < this.today.iso;
+      if (!isPastBooking) {
+        const foundStartOrEnd = dates.find((day) => {
+          const booked = !(day.availableForCheckin || day.availableForCheckout);
+          return booked && [b.firstNight, b.lastNight].includes(day.calendarDate);
+        });
+        if (!foundStartOrEnd) {
+          toRemove.push(i);
+          this.sendEmail(`<b>Booking Cancelled:</b> ${this.email.formatBooking(b)}`);
+        }
+      }
+    });
+
+    toRemove.forEach((index, i) => this.bookings.splice(index - i, 1));
   }
 
-  run();
-  setInterval(run, INTERVAL);
-})();
+  private guestChangeNotification() {
+    const startingToday: Booking[] = [];
+    const endingToday: Booking[] = [];
+    this.bookings.forEach((b) => {
+      if (b.firstNight === this.today.iso) {
+        startingToday.push(b);
+      } else if (offsetDay(b.lastNight, 1) === this.today.iso) {
+        endingToday.push(b);
+      }
+    });
+
+    if (endingToday.length) {
+      this.sendEmail(`<b>Bookings Ending Today:</b> ${endingToday.map(this.email.formatBooking)}`);
+    }
+    if (startingToday.length) {
+      this.sendEmail(`<b>Bookings Starting Today:</b> ${startingToday.map(this.email.formatBooking)}`);
+    }
+  }
+
+  private handleSuccess = (dates: MerlinCalendarDay[]) => {
+    const datesStr = JSON.stringify(dates);
+
+    if (datesStr !== this.previousDatesStr) {
+      this.removeCancelledBookings(dates);
+      this.checkForNewBookings(dates);
+      this.previousDatesStr = datesStr;
+    }
+
+    this.email.clearErrors();
+    console.info(`Airbnb API Request Successful at ${new Date().toLocaleString()}`);
+  };
+
+  private handleError = (err: Error, response?: AxiosResponse) => {
+    console.error(err);
+    if (response) {
+      this.email.sendError(
+        `<b>Error:</b> Airbnb API response is in unexpected format.<br><br><i>${JSON.stringify(
+          response.data
+        )}</i>`
+      );
+    } else {
+      this.email.sendError(
+        `<b>Error:</b> Airbnb API responded with an error.<br><br><i>${JSON.stringify(
+          err?.message || err
+        )}</i>`
+      );
+    }
+  };
+
+  private run = () => {
+    this.today.set();
+
+    if (isCloseToHour(9)) {
+      this.guestChangeNotification();
+    }
+
+    const requestVariables: AirbnbRequestVars = {
+      request: {
+        count: this.months + 1,
+        listingId: this.listingId,
+        month: this.today.month,
+        year: this.today.year,
+      },
+    };
+    this.apiConfig.params.variables = JSON.stringify(requestVariables);
+
+    axios
+      .request(this.apiConfig)
+      .then((response) => {
+        try {
+          const { calendarMonths } = response.data.data.merlin.pdpAvailabilityCalendar;
+          const dates = calendarMonths
+            .flatMap((m: MerlinCalendarMonth) => m.days)
+            .filter((d: MerlinCalendarDay) => {
+              const xMonthsFromToday = offsetMonth(this.today.date, this.months);
+              return d.calendarDate >= this.today.iso && d.calendarDate < xMonthsFromToday;
+            });
+
+          this.handleSuccess(dates);
+        } catch (err: any) {
+          const errors = response?.data?.errors;
+
+          if (errors?.length) {
+            errors.forEach((e: any) => {
+              const message = e?.extensions?.response?.body?.error_message || e?.message;
+              this.handleError(message ? { message } : e);
+            });
+          } else {
+            this.handleError(err, response);
+          }
+        }
+      })
+      .catch(this.handleError);
+  };
+}
+
+new App();

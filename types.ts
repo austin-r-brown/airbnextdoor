@@ -25,11 +25,6 @@ export type EmailConfig = {
   htmlContent?: string;
 };
 
-export type AirbnbUserConfig = {
-  months: number;
-  listingId: string;
-};
-
 export type AirbnbApiConfig = {
   method: string;
   maxBodyLength?: number;
