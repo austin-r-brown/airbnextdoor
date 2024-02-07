@@ -66,14 +66,14 @@ export class EmailService {
       } else {
         this.smtpConfig.htmlContent = joinedEmails;
 
-        // this.api.sendTransacEmail(this.smtpConfig).then(
-        //   (data: any) => {
-        //     console.info(`Email Sent successfully. Returned data: ${JSON.stringify(data)}`);
-        //   },
-        //   (err: Error) => {
-        //     console.error(err);
-        //   }
-        // );
+        this.api.sendTransacEmail(this.smtpConfig).then(
+          (data: any) => {
+            console.info(`Email Sent successfully. Returned data: ${JSON.stringify(data)}`);
+          },
+          (err: Error) => {
+            console.error(err);
+          }
+        );
       }
 
       this.emailsBuffer = [];
