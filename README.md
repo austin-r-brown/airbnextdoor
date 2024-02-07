@@ -22,7 +22,7 @@ MONTHS=3
 INTERVAL_MINS=5
 ```
 
-### Setup: The .env file
+### Setup: The .env File
 
 #### SIB_API_KEY
 This is the API key needed for the app to send notification emails.
