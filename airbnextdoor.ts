@@ -11,8 +11,8 @@ import {
 } from './date.helpers';
 import { DbService } from './services/db.service';
 import { EmailService } from './services/email.service';
-
 require('dotenv').config();
+
 const { AIRBNB_URL, MONTHS } = process.env;
 const operationName = 'PdpAvailabilityCalendar';
 const sha256Hash = '8f08e03c7bd16fcad3c92a3592c19a8b559a0d0855a84028d1163d4733ed9ade';

@@ -1,10 +1,8 @@
 import { Booking, DateString } from './types';
-
 require('dotenv').config();
+
 const { INTERVAL_MINS } = process.env;
-
 const MS_IN_DAY: number = 86400000;
-
 export const INTERVAL: number = (Number(INTERVAL_MINS) || 5) * 60000;
 
 export class Today {

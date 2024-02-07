@@ -1,5 +1,5 @@
-const fs = require('fs');
 import { Booking } from '../types';
+const fs = require('fs');
 
 const FILE_NAME: string = 'bookings.json';
 const DEBOUNCE_TIME: number = 1000;

@@ -1,8 +1,8 @@
-const SibApiV3Sdk = require('sib-api-v3-sdk');
 import { offsetDay, Today } from '../date.helpers';
 import { Booking, EmailConfig } from '../types';
-
+const SibApiV3Sdk = require('sib-api-v3-sdk');
 require('dotenv').config();
+
 const { SIB_API_KEY, SEND_FROM_EMAIL, SEND_TO_EMAILS } = process.env;
 const DEBOUNCE_TIME: number = 1000;
 
@@ -61,8 +61,8 @@ export class EmailService {
 
       if (!SIB_API_KEY || !SEND_FROM_EMAIL || !SEND_TO_EMAILS) {
         console.error(`
-      SIB API Key and Email Addresses must be provided in .env file to send emails.
-      `);
+        SIB API Key and Email Addresses must be provided in .env file to send emails.
+        `);
       } else {
         this.smtpConfig.htmlContent = joinedEmails;
 
