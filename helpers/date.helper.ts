@@ -1,4 +1,4 @@
-import { Booking, DateString } from './types';
+import { Booking, DateString } from '../types';
 require('dotenv').config();
 
 const { INTERVAL_MINS } = process.env;

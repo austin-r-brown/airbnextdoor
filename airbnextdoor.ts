@@ -8,7 +8,7 @@ import {
   offsetMonth,
   getInBetweenBookings,
   Today,
-} from './date.helpers';
+} from './helpers/date.helper';
 import { DbService } from './services/db.service';
 import { EmailService } from './services/email.service';
 require('dotenv').config();

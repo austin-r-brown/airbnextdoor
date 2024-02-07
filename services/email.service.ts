@@ -1,4 +1,4 @@
-import { offsetDay, Today } from '../date.helpers';
+import { offsetDay, Today } from '../helpers/date.helper';
 import { Booking, EmailConfig } from '../types';
 const SibApiV3Sdk = require('sib-api-v3-sdk');
 require('dotenv').config();
