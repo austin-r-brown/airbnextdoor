@@ -3,9 +3,9 @@ import {
   Booking,
   MerlinCalendarDay,
   AirbnbApiConfig,
-  AirbnbRequestVars,
+  AirbnbRequest,
   MerlinCalendarMonth,
-  BookingChangeType,
+  BookingChange,
 } from './types';
 import {
   INTERVAL,
@@ -105,17 +105,17 @@ class App {
       });
       if (!alreadyExists) {
         this.bookings.push(b);
-        this.sendEmail(`<b>New Booking:</b><br>${this.email.formatBooking(b)}`);
+        this.sendEmail(`<b>${BookingChange.New}:</b><br>${this.email.formatBooking(b)}`);
       }
     });
   }
 
   private changeBookingLength(booking: Booking, change: Partial<Booking>) {
-    let changeType: BookingChangeType | undefined;
+    let changeType: BookingChange | undefined;
 
     if (change.lastNight) {
       if (change.lastNight > booking.lastNight) {
-        changeType = BookingChangeType.Lengthened;
+        changeType = BookingChange.Lengthened;
         const overlappedBooking = this.bookings.find(
           (b) => b.lastNight === change.lastNight && b.firstNight > booking.firstNight
         );
@@ -123,11 +123,11 @@ class App {
           change.lastNight = offsetDay(overlappedBooking.firstNight, -1);
         }
       } else if (change.lastNight < booking.lastNight) {
-        changeType = BookingChangeType.Shortened;
+        changeType = BookingChange.Shortened;
       }
     } else if (change.firstNight) {
       if (change.firstNight < booking.firstNight) {
-        changeType = BookingChangeType.Lengthened;
+        changeType = BookingChange.Lengthened;
         const overlappedBooking = this.bookings.find(
           (b) => b.firstNight === change.firstNight && b.lastNight < booking.lastNight
         );
@@ -135,7 +135,7 @@ class App {
           change.firstNight = offsetDay(overlappedBooking.lastNight, 1);
         }
       } else if (change.firstNight > booking.firstNight) {
-        changeType = BookingChangeType.Shortened;
+        changeType = BookingChange.Shortened;
       }
     }
 
@@ -148,7 +148,7 @@ class App {
       );
       const emailDateType = lastNightChanged ? 'End' : 'Start';
       this.sendEmail(
-        `<b>Booking ${changeType}:</b><br>${this.email.formatBooking(
+        `<b>${changeType}:</b><br>${this.email.formatBooking(
           booking
         )}<br>New ${emailDateType} Date: <b>${emailDate}</b>`
       );
@@ -271,7 +271,7 @@ class App {
         });
         if (!foundStartOrEnd) {
           toRemove.push(i);
-          this.sendEmail(`<b>Booking ${BookingChangeType.Cancelled}:</b><br>${this.email.formatBooking(b)}`);
+          this.sendEmail(`<b>${BookingChange.Cancelled}:</b><br>${this.email.formatBooking(b)}`);
         }
       }
     });
@@ -335,7 +335,7 @@ class App {
       this.guestChangeNotification();
     }
 
-    const requestVariables: AirbnbRequestVars = {
+    const requestVariables: AirbnbRequest = {
       request: {
         count: this.months + 1,
         listingId: this.listingId,

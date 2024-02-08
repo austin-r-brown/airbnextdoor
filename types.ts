@@ -41,7 +41,7 @@ export type AirbnbApiConfig = {
   };
 };
 
-export type AirbnbRequestVars = {
+export type AirbnbRequest = {
   request: {
     count: number;
     listingId: string;
@@ -50,8 +50,9 @@ export type AirbnbRequestVars = {
   };
 };
 
-export enum BookingChangeType {
-  Cancelled = 'Cancelled',
-  Lengthened = 'Lengthened',
-  Shortened = 'Shortened',
+export enum BookingChange {
+  New = 'New Booking',
+  Cancelled = 'Booking Cancelled',
+  Lengthened = 'Booking Lengthened',
+  Shortened = 'Booking Shortened',
 }
