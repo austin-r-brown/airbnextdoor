@@ -11,13 +11,15 @@ export class Today {
   public month!: number;
   public year!: number;
 
-  public set() {
+  public set(): boolean {
     const todayIso = getIsoDate(new Date());
+    const dateChanged = todayIso !== this.iso;
     const [y, m] = todayIso.split('-');
     this.date = new Date(todayIso);
     this.iso = todayIso;
     this.month = Number(m);
     this.year = Number(y);
+    return dateChanged;
   }
 
   constructor() {
@@ -36,8 +38,8 @@ export const isCloseToHour = (hour: number): boolean => {
   return now.getHours() < hour && d.valueOf() - now.valueOf() <= INTERVAL;
 };
 
-export const countDaysBetween = (firstNight: DateString, lastNight: DateString): number =>
-  Math.abs(new Date(lastNight).valueOf() - new Date(firstNight).valueOf()) / MS_IN_DAY;
+export const countDaysBetween = (dateA: DateString, dateB: DateString): number =>
+  Math.abs(new Date(dateB).valueOf() - new Date(dateA).valueOf()) / MS_IN_DAY;
 
 export const offsetDay = (date: DateString, days: number): string => {
   const dateObject = new Date(date);

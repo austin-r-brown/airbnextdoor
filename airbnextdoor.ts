@@ -98,7 +98,7 @@ class App {
       });
       if (!alreadyExists) {
         this.bookings.push(b);
-        this.sendEmail(`<b>New Booking:</b> ${this.email.formatBooking(b)}`);
+        this.sendEmail(`<b>New Booking:</b><br>${this.email.formatBooking(b)}`);
       }
     });
   }
@@ -109,6 +109,23 @@ class App {
     const newLastNight = new Date(lastNight);
     const totalNights = countDaysBetween(newFirstNight, newLastNight) + 1;
     const encompassedBookings: Booking[] = [];
+
+    if (firstNight === this.today.iso) {
+      //TODO: set property for active booking and maybe find out earlier in the process when it finds the active booking, maybe even a specific set of things it only does when the day changes
+      const activeBooking = this.bookings.find(
+        (b) => b.firstNight <= this.today.iso && b.lastNight >= offsetDay(this.today.iso, -1)
+      );
+      if (activeBooking && lastNight !== activeBooking.lastNight) {
+        const changeType = lastNight > activeBooking.lastNight ? 'Lengthened' : 'Shortened';
+        this.sendEmail(
+          `<b>Booking ${changeType}:</b><br>${this.email.formatBooking(
+            activeBooking
+          )}<br>New End Date: <b>${this.email.formatDate(offsetDay(lastNight, 1))}</b>`
+        );
+        activeBooking.lastNight = lastNight;
+        return;
+      }
+    }
 
     if (totalNights >= minNights) {
       for (let b of this.bookings) {
@@ -129,9 +146,9 @@ class App {
             // Existing booking has changed length
             const changeType = endDateIsLater ? 'Lengthened' : 'Shortened';
             this.sendEmail(
-              `<b>Booking ${changeType}:</b> ${this.email.formatBooking(
+              `<b>Booking ${changeType}:</b><br>${this.email.formatBooking(
                 b
-              )}<br>End Date is now: ${this.email.formatDate(offsetDay(lastNight, 1))}`
+              )}<br>New End Date: <b>${this.email.formatDate(offsetDay(lastNight, 1))}</b>`
             );
             b.lastNight = lastNight;
             return;
@@ -147,9 +164,9 @@ class App {
               // Existing booking has changed length
               const changeType = startDateIsSooner ? 'Lengthened' : 'Shortened';
               this.sendEmail(
-                `<b>Booking ${changeType}:</b> ${this.email.formatBooking(
+                `<b>Booking ${changeType}:</b><br>${this.email.formatBooking(
                   b
-                )}<br>Start Date is now: ${this.email.formatDate(firstNight)}`
+                )}<br>New Start Date: <b>${this.email.formatDate(firstNight)}</b>`
               );
               b.firstNight = firstNight;
             }
@@ -210,11 +227,12 @@ class App {
       if (!isPastBooking) {
         const foundStartOrEnd = dates.find((day) => {
           const booked = !(day.availableForCheckin || day.availableForCheckout);
-          return booked && [b.firstNight, b.lastNight].includes(day.calendarDate);
+          const startedInPast = b.firstNight < this.today.iso;
+          return startedInPast || (booked && [b.firstNight, b.lastNight].includes(day.calendarDate));
         });
         if (!foundStartOrEnd) {
           toRemove.push(i);
-          this.sendEmail(`<b>Booking Cancelled:</b> ${this.email.formatBooking(b)}`);
+          this.sendEmail(`<b>Booking Cancelled:</b><br>${this.email.formatBooking(b)}`);
         }
       }
     });
@@ -234,10 +252,10 @@ class App {
     });
 
     if (endingToday.length) {
-      this.sendEmail(`<b>Bookings Ending Today:</b> ${endingToday.map(this.email.formatBooking)}`);
+      this.sendEmail(`<b>Bookings Ending Today:</b><br>${endingToday.map(this.email.formatBooking)}`);
     }
     if (startingToday.length) {
-      this.sendEmail(`<b>Bookings Starting Today:</b> ${startingToday.map(this.email.formatBooking)}`);
+      this.sendEmail(`<b>Bookings Starting Today:</b><br>${startingToday.map(this.email.formatBooking)}`);
     }
   }
 
@@ -272,7 +290,7 @@ class App {
   };
 
   private run = () => {
-    this.today.set();
+    const dateChanged = this.today.set();
 
     if (isCloseToHour(9)) {
       this.guestChangeNotification();
