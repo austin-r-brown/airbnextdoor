@@ -139,9 +139,14 @@ class App {
       }
     }
 
-    if (changeType && (change.lastNight || change.firstNight)) {
-      const emailDate = this.email.formatDate(change.firstNight || offsetDay(change.lastNight!, 1));
-      const emailDateType = change.lastNight ? 'End' : 'Start';
+    const lastNightChanged = change.lastNight && change.lastNight !== booking.lastNight;
+    const firstNightChanged = change.firstNight && change.firstNight !== booking.firstNight;
+
+    if (changeType && (lastNightChanged || firstNightChanged)) {
+      const emailDate = this.email.formatDate(
+        lastNightChanged ? offsetDay(change.lastNight!, 1) : change.firstNight!
+      );
+      const emailDateType = lastNightChanged ? 'End' : 'Start';
       this.sendEmail(
         `<b>Booking ${changeType}:</b><br>${this.email.formatBooking(
           booking
