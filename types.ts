@@ -49,3 +49,9 @@ export type AirbnbRequestVars = {
     year: number;
   };
 };
+
+export enum BookingChangeType {
+  Cancelled = 'Cancelled',
+  Lengthened = 'Lengthened',
+  Shortened = 'Shortened',
+}

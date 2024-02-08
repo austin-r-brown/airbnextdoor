@@ -1,5 +1,12 @@
 import axios, { AxiosResponse } from 'axios';
-import { Booking, MerlinCalendarDay, AirbnbApiConfig, AirbnbRequestVars, MerlinCalendarMonth } from './types';
+import {
+  Booking,
+  MerlinCalendarDay,
+  AirbnbApiConfig,
+  AirbnbRequestVars,
+  MerlinCalendarMonth,
+  BookingChangeType,
+} from './types';
 import {
   INTERVAL,
   isCloseToHour,
@@ -103,6 +110,46 @@ class App {
     });
   }
 
+  private changeBookingLength(booking: Booking, change: Partial<Booking>) {
+    let newDate: string | undefined;
+    let changeType: BookingChangeType | undefined;
+
+    if (change.lastNight) {
+      if (change.lastNight > booking.lastNight) {
+        changeType = BookingChangeType.Lengthened;
+        const overlappedBooking = this.bookings.find(
+          (b) => b.lastNight === change.lastNight && b.firstNight > booking.firstNight
+        );
+        newDate = overlappedBooking ? offsetDay(overlappedBooking.firstNight, -1) : change.lastNight;
+      } else if (change.lastNight < booking.lastNight) {
+        changeType = BookingChangeType.Shortened;
+        newDate = change.lastNight;
+      }
+    } else if (change.firstNight) {
+      if (change.firstNight < booking.firstNight) {
+        changeType = BookingChangeType.Lengthened;
+        const overlappedBooking = this.bookings.find(
+          (b) => b.firstNight === change.firstNight && b.lastNight < booking.lastNight
+        );
+        newDate = overlappedBooking ? offsetDay(overlappedBooking.lastNight, 1) : change.firstNight;
+      } else if (change.firstNight > booking.firstNight) {
+        changeType = BookingChangeType.Shortened;
+        newDate = change.firstNight;
+      }
+    }
+
+    if (newDate && changeType) {
+      const emailDate = this.email.formatDate(change.lastNight ? offsetDay(newDate, 1) : newDate);
+      const emailDateType = change.lastNight ? 'End' : 'Start';
+      this.sendEmail(
+        `<b>Booking ${changeType}:</b><br>${this.email.formatBooking(
+          booking
+        )}<br>New ${emailDateType} Date: <b>${emailDate}</b>`
+      );
+      Object.assign(booking, change);
+    }
+  }
+
   private checkAgainstExistingBookings(firstNight: string, lastNight: string, minNights: number) {
     const newBooking = { firstNight, lastNight };
     const newFirstNight = new Date(firstNight);
@@ -116,13 +163,7 @@ class App {
         (b) => b.firstNight <= this.today.iso && b.lastNight >= offsetDay(this.today.iso, -1)
       );
       if (activeBooking && lastNight !== activeBooking.lastNight) {
-        const changeType = lastNight > activeBooking.lastNight ? 'Lengthened' : 'Shortened';
-        this.sendEmail(
-          `<b>Booking ${changeType}:</b><br>${this.email.formatBooking(
-            activeBooking
-          )}<br>New End Date: <b>${this.email.formatDate(offsetDay(lastNight, 1))}</b>`
-        );
-        activeBooking.lastNight = lastNight;
+        this.changeBookingLength(activeBooking, { lastNight });
         return;
       }
     }
@@ -137,38 +178,30 @@ class App {
             // Booking already exists
             return;
           }
-          const endDateIsLater = newLastNight > currentLastNight;
-          if (endDateIsLater && countDaysBetween(newLastNight, currentLastNight) >= minNights) {
+          if (
+            newLastNight > currentLastNight &&
+            countDaysBetween(newLastNight, currentLastNight) >= minNights
+          ) {
             // New booking starts right after existing booking
             newBooking.firstNight = offsetDay(b.lastNight, 1);
             break;
           } else {
             // Existing booking has changed length
-            const changeType = endDateIsLater ? 'Lengthened' : 'Shortened';
-            this.sendEmail(
-              `<b>Booking ${changeType}:</b><br>${this.email.formatBooking(
-                b
-              )}<br>New End Date: <b>${this.email.formatDate(offsetDay(lastNight, 1))}</b>`
-            );
-            b.lastNight = lastNight;
+            this.changeBookingLength(b, { lastNight });
             return;
           }
         } else if (b.lastNight === lastNight) {
-          const startDateIsSooner = newFirstNight < currentFirstNight;
-          if (startDateIsSooner && countDaysBetween(newFirstNight, currentFirstNight) >= minNights) {
+          if (
+            newFirstNight < currentFirstNight &&
+            countDaysBetween(newFirstNight, currentFirstNight) >= minNights
+          ) {
             // New booking starts right before existing booking
             newBooking.lastNight = offsetDay(b.firstNight, -1);
             break;
           } else {
             if (currentFirstNight > this.today.date) {
               // Existing booking has changed length
-              const changeType = startDateIsSooner ? 'Lengthened' : 'Shortened';
-              this.sendEmail(
-                `<b>Booking ${changeType}:</b><br>${this.email.formatBooking(
-                  b
-                )}<br>New Start Date: <b>${this.email.formatDate(firstNight)}</b>`
-              );
-              b.firstNight = firstNight;
+              this.changeBookingLength(b, { firstNight });
             }
             return;
           }
@@ -232,7 +265,7 @@ class App {
         });
         if (!foundStartOrEnd) {
           toRemove.push(i);
-          this.sendEmail(`<b>Booking Cancelled:</b><br>${this.email.formatBooking(b)}`);
+          this.sendEmail(`<b>Booking ${BookingChangeType.Cancelled}:</b><br>${this.email.formatBooking(b)}`);
         }
       }
     });
