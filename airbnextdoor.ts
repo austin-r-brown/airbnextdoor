@@ -111,7 +111,6 @@ class App {
   }
 
   private changeBookingLength(booking: Booking, change: Partial<Booking>) {
-    let newDate: string | undefined;
     let changeType: BookingChangeType | undefined;
 
     if (change.lastNight) {
@@ -120,10 +119,11 @@ class App {
         const overlappedBooking = this.bookings.find(
           (b) => b.lastNight === change.lastNight && b.firstNight > booking.firstNight
         );
-        newDate = overlappedBooking ? offsetDay(overlappedBooking.firstNight, -1) : change.lastNight;
+        if (overlappedBooking) {
+          change.lastNight = offsetDay(overlappedBooking.firstNight, -1);
+        }
       } else if (change.lastNight < booking.lastNight) {
         changeType = BookingChangeType.Shortened;
-        newDate = change.lastNight;
       }
     } else if (change.firstNight) {
       if (change.firstNight < booking.firstNight) {
@@ -131,15 +131,16 @@ class App {
         const overlappedBooking = this.bookings.find(
           (b) => b.firstNight === change.firstNight && b.lastNight < booking.lastNight
         );
-        newDate = overlappedBooking ? offsetDay(overlappedBooking.lastNight, 1) : change.firstNight;
+        if (overlappedBooking) {
+          change.firstNight = offsetDay(overlappedBooking.lastNight, 1);
+        }
       } else if (change.firstNight > booking.firstNight) {
         changeType = BookingChangeType.Shortened;
-        newDate = change.firstNight;
       }
     }
 
-    if (newDate && changeType) {
-      const emailDate = this.email.formatDate(change.lastNight ? offsetDay(newDate, 1) : newDate);
+    if (changeType && (change.lastNight || change.firstNight)) {
+      const emailDate = this.email.formatDate(change.firstNight || offsetDay(change.lastNight!, 1));
       const emailDateType = change.lastNight ? 'End' : 'Start';
       this.sendEmail(
         `<b>Booking ${changeType}:</b><br>${this.email.formatBooking(
