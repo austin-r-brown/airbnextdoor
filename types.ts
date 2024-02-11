@@ -1,22 +1,28 @@
 export type Booking = {
-  firstNight: string;
-  lastNight: string;
+  firstNight: ISODate;
+  lastNight: ISODate;
 };
 
-export type MerlinCalendarDay = {
-  availableForCheckin: boolean;
-  availableForCheckout: boolean;
-  calendarDate: string;
+export enum BookingChange {
+  New = 'New Booking',
+  Cancelled = 'Booking Cancelled',
+  Extended = 'Booking Extended',
+  Shortened = 'Booking Shortened',
+}
+
+export type ISODate = `${string}-${string}-${string}`;
+
+export type CalendarDay = {
+  booked: boolean;
+  date: ISODate;
   minNights: number;
 };
 
-export type MerlinCalendarMonth = {
-  month: number;
-  year: number;
-  days: MerlinCalendarDay[];
-};
+export type Calendar = Map<ISODate, CalendarDay>;
 
-export type DateString = Date | string;
+export type BookingsMap = Map<ISODate, Booking>;
+
+export type DateType = Date | ISODate;
 
 export type EmailConfig = {
   sender: { email: string };
@@ -50,9 +56,15 @@ export type AirbnbRequest = {
   };
 };
 
-export enum BookingChange {
-  New = 'New Booking',
-  Cancelled = 'Booking Cancelled',
-  Lengthened = 'Booking Lengthened',
-  Shortened = 'Booking Shortened',
-}
+export type MerlinCalendarDay = {
+  availableForCheckin: boolean;
+  availableForCheckout: boolean;
+  calendarDate: ISODate;
+  minNights: number;
+};
+
+export type MerlinCalendarMonth = {
+  month: number;
+  year: number;
+  days: MerlinCalendarDay[];
+};

@@ -6,6 +6,10 @@ import {
   AirbnbRequest,
   MerlinCalendarMonth,
   BookingChange,
+  ISODate,
+  Calendar,
+  CalendarDay,
+  BookingsMap,
 } from './types';
 import {
   INTERVAL,
@@ -13,8 +17,8 @@ import {
   countDaysBetween,
   offsetDay,
   offsetMonth,
-  getInBetweenBookings,
   Today,
+  getBookingDateRange,
 } from './helpers/date.helper';
 import { DbService } from './services/db.service';
 import { EmailService } from './services/email.service';
@@ -31,7 +35,7 @@ class App {
   private readonly today: Today = new Today();
 
   private bookings: Booking[] = [];
-  private previousDatesStr?: string;
+  private previousCalendarStr?: string;
 
   private months: number;
   private listingId: string;
@@ -90,24 +94,20 @@ class App {
     );
     this.db.save(sorted);
 
-    const currentBookings = this.bookings.filter((b) => b.lastNight >= offsetDay(this.today.date, -1));
+    const currentBookings = this.bookings.filter((b) => b.lastNight >= this.today.yesterday);
     this.email.send(message, currentBookings);
   }
 
-  private addBookings(newBookings: Booking[]) {
-    newBookings.forEach((b) => {
-      const alreadyExists = this.bookings.find((c) => {
-        if (b.lastNight === c.lastNight) {
-          const isSame = b.firstNight === c.firstNight;
-          const isActive = b.firstNight === this.today.iso && c.firstNight < this.today.iso;
-          return isActive || isSame;
-        }
-      });
-      if (!alreadyExists) {
-        this.bookings.push(b);
-        this.sendEmail(`<b>${BookingChange.New}:</b><br>${this.email.formatBooking(b)}`);
+  private addBooking(booking: Booking, minNights: number, existingBookings: BookingsMap) {
+    if (booking.firstNight && booking.lastNight) {
+      const totalNights = countDaysBetween(booking.firstNight, booking.lastNight) + 1;
+      if (totalNights >= minNights) {
+        this.bookings.push(booking);
+        this.sendEmail(`<b>${BookingChange.New}:</b><br>${this.email.formatBooking(booking)}`);
+      } else {
+        this.checkGapAdjacentBookings(booking, existingBookings);
       }
-    });
+    }
   }
 
   private changeBookingLength(booking: Booking, change: Partial<Booking>) {
@@ -115,25 +115,13 @@ class App {
 
     if (change.lastNight) {
       if (change.lastNight > booking.lastNight) {
-        changeType = BookingChange.Lengthened;
-        const overlappedBooking = this.bookings.find(
-          (b) => b.lastNight === change.lastNight && b.firstNight > booking.firstNight
-        );
-        if (overlappedBooking) {
-          change.lastNight = offsetDay(overlappedBooking.firstNight, -1);
-        }
+        changeType = BookingChange.Extended;
       } else if (change.lastNight < booking.lastNight) {
         changeType = BookingChange.Shortened;
       }
     } else if (change.firstNight) {
       if (change.firstNight < booking.firstNight) {
-        changeType = BookingChange.Lengthened;
-        const overlappedBooking = this.bookings.find(
-          (b) => b.firstNight === change.firstNight && b.lastNight < booking.lastNight
-        );
-        if (overlappedBooking) {
-          change.firstNight = offsetDay(overlappedBooking.lastNight, 1);
-        }
+        changeType = BookingChange.Extended;
       } else if (change.firstNight > booking.firstNight) {
         changeType = BookingChange.Shortened;
       }
@@ -156,127 +144,44 @@ class App {
     }
   }
 
-  private checkAgainstExistingBookings(firstNight: string, lastNight: string, minNights: number) {
-    const newBooking = { firstNight, lastNight };
-    const newFirstNight = new Date(firstNight);
-    const newLastNight = new Date(lastNight);
-    const totalNights = countDaysBetween(newFirstNight, newLastNight) + 1;
-    const encompassedBookings: Booking[] = [];
-
-    if (firstNight === this.today.iso) {
-      //TODO: set property for active booking and maybe find out earlier in the process when it finds the active booking, maybe even a specific set of things it only does when the day changes
-      const activeBooking = this.bookings.find(
-        (b) => b.firstNight <= this.today.iso && b.lastNight >= offsetDay(this.today.iso, -1)
-      );
-      if (activeBooking && lastNight !== activeBooking.lastNight) {
-        this.changeBookingLength(activeBooking, { lastNight });
-        return;
-      }
-    }
-
-    if (totalNights >= minNights) {
-      for (let b of this.bookings) {
-        const currentFirstNight = new Date(b.firstNight);
-        const currentLastNight = new Date(b.lastNight);
-
-        if (b.firstNight === firstNight) {
-          if (b.lastNight === lastNight) {
-            // Booking already exists
-            return;
-          }
-          if (
-            newLastNight > currentLastNight &&
-            countDaysBetween(newLastNight, currentLastNight) >= minNights
-          ) {
-            // New booking starts right after existing booking
-            newBooking.firstNight = offsetDay(b.lastNight, 1);
-            break;
-          } else {
-            // Existing booking has changed length
-            this.changeBookingLength(b, { lastNight });
-            return;
-          }
-        } else if (b.lastNight === lastNight) {
-          if (
-            newFirstNight < currentFirstNight &&
-            countDaysBetween(newFirstNight, currentFirstNight) >= minNights
-          ) {
-            // New booking starts right before existing booking
-            newBooking.lastNight = offsetDay(b.firstNight, -1);
-            break;
-          } else {
-            if (currentFirstNight > this.today.date) {
-              // Existing booking has changed length
-              this.changeBookingLength(b, { firstNight });
-            }
-            return;
-          }
-        } else if (currentFirstNight > newFirstNight && currentLastNight < newLastNight) {
-          // Newly found booking is actually encompassing several others
-          encompassedBookings.push(b);
-        }
-      }
-
-      if (encompassedBookings.length) {
-        this.addBookings(getInBetweenBookings(newBooking, encompassedBookings));
-      } else {
-        this.addBookings([newBooking]);
-      }
+  private cancelBooking(booking: Booking) {
+    const index = this.bookings.findIndex((b) => JSON.stringify(b) === JSON.stringify(booking));
+    if (index >= 0) {
+      this.bookings.splice(index, 1);
+      this.sendEmail(`<b>${BookingChange.Cancelled}:</b><br>${this.email.formatBooking(booking)}`);
     }
   }
 
-  private checkForNewBookings(dates: MerlinCalendarDay[]) {
+  private checkNewBookings(calendar: Calendar, existingBookings: BookingsMap) {
     let minNights: number = 1;
-    let currentBookingStart: string | null = null;
-    let currentBookingEnd: string | null = null;
+    let firstNight: ISODate | null = null;
+    let lastNight: ISODate | null = null;
 
-    dates.forEach((day) => {
-      const booked = !(day.availableForCheckin || day.availableForCheckout);
-      if (booked) {
+    const days = Array.from(calendar.values());
+
+    days.forEach((day) => {
+      if (day.booked) {
         // If a booking is in progress, update the end date
-        if (currentBookingStart !== null) {
-          currentBookingEnd = day.calendarDate;
+        if (firstNight !== null) {
+          lastNight = day.date;
         } else {
           // Otherwise, start a new booking
-          minNights = Number(day.minNights);
-          currentBookingStart = day.calendarDate;
-          currentBookingEnd = day.calendarDate;
+          minNights = day.minNights;
+          firstNight = day.date;
+          lastNight = day.date;
         }
       } else {
         // If a booking was in progress and now it's not, save it
-        if (currentBookingStart && currentBookingEnd) {
-          this.checkAgainstExistingBookings(currentBookingStart, currentBookingEnd, minNights);
-          currentBookingStart = null;
-          currentBookingEnd = null;
-        }
+        this.addBooking({ firstNight, lastNight } as Booking, minNights, existingBookings);
+        firstNight = null;
+        lastNight = null;
       }
     });
 
     // Add a booking if a booking was in progress at the end of the loop
-    if (currentBookingStart && currentBookingEnd) {
-      this.checkAgainstExistingBookings(currentBookingStart, currentBookingEnd, minNights);
+    if (firstNight && lastNight) {
+      this.addBooking({ firstNight, lastNight }, minNights, existingBookings);
     }
-  }
-
-  private removeCancelledBookings(dates: MerlinCalendarDay[]) {
-    const toRemove: number[] = [];
-
-    this.bookings.forEach((b, i) => {
-      const isPastBooking = b.lastNight < this.today.iso;
-      if (!isPastBooking) {
-        const foundStartOrEnd = dates.find((day) => {
-          const booked = !(day.availableForCheckin || day.availableForCheckout);
-          const startedInPast = b.firstNight < this.today.iso;
-          return startedInPast || (booked && [b.firstNight, b.lastNight].includes(day.calendarDate));
-        });
-        if (!foundStartOrEnd) {
-          toRemove.push(i);
-          this.sendEmail(`<b>${BookingChange.Cancelled}:</b><br>${this.email.formatBooking(b)}`);
-        }
-      }
-    });
-
-    toRemove.forEach((index, i) => this.bookings.splice(index - i, 1));
   }
 
   private guestChangeNotification() {
@@ -298,13 +203,134 @@ class App {
     }
   }
 
-  private handleSuccess = (dates: MerlinCalendarDay[]) => {
-    const datesStr = JSON.stringify(dates);
+  private isBookingInCalendarRange(booking: Booking, calendar: Calendar): boolean {
+    const days = Array.from(calendar.keys());
+    const [firstDay] = days;
+    const lastDay = days[days.length - 1];
 
-    if (datesStr !== this.previousDatesStr) {
-      this.removeCancelledBookings(dates);
-      this.checkForNewBookings(dates);
-      this.previousDatesStr = datesStr;
+    if (booking.firstNight < firstDay) {
+      if (booking.lastNight < firstDay) {
+        return false;
+      } else {
+        const pastDates = getBookingDateRange(booking).filter((d) => d < firstDay);
+        pastDates.forEach((d) => calendar.set(d, { date: d, booked: true, minNights: 1 }));
+      }
+    }
+    if (booking.lastNight > lastDay) {
+      if (booking.firstNight > lastDay) {
+        return false;
+      } else {
+        const futureDates = getBookingDateRange(booking).filter((d) => d > lastDay);
+        futureDates.forEach((d) => calendar.set(d, { date: d, booked: true, minNights: 1 }));
+      }
+    }
+    return true;
+  }
+
+  /* Check if blocked off gaps that are too short to be bookings belong to another booking */
+  private checkGapAdjacentBookings(gap: Booking, existingBookings: BookingsMap) {
+    let preceding;
+    let succeeding;
+
+    const precedingDate = offsetDay(gap.firstNight, -1);
+    const precedingBooking = existingBookings.get(precedingDate);
+    if (precedingBooking?.lastNight === precedingDate) {
+      preceding = precedingBooking;
+    }
+
+    const succeedingDate = offsetDay(gap.lastNight, 1);
+    const succeedingBooking = existingBookings.get(succeedingDate);
+    if (succeedingBooking?.firstNight === succeedingDate) {
+      succeeding = succeedingBooking;
+    }
+
+    if (preceding && succeeding) {
+      // Gap is likely blocked off due to being in between two bookings
+      return;
+    } else if (preceding) {
+      this.changeBookingLength(preceding, { lastNight: gap.lastNight });
+    } else if (succeeding) {
+      this.changeBookingLength(succeeding, { firstNight: gap.firstNight });
+    }
+  }
+
+  /* Use calendar of current booked dates to check for changes in existing bookings  */
+  private checkExistingBookings(calendar: Calendar): BookingsMap {
+    const existingBookings: BookingsMap = new Map();
+
+    this.bookings.forEach((b) => {
+      if (!this.isBookingInCalendarRange(b, calendar)) {
+        return;
+      }
+
+      const dates = getBookingDateRange(b);
+      // Consider cancelled if both first and last nights are no longer booked
+      let cancelled: boolean = !(calendar.get(b.firstNight)?.booked || calendar.get(b.lastNight)?.booked);
+
+      if (!cancelled) {
+        let newFirst: CalendarDay | null = null;
+        let newLast: CalendarDay | null = null;
+
+        let previousDay: CalendarDay | undefined;
+
+        for (const date of dates) {
+          const currentDay = calendar.get(date);
+
+          if (currentDay) {
+            if (previousDay) {
+              if (currentDay.booked && !previousDay.booked) {
+                if (newLast) {
+                  // Consider cancelled if there are dates in the middle that are no longer booked
+                  cancelled = true;
+                  break;
+                } else {
+                  // First night has been moved up
+                  newFirst = currentDay;
+                }
+              } else if (!currentDay.booked && previousDay.booked) {
+                // Last night has been moved back
+                newLast = previousDay;
+              }
+            }
+            previousDay = currentDay;
+          }
+        }
+
+        if (!cancelled && (newFirst || newLast)) {
+          const minNights = newFirst?.minNights ?? calendar.get(b.firstNight)?.minNights ?? 1;
+          const firstNight = newFirst?.date ?? b.firstNight;
+          const lastNight = newLast?.date ?? b.lastNight;
+          const totalNights = countDaysBetween(firstNight, lastNight) + 1;
+
+          if (totalNights >= minNights) {
+            this.changeBookingLength(b, { firstNight, lastNight });
+          } else {
+            // Consider cancelled if booking is now shorter than minimum length requirement
+            cancelled = true;
+          }
+        }
+      }
+
+      if (!cancelled) {
+        getBookingDateRange(b).forEach((date) => {
+          existingBookings.set(date, b);
+          calendar.delete(date);
+        });
+      } else {
+        this.cancelBooking(b);
+      }
+    });
+
+    return existingBookings;
+  }
+
+  private handleSuccess = (calendar: Calendar) => {
+    const calendarStr = JSON.stringify(calendar);
+
+    if (calendarStr !== this.previousCalendarStr) {
+      const existingBookings = this.checkExistingBookings(calendar);
+      this.checkNewBookings(calendar, existingBookings);
+      this.previousCalendarStr = calendarStr;
     }
 
     this.email.clearErrors();
@@ -350,14 +376,21 @@ class App {
       .then((response) => {
         try {
           const { calendarMonths } = response.data.data.merlin.pdpAvailabilityCalendar;
-          const dates = calendarMonths
+          const xMonthsFromToday = offsetMonth(this.today.date, this.months);
+          const calendar = calendarMonths
             .flatMap((m: MerlinCalendarMonth) => m.days)
-            .filter((d: MerlinCalendarDay) => {
-              const xMonthsFromToday = offsetMonth(this.today.date, this.months);
-              return d.calendarDate >= this.today.iso && d.calendarDate < xMonthsFromToday;
-            });
+            .reduce((calendar: Calendar, d: MerlinCalendarDay) => {
+              const { calendarDate, availableForCheckin, availableForCheckout, minNights } = d;
+              if (calendarDate >= this.today.iso && calendarDate < xMonthsFromToday) {
+                calendar.set(calendarDate, {
+                  booked: !(availableForCheckin || availableForCheckout),
+                  date: calendarDate,
+                  minNights: Number(minNights),
+                });
+              }
+            }, new Map());
 
-          this.handleSuccess(dates);
+          this.handleSuccess(calendar);
         } catch (err: any) {
           const errors = response?.data?.errors;
 

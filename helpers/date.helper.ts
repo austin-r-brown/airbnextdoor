@@ -1,4 +1,4 @@
-import { Booking, DateString } from '../types';
+import { Booking, DateType, ISODate } from '../types';
 require('dotenv').config();
 
 const { INTERVAL_MINS } = process.env;
@@ -7,7 +7,9 @@ export const INTERVAL: number = (Number(INTERVAL_MINS) || 5) * 60000;
 
 export class Today {
   public date!: Date;
-  public iso!: string;
+  public iso!: ISODate;
+  public yesterday!: ISODate;
+  public tomorrow!: ISODate;
   public month!: number;
   public year!: number;
 
@@ -17,6 +19,8 @@ export class Today {
     const [y, m] = todayIso.split('-');
     this.date = new Date(todayIso);
     this.iso = todayIso;
+    this.yesterday = offsetDay(todayIso, -1);
+    this.tomorrow = offsetDay(todayIso, 1);
     this.month = Number(m);
     this.year = Number(y);
     return dateChanged;
@@ -27,7 +31,7 @@ export class Today {
   }
 }
 
-export const getIsoDate = (date: Date): string => date.toISOString().split('T')[0];
+export const getIsoDate = (date: Date): ISODate => date.toISOString().split('T')[0] as ISODate;
 
 export const isCloseToHour = (hour: number): boolean => {
   const d = new Date();
@@ -38,16 +42,16 @@ export const isCloseToHour = (hour: number): boolean => {
   return now.getHours() < hour && d.valueOf() - now.valueOf() <= INTERVAL;
 };
 
-export const countDaysBetween = (dateA: DateString, dateB: DateString): number =>
+export const countDaysBetween = (dateA: DateType, dateB: DateType): number =>
   Math.abs(new Date(dateB).valueOf() - new Date(dateA).valueOf()) / MS_IN_DAY;
 
-export const offsetDay = (date: DateString, days: number): string => {
+export const offsetDay = (date: DateType, days: number): ISODate => {
   const dateObject = new Date(date);
   const ms = days * MS_IN_DAY;
   return getIsoDate(new Date(dateObject.valueOf() + ms));
 };
 
-export const offsetMonth = (date: DateString, months: number): string => {
+export const offsetMonth = (date: DateType, months: number): ISODate => {
   const isoDate = getIsoDate(new Date(date));
   const [y, m, d] = isoDate.split('-');
   const addedMonths = Number(m) + months;
@@ -56,30 +60,14 @@ export const offsetMonth = (date: DateString, months: number): string => {
   return getIsoDate(new Date(`${newYear}-${newMonth}-${d}`));
 };
 
-export const getInBetweenBookings = (
-  encompassingBooking: Booking,
-  encompassedBookings: Booking[]
-): Booking[] => {
-  const inBetweenBookings: Booking[] = [];
+export const getBookingDateRange = (booking: Booking): ISODate[] => {
+  const dateArray: ISODate[] = [];
+  let currentDate = new Date(booking.firstNight);
 
-  encompassedBookings.forEach((b, i) => {
-    const isLast = i === encompassedBookings.length - 1;
-    const previous = encompassedBookings[i - 1];
+  while (currentDate <= new Date(booking.lastNight)) {
+    dateArray.push(getIsoDate(currentDate));
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
 
-    if (previous || b.firstNight > encompassingBooking.firstNight) {
-      const firstNight = previous ? offsetDay(previous.lastNight, 1) : encompassingBooking.firstNight;
-      const lastNight = offsetDay(b.firstNight, -1);
-
-      inBetweenBookings.push({ firstNight, lastNight });
-    }
-
-    if (isLast && b.lastNight < encompassingBooking.lastNight) {
-      inBetweenBookings.push({
-        firstNight: offsetDay(b.lastNight, 1),
-        lastNight: encompassingBooking.lastNight,
-      });
-    }
-  });
-
-  return inBetweenBookings;
+  return dateArray;
 };

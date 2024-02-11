@@ -47,8 +47,8 @@ export class EmailService {
         ? '<h3>Current Bookings:</h3>' +
           bookings
             .map((b) => {
-              const today = new Today().iso;
-              const isActive = b.firstNight <= today && b.lastNight >= offsetDay(today, -1);
+              const today = new Today();
+              const isActive = b.firstNight <= today.iso && b.lastNight >= today.yesterday;
               return isActive ? `<b>${this.formatBooking(b)}</b>` : this.formatBooking(b);
             })
             .join('<br>')
