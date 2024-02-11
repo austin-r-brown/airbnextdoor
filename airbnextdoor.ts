@@ -147,8 +147,10 @@ class App {
   private cancelBooking(booking: Booking) {
     const index = this.bookings.findIndex((b) => JSON.stringify(b) === JSON.stringify(booking));
     if (index >= 0) {
-      this.bookings.splice(index, 1);
-      this.sendEmail(`<b>${BookingChange.Cancelled}:</b><br>${this.email.formatBooking(booking)}`);
+      setTimeout(() => {
+        this.bookings.splice(index, 1);
+        this.sendEmail(`<b>${BookingChange.Cancelled}:</b><br>${this.email.formatBooking(booking)}`);
+      });
     }
   }
 
@@ -377,9 +379,10 @@ class App {
         try {
           const { calendarMonths } = response.data.data.merlin.pdpAvailabilityCalendar;
           const xMonthsFromToday = offsetMonth(this.today.date, this.months);
-          const calendar = calendarMonths
+          const calendar = new Map();
+          calendarMonths
             .flatMap((m: MerlinCalendarMonth) => m.days)
-            .reduce((calendar: Calendar, d: MerlinCalendarDay) => {
+            .forEach((d: MerlinCalendarDay) => {
               const { calendarDate, availableForCheckin, availableForCheckout, minNights } = d;
               if (calendarDate >= this.today.iso && calendarDate < xMonthsFromToday) {
                 calendar.set(calendarDate, {
@@ -388,7 +391,7 @@ class App {
                   minNights: Number(minNights),
                 });
               }
-            }, new Map());
+            });
 
           this.handleSuccess(calendar);
         } catch (err: any) {
