@@ -13,8 +13,15 @@ export class Today {
   public month!: number;
   public year!: number;
 
+  private getTodayIso(): ISODate {
+    const [m, d, y] = new Date()
+      .toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' })
+      .split('/');
+    return `${y}-${m}-${d}`;
+  }
+
   public set(): boolean {
-    const todayIso = getIsoDate(new Date());
+    const todayIso = this.getTodayIso();
     const dateChanged = todayIso !== this.iso;
     const [y, m] = todayIso.split('-');
     this.date = new Date(todayIso);
