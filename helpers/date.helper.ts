@@ -8,8 +8,8 @@ export const INTERVAL: number = (Number(INTERVAL_MINS) || 5) * 60000;
 export class Today {
   public date!: Date;
   public iso!: ISODate;
-  public yesterday!: ISODate;
-  public tomorrow!: ISODate;
+  public dayBefore!: ISODate;
+  public dayAfter!: ISODate;
   public month!: number;
   public year!: number;
 
@@ -26,8 +26,8 @@ export class Today {
     const [y, m] = todayIso.split('-');
     this.date = new Date(todayIso);
     this.iso = todayIso;
-    this.yesterday = offsetDay(todayIso, -1);
-    this.tomorrow = offsetDay(todayIso, 1);
+    this.dayBefore = offsetDay(todayIso, -1);
+    this.dayAfter = offsetDay(todayIso, 1);
     this.month = Number(m);
     this.year = Number(y);
     return dateChanged;
@@ -109,4 +109,28 @@ export const getBookingDateRange = (booking: Booking): ISODate[] => {
   }
 
   return dateArray;
+};
+
+export const isBookingInCalendarRange = (booking: Booking, calendar: Calendar): boolean => {
+  const days = Array.from(calendar.keys());
+  const [firstDay] = days;
+  const lastDay = days[days.length - 1];
+
+  if (booking.firstNight < firstDay) {
+    if (booking.lastNight < firstDay) {
+      return false;
+    } else {
+      const pastDates = getBookingDateRange(booking).filter((d) => d < firstDay);
+      pastDates.reverse().forEach((d) => calendar.prepend(d, { date: d, booked: true, minNights: 1 }));
+    }
+  }
+  if (booking.lastNight > lastDay) {
+    if (booking.firstNight > lastDay) {
+      return false;
+    } else {
+      const futureDates = getBookingDateRange(booking).filter((d) => d > lastDay);
+      futureDates.forEach((d) => calendar.set(d, { date: d, booked: true, minNights: 1 }));
+    }
+  }
+  return true;
 };

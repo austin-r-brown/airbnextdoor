@@ -19,6 +19,7 @@ import {
   Today,
   getBookingDateRange,
   Calendar,
+  isBookingInCalendarRange,
 } from './helpers/date.helper';
 import { DbService } from './services/db.service';
 import { EmailService } from './services/email.service';
@@ -84,6 +85,7 @@ class App {
     setInterval(this.run, INTERVAL);
   }
 
+  /* Extracts Airbnb listing ID from URL, or returns original value if already ID */
   private getListingId(): string | void {
     if (AIRBNB_URL) {
       const trimmed = AIRBNB_URL.trim();
@@ -93,6 +95,7 @@ class App {
     }
   }
 
+  /* Sends all emails that have been attempted within past 1 second, sorts bookings and saves to DB */
   private sendEmail(message: string) {
     clearTimeout(this.sendDebounceTimer);
     this.emailsBuffer.push(message);
@@ -103,13 +106,14 @@ class App {
       );
       this.db.save(bookings);
 
-      const currentBookings = bookings.filter((b) => b.lastNight >= this.today.yesterday);
+      const currentBookings = bookings.filter((b) => b.lastNight >= this.today.dayBefore);
       this.email.send(this.emailsBuffer, currentBookings);
 
       this.emailsBuffer = [];
     }, SEND_DEBOUNCE_TIME);
   }
 
+  /* Validates new booking before adding by checking length against length requirement */
   private addBooking(booking: Booking, minNights: number, existingBookings: BookingsMap) {
     if (booking.firstNight && booking.lastNight) {
       const totalNights = countDaysBetween(booking.firstNight, booking.lastNight) + 1;
@@ -122,6 +126,7 @@ class App {
     }
   }
 
+  /* Validates changes in booking length, updates booking accordingly and sends email */
   private changeBookingLength(booking: Booking, change: Partial<Booking>) {
     let changeType: BookingChange | undefined;
 
@@ -156,6 +161,7 @@ class App {
     }
   }
 
+  /* Takes an array of indexes from this.bookings array, splices them from the array and sends email notification */
   private cancelBookings(indexes: number[]) {
     indexes.forEach((index, i) => {
       const booking = this.bookings[index];
@@ -166,6 +172,7 @@ class App {
     });
   }
 
+  /* Checks for new bookings using calendar of current booked dates and map of known existing bookings */
   private checkNewBookings(calendar: Calendar, existingBookings: BookingsMap) {
     let minNights: number = 1;
     let firstNight: ISODate | null = null;
@@ -198,6 +205,7 @@ class App {
     }
   }
 
+  /* Sends email when guests are arriving or leaving today */
   private guestChangeNotification() {
     const startingToday: Booking[] = [];
     const endingToday: Booking[] = [];
@@ -217,31 +225,7 @@ class App {
     }
   }
 
-  private isBookingInCalendarRange(booking: Booking, calendar: Calendar): boolean {
-    const days = Array.from(calendar.keys());
-    const [firstDay] = days;
-    const lastDay = days[days.length - 1];
-
-    if (booking.firstNight < firstDay) {
-      if (booking.lastNight < firstDay) {
-        return false;
-      } else {
-        const pastDates = getBookingDateRange(booking).filter((d) => d < firstDay);
-        pastDates.reverse().forEach((d) => calendar.prepend(d, { date: d, booked: true, minNights: 1 }));
-      }
-    }
-    if (booking.lastNight > lastDay) {
-      if (booking.firstNight > lastDay) {
-        return false;
-      } else {
-        const futureDates = getBookingDateRange(booking).filter((d) => d > lastDay);
-        futureDates.forEach((d) => calendar.set(d, { date: d, booked: true, minNights: 1 }));
-      }
-    }
-    return true;
-  }
-
-  /* Check if blocked off gaps that are too short to be bookings belong to another booking */
+  /* Checks if blocked off gaps that are too short to be bookings belong to another booking */
   private checkGapAdjacentBookings(gap: Booking, existingBookings: BookingsMap) {
     let preceding;
     let succeeding;
@@ -268,13 +252,13 @@ class App {
     }
   }
 
-  /* Use calendar of current booked dates to check for changes in existing bookings  */
+  /* Uses calendar of current booked dates to check for changes in existing bookings, returns map of updated existing bookings  */
   private checkExistingBookings(calendar: Calendar): BookingsMap {
     const existingBookings: BookingsMap = new Map();
     const cancelledBookings: number[] = [];
 
     this.bookings.forEach((b, i) => {
-      if (!this.isBookingInCalendarRange(b, calendar)) {
+      if (!isBookingInCalendarRange(b, calendar)) {
         return;
       }
 
@@ -340,7 +324,7 @@ class App {
   }
 
   private handleSuccess = (calendar: Calendar) => {
-    const calendarStr = JSON.stringify(calendar);
+    const calendarStr = JSON.stringify(calendar.values());
 
     if (calendarStr !== this.previousCalendarStr) {
       const existingBookings = this.checkExistingBookings(calendar);
