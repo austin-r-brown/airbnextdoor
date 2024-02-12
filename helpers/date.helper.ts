@@ -1,4 +1,4 @@
-import { Booking, DateType, ISODate } from '../types';
+import { Booking, CalendarDay, DateType, ISODate } from '../types';
 require('dotenv').config();
 
 const { INTERVAL_MINS } = process.env;
@@ -36,6 +36,38 @@ export class Today {
   constructor() {
     this.set();
   }
+}
+
+export class Calendar {
+  private map: Map<ISODate, CalendarDay>;
+  private keyOrder: ISODate[] = [];
+
+  constructor() {
+    this.map = new Map();
+    this.keyOrder = [];
+  }
+
+  prepend(key: ISODate, value: CalendarDay) {
+    this.map.set(key, value);
+    this.keyOrder.unshift(key);
+  }
+
+  keys(): ISODate[] {
+    return this.keyOrder;
+  }
+
+  values(): CalendarDay[] {
+    return this.keyOrder.map((key) => this.map.get(key) as CalendarDay);
+  }
+
+  set(key: ISODate, value: CalendarDay) {
+    this.map.set(key, value);
+    this.keyOrder.push(key);
+    return this;
+  }
+
+  get = (key: ISODate): CalendarDay | undefined => this.map.get(key);
+  has = (key: ISODate): boolean => this.map.has(key);
 }
 
 export const getIsoDate = (date: Date): ISODate => date.toISOString().split('T')[0] as ISODate;

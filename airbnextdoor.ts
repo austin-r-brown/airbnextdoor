@@ -7,7 +7,6 @@ import {
   MerlinCalendarMonth,
   BookingChange,
   ISODate,
-  Calendar,
   CalendarDay,
   BookingsMap,
 } from './types';
@@ -19,18 +18,24 @@ import {
   offsetMonth,
   Today,
   getBookingDateRange,
+  Calendar,
 } from './helpers/date.helper';
 import { DbService } from './services/db.service';
 import { EmailService } from './services/email.service';
 require('dotenv').config();
 
 const { AIRBNB_URL, MONTHS } = process.env;
+const SEND_DEBOUNCE_TIME: number = 1000;
+
 const operationName = 'PdpAvailabilityCalendar';
 const sha256Hash = '8f08e03c7bd16fcad3c92a3592c19a8b559a0d0855a84028d1163d4733ed9ade';
 
 class App {
   private readonly db: DbService = new DbService();
   private readonly email: EmailService = new EmailService();
+
+  private sendDebounceTimer?: NodeJS.Timeout;
+  private emailsBuffer: string[] = [];
 
   private readonly today: Today = new Today();
 
@@ -89,13 +94,20 @@ class App {
   }
 
   private sendEmail(message: string) {
-    const sorted = this.bookings.sort(
-      (a, b) => new Date(a.firstNight).valueOf() - new Date(b.firstNight).valueOf()
-    );
-    this.db.save(sorted);
+    clearTimeout(this.sendDebounceTimer);
+    this.emailsBuffer.push(message);
 
-    const currentBookings = this.bookings.filter((b) => b.lastNight >= this.today.yesterday);
-    this.email.send(message, currentBookings);
+    this.sendDebounceTimer = setTimeout(() => {
+      const bookings = this.bookings.sort(
+        (a, b) => new Date(a.firstNight).valueOf() - new Date(b.firstNight).valueOf()
+      );
+      this.db.save(bookings);
+
+      const currentBookings = bookings.filter((b) => b.lastNight >= this.today.yesterday);
+      this.email.send(this.emailsBuffer, currentBookings);
+
+      this.emailsBuffer = [];
+    }, SEND_DEBOUNCE_TIME);
   }
 
   private addBooking(booking: Booking, minNights: number, existingBookings: BookingsMap) {
@@ -144,14 +156,14 @@ class App {
     }
   }
 
-  private cancelBooking(booking: Booking) {
-    const index = this.bookings.findIndex((b) => JSON.stringify(b) === JSON.stringify(booking));
-    if (index >= 0) {
-      setTimeout(() => {
-        this.bookings.splice(index, 1);
+  private cancelBookings(indexes: number[]) {
+    indexes.forEach((index, i) => {
+      const booking = this.bookings[index];
+      if (booking) {
         this.sendEmail(`<b>${BookingChange.Cancelled}:</b><br>${this.email.formatBooking(booking)}`);
-      });
-    }
+        this.bookings.splice(index - i, 1);
+      }
+    });
   }
 
   private checkNewBookings(calendar: Calendar, existingBookings: BookingsMap) {
@@ -162,7 +174,7 @@ class App {
     const days = Array.from(calendar.values());
 
     days.forEach((day) => {
-      if (day.booked) {
+      if (day.booked && !existingBookings.has(day.date)) {
         // If a booking is in progress, update the end date
         if (firstNight !== null) {
           lastNight = day.date;
@@ -215,7 +227,7 @@ class App {
         return false;
       } else {
         const pastDates = getBookingDateRange(booking).filter((d) => d < firstDay);
-        pastDates.forEach((d) => calendar.set(d, { date: d, booked: true, minNights: 1 }));
+        pastDates.reverse().forEach((d) => calendar.prepend(d, { date: d, booked: true, minNights: 1 }));
       }
     }
     if (booking.lastNight > lastDay) {
@@ -259,8 +271,9 @@ class App {
   /* Use calendar of current booked dates to check for changes in existing bookings  */
   private checkExistingBookings(calendar: Calendar): BookingsMap {
     const existingBookings: BookingsMap = new Map();
+    const cancelledBookings: number[] = [];
 
-    this.bookings.forEach((b) => {
+    this.bookings.forEach((b, i) => {
       if (!this.isBookingInCalendarRange(b, calendar)) {
         return;
       }
@@ -316,13 +329,13 @@ class App {
       if (!cancelled) {
         getBookingDateRange(b).forEach((date) => {
           existingBookings.set(date, b);
-          calendar.delete(date);
         });
       } else {
-        this.cancelBooking(b);
+        cancelledBookings.push(i);
       }
     });
 
+    this.cancelBookings(cancelledBookings);
     return existingBookings;
   }
 
@@ -379,7 +392,7 @@ class App {
         try {
           const { calendarMonths } = response.data.data.merlin.pdpAvailabilityCalendar;
           const xMonthsFromToday = offsetMonth(this.today.date, this.months);
-          const calendar = new Map();
+          const calendar = new Calendar();
           calendarMonths
             .flatMap((m: MerlinCalendarMonth) => m.days)
             .forEach((d: MerlinCalendarDay) => {

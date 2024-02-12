@@ -18,8 +18,6 @@ export type CalendarDay = {
   minNights: number;
 };
 
-export type Calendar = Map<ISODate, CalendarDay>;
-
 export type BookingsMap = Map<ISODate, Booking>;
 
 export type DateType = Date | ISODate;
