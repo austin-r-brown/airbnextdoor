@@ -1,4 +1,4 @@
-import { offsetDay, Today } from '../helpers/date.helper';
+import { MS_IN_MINUTE, offsetDay, Today } from '../helpers/date.helper';
 import { Booking, EmailConfig } from '../types';
 const SibApiV3Sdk = require('sib-api-v3-sdk');
 require('dotenv').config();
@@ -18,7 +18,7 @@ export class EmailService {
   };
 
   private lastError: string | null = null;
-  private lastSentEmail: string | null = null;
+  private lastNotifiedError: string | null = null;
 
   public readonly formatDate = (date: string): string => {
     const [y, m, d] = date.split('-');
@@ -63,6 +63,7 @@ export class EmailService {
           console.info(`Email Sent successfully. Returned data: ${JSON.stringify(data)}`);
         },
         (err: Error) => {
+          this.lastNotifiedError = null;
           console.error(err);
         }
       );
@@ -71,17 +72,25 @@ export class EmailService {
 
   public sendError(email: string) {
     // Only send same error once and only if it has occured more than once
-    if (email === this.lastError && email !== this.lastSentEmail) {
+    if (email === this.lastError && email !== this.lastNotifiedError) {
       this.send([email]);
-      this.lastSentEmail = email;
+      this.lastNotifiedError = email;
       this.lastError = null;
     } else {
       this.lastError = email;
     }
   }
 
+  public sendTimeoutError(timeout: number) {
+    if (!this.lastNotifiedError) {
+      const minutes = timeout / MS_IN_MINUTE;
+      const lastError = this.lastError ? `Last error that occurred: "${this.lastError}"` : '';
+      this.send([`Application has not successfully run in ${Math.round(minutes)} minutes.`, lastError]);
+    }
+  }
+
   public clearErrors() {
     this.lastError = null;
-    this.lastSentEmail = null;
+    this.lastNotifiedError = null;
   }
 }

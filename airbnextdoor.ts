@@ -45,6 +45,9 @@ class App {
   /* Used for preliminary checking of changes in API response */
   private apiResponseStr?: string;
 
+  /* Used for sending notification if app appears to have stalled */
+  private successTimer?: NodeJS.Timeout;
+
   /* Used for Airbnb API request */
   private listingId: string;
   private monthsFromNow: number;
@@ -332,6 +335,7 @@ class App {
       this.checkNewBookings(calendar, existingBookings);
     }
 
+    clearTimeout(this.successTimer);
     this.email.clearErrors();
     console.info(`Airbnb API Request Successful at ${new Date().toLocaleString()}`);
   };
@@ -354,7 +358,10 @@ class App {
   };
 
   private run = () => {
-    const dateChanged = this.today.set();
+    const successTimeout = INTERVAL * 2;
+    this.successTimer = setTimeout(() => this.email.sendTimeoutError(successTimeout), successTimeout);
+
+    this.today.set();
 
     if (isCloseToHour(9)) {
       this.guestChangeNotification();
