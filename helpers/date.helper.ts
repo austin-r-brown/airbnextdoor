@@ -95,8 +95,8 @@ export const countDaysBetween = (dateA: Date | ISODate, dateB: Date | ISODate): 
 
 export const offsetDay = (date: Date | ISODate, days: number): ISODate => {
   const dateObject = new Date(date);
-  dateObject.setDate(dateObject.getDate() + days);
-  return getIsoDate(dateObject);
+  const ms = days * MS_IN_DAY;
+  return getIsoDate(new Date(dateObject.valueOf() + ms));
 };
 
 export const offsetMonth = (date: Date | ISODate, months: number): ISODate => {
