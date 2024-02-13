@@ -380,7 +380,6 @@ class App {
           const calendar = new Calendar();
 
           if (apiResponseStr !== this.apiResponseStr) {
-            this.apiResponseStr = apiResponseStr;
             const xMonthsFromNow = offsetMonth(this.today.date, this.monthsFromNow);
 
             apiResponse.forEach(({ calendarDate, availableForCheckin, availableForCheckout, minNights }) => {
@@ -392,6 +391,7 @@ class App {
                 });
               }
             });
+            this.apiResponseStr = apiResponseStr;
           }
 
           this.handleSuccess(calendar);
