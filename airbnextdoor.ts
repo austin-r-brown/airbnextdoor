@@ -34,18 +34,20 @@ const sha256Hash = '8f08e03c7bd16fcad3c92a3592c19a8b559a0d0855a84028d1163d4733ed
 class App {
   private readonly db: DbService = new DbService();
   private readonly email: EmailService = new EmailService();
-
-  private sendDebounceTimer?: NodeJS.Timeout;
-  private emailsBuffer: string[] = [];
-
   private readonly today: Today = new Today();
 
   private bookings: Booking[] = [];
+
+  /* Used for debouncing notifications sent and JSON backups saved */
+  private sendDebounceTimer?: NodeJS.Timeout;
+  private notificationBuffer: string[] = [];
+
+  /* Used for preliminary checking of changes in API response */
   private previousCalendarStr?: string;
 
-  private months: number;
+  /* Used for Airbnb API request */
   private listingId: string;
-
+  private monthsFromNow: number;
   private apiConfig: AirbnbApiConfig = {
     method: 'get',
     url: `https://www.airbnb.com/api/v3/${operationName}/${sha256Hash}`,
@@ -73,7 +75,7 @@ class App {
     }
 
     this.listingId = listingId;
-    this.months = Number(MONTHS) || 3;
+    this.monthsFromNow = Number(MONTHS) || 3;
 
     const previousBookings = this.db.restore();
     if (previousBookings.length) {
@@ -95,10 +97,10 @@ class App {
     }
   }
 
-  /* Sends all emails that have been attempted within past 1 second, sorts bookings and saves to DB */
-  private sendEmail(message: string) {
+  /* Sends all notifications that have been attempted within past second, sorts bookings and saves to DB */
+  private sendNotification(message: string) {
     clearTimeout(this.sendDebounceTimer);
-    this.emailsBuffer.push(message);
+    this.notificationBuffer.push(message);
 
     this.sendDebounceTimer = setTimeout(() => {
       const bookings = this.bookings.sort(
@@ -107,26 +109,26 @@ class App {
       this.db.save(bookings);
 
       const currentBookings = bookings.filter((b) => b.lastNight >= this.today.dayBefore);
-      this.email.send(this.emailsBuffer, currentBookings);
+      this.email.send(this.notificationBuffer, currentBookings);
 
-      this.emailsBuffer = [];
+      this.notificationBuffer = [];
     }, SEND_DEBOUNCE_TIME);
   }
 
-  /* Validates new booking before adding by checking length against length requirement */
+  /* Adds new booking and sends notification if length requirement is met, otherwise considers it a gap */
   private addBooking(booking: Booking, minNights: number, existingBookings: BookingsMap) {
     if (booking.firstNight && booking.lastNight) {
       const totalNights = countDaysBetween(booking.firstNight, booking.lastNight) + 1;
       if (totalNights >= minNights) {
         this.bookings.push(booking);
-        this.sendEmail(`<b>${BookingChange.New}:</b><br>${this.email.formatBooking(booking)}`);
+        this.sendNotification(`<b>${BookingChange.New}:</b><br>${this.email.formatBooking(booking)}`);
       } else {
         this.checkGapAdjacentBookings(booking, existingBookings);
       }
     }
   }
 
-  /* Validates changes in booking length, updates booking accordingly and sends email */
+  /* Validates changes in booking length, updates booking accordingly and sends notification */
   private changeBookingLength(booking: Booking, change: Partial<Booking>) {
     let changeType: BookingChange | undefined;
 
@@ -148,25 +150,25 @@ class App {
     const firstNightChanged = change.firstNight && change.firstNight !== booking.firstNight;
 
     if (changeType && (lastNightChanged || firstNightChanged)) {
-      const emailDate = this.email.formatDate(
+      const formattedDate = this.email.formatDate(
         lastNightChanged ? offsetDay(change.lastNight!, 1) : change.firstNight!
       );
-      const emailDateType = lastNightChanged ? 'End' : 'Start';
-      this.sendEmail(
+      const dateType = lastNightChanged ? 'End' : 'Start';
+      this.sendNotification(
         `<b>${changeType}:</b><br>${this.email.formatBooking(
           booking
-        )}<br>New ${emailDateType} Date: <b>${emailDate}</b>`
+        )}<br>New ${dateType} Date: <b>${formattedDate}</b>`
       );
       Object.assign(booking, change);
     }
   }
 
-  /* Takes an array of indexes from this.bookings array, splices them from the array and sends email notification */
+  /* Takes an array of indexes from this.bookings array, splices them from the array and sends notification */
   private cancelBookings(indexes: number[]) {
     indexes.forEach((index, i) => {
       const booking = this.bookings[index];
       if (booking) {
-        this.sendEmail(`<b>${BookingChange.Cancelled}:</b><br>${this.email.formatBooking(booking)}`);
+        this.sendNotification(`<b>${BookingChange.Cancelled}:</b><br>${this.email.formatBooking(booking)}`);
         this.bookings.splice(index - i, 1);
       }
     });
@@ -178,7 +180,7 @@ class App {
     let firstNight: ISODate | null = null;
     let lastNight: ISODate | null = null;
 
-    const days = Array.from(calendar.values());
+    const days = calendar.values();
 
     days.forEach((day) => {
       if (day.booked && !existingBookings.has(day.date)) {
@@ -205,23 +207,25 @@ class App {
     }
   }
 
-  /* Sends email when guests are arriving or leaving today */
+  /* Sends notification when guests are arriving or leaving today */
   private guestChangeNotification() {
     const startingToday: Booking[] = [];
     const endingToday: Booking[] = [];
     this.bookings.forEach((b) => {
       if (b.firstNight === this.today.iso) {
         startingToday.push(b);
-      } else if (offsetDay(b.lastNight, 1) === this.today.iso) {
+      } else if (b.lastNight === this.today.dayBefore) {
         endingToday.push(b);
       }
     });
 
     if (endingToday.length) {
-      this.sendEmail(`<b>Bookings Ending Today:</b><br>${endingToday.map(this.email.formatBooking)}`);
+      this.sendNotification(`<b>Bookings Ending Today:</b><br>${endingToday.map(this.email.formatBooking)}`);
     }
     if (startingToday.length) {
-      this.sendEmail(`<b>Bookings Starting Today:</b><br>${startingToday.map(this.email.formatBooking)}`);
+      this.sendNotification(
+        `<b>Bookings Starting Today:</b><br>${startingToday.map(this.email.formatBooking)}`
+      );
     }
   }
 
@@ -261,10 +265,9 @@ class App {
       if (!isBookingInCalendarRange(b, calendar)) {
         return;
       }
-
       const dates = getBookingDateRange(b);
       // Consider cancelled if both first and last nights are no longer booked
-      let cancelled: boolean = !(calendar.get(b.firstNight)?.booked || calendar.get(b.lastNight)?.booked);
+      let cancelled = !(calendar.get(b.firstNight)?.booked || calendar.get(b.lastNight)?.booked);
 
       if (!cancelled) {
         let newFirst: CalendarDay | null = null;
@@ -362,7 +365,7 @@ class App {
 
     const requestVariables: AirbnbRequest = {
       request: {
-        count: this.months + 1,
+        count: this.monthsFromNow + 1,
         listingId: this.listingId,
         month: this.today.month,
         year: this.today.year,
@@ -375,13 +378,13 @@ class App {
       .then((response) => {
         try {
           const { calendarMonths } = response.data.data.merlin.pdpAvailabilityCalendar;
-          const xMonthsFromToday = offsetMonth(this.today.date, this.months);
+          const xMonthsFromNow = offsetMonth(this.today.date, this.monthsFromNow);
           const calendar = new Calendar();
           calendarMonths
             .flatMap((m: MerlinCalendarMonth) => m.days)
             .forEach((d: MerlinCalendarDay) => {
               const { calendarDate, availableForCheckin, availableForCheckout, minNights } = d;
-              if (calendarDate >= this.today.iso && calendarDate < xMonthsFromToday) {
+              if (calendarDate >= this.today.iso && calendarDate < xMonthsFromNow) {
                 calendar.set(calendarDate, {
                   booked: !(availableForCheckin || availableForCheckout),
                   date: calendarDate,

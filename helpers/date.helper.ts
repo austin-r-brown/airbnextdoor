@@ -1,4 +1,4 @@
-import { Booking, CalendarDay, DateType, ISODate } from '../types';
+import { Booking, CalendarDay, ISODate } from '../types';
 require('dotenv').config();
 
 const { INTERVAL_MINS } = process.env;
@@ -81,16 +81,16 @@ export const isCloseToHour = (hour: number): boolean => {
   return now.getHours() < hour && d.valueOf() - now.valueOf() <= INTERVAL;
 };
 
-export const countDaysBetween = (dateA: DateType, dateB: DateType): number =>
+export const countDaysBetween = (dateA: Date | ISODate, dateB: Date | ISODate): number =>
   Math.abs(new Date(dateB).valueOf() - new Date(dateA).valueOf()) / MS_IN_DAY;
 
-export const offsetDay = (date: DateType, days: number): ISODate => {
+export const offsetDay = (date: Date | ISODate, days: number): ISODate => {
   const dateObject = new Date(date);
-  const ms = days * MS_IN_DAY;
-  return getIsoDate(new Date(dateObject.valueOf() + ms));
+  dateObject.setDate(dateObject.getDate() + days);
+  return getIsoDate(dateObject);
 };
 
-export const offsetMonth = (date: DateType, months: number): ISODate => {
+export const offsetMonth = (date: Date | ISODate, months: number): ISODate => {
   const isoDate = getIsoDate(new Date(date));
   const [y, m, d] = isoDate.split('-');
   const addedMonths = Number(m) + months;
@@ -112,7 +112,7 @@ export const getBookingDateRange = (booking: Booking): ISODate[] => {
 };
 
 export const isBookingInCalendarRange = (booking: Booking, calendar: Calendar): boolean => {
-  const days = Array.from(calendar.keys());
+  const days = calendar.keys();
   const [firstDay] = days;
   const lastDay = days[days.length - 1];
 

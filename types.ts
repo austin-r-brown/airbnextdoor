@@ -3,13 +3,6 @@ export type Booking = {
   lastNight: ISODate;
 };
 
-export enum BookingChange {
-  New = 'New Booking',
-  Cancelled = 'Booking Cancelled',
-  Extended = 'Booking Extended',
-  Shortened = 'Booking Shortened',
-}
-
 export type ISODate = `${string}-${string}-${string}`;
 
 export type CalendarDay = {
@@ -19,8 +12,6 @@ export type CalendarDay = {
 };
 
 export type BookingsMap = Map<ISODate, Booking>;
-
-export type DateType = Date | ISODate;
 
 export type EmailConfig = {
   sender: { email: string };
@@ -66,3 +57,10 @@ export type MerlinCalendarMonth = {
   year: number;
   days: MerlinCalendarDay[];
 };
+
+export enum BookingChange {
+  New = 'New Booking',
+  Cancelled = 'Booking Cancelled',
+  Extended = 'Booking Extended',
+  Shortened = 'Booking Shortened',
+}
