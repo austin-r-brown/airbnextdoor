@@ -43,7 +43,7 @@ class App {
   private notificationBuffer: string[] = [];
 
   /* Used for preliminary checking of changes in API response */
-  private previousCalendarStr?: string;
+  private apiResponseStr?: string;
 
   /* Used for Airbnb API request */
   private listingId: string;
@@ -180,7 +180,7 @@ class App {
     let firstNight: ISODate | null = null;
     let lastNight: ISODate | null = null;
 
-    const days = calendar.values();
+    const days = calendar.days();
 
     days.forEach((day) => {
       if (day.booked && !existingBookings.has(day.date)) {
@@ -327,12 +327,9 @@ class App {
   }
 
   private handleSuccess = (calendar: Calendar) => {
-    const calendarStr = JSON.stringify(calendar.values());
-
-    if (calendarStr !== this.previousCalendarStr) {
+    if (calendar.size) {
       const existingBookings = this.checkExistingBookings(calendar);
       this.checkNewBookings(calendar, existingBookings);
-      this.previousCalendarStr = calendarStr;
     }
 
     this.email.clearErrors();
@@ -378,20 +375,24 @@ class App {
       .then((response) => {
         try {
           const { calendarMonths } = response.data.data.merlin.pdpAvailabilityCalendar;
-          const xMonthsFromNow = offsetMonth(this.today.date, this.monthsFromNow);
+          const apiResponse: MerlinCalendarDay[] = calendarMonths.flatMap((m: MerlinCalendarMonth) => m.days);
+          const apiResponseStr = JSON.stringify(apiResponse);
           const calendar = new Calendar();
-          calendarMonths
-            .flatMap((m: MerlinCalendarMonth) => m.days)
-            .forEach((d: MerlinCalendarDay) => {
-              const { calendarDate, availableForCheckin, availableForCheckout, minNights } = d;
+
+          if (apiResponseStr !== this.apiResponseStr) {
+            this.apiResponseStr = apiResponseStr;
+            const xMonthsFromNow = offsetMonth(this.today.date, this.monthsFromNow);
+
+            apiResponse.forEach(({ calendarDate, availableForCheckin, availableForCheckout, minNights }) => {
               if (calendarDate >= this.today.iso && calendarDate < xMonthsFromNow) {
-                calendar.set(calendarDate, {
+                calendar.add(calendarDate, {
                   booked: !(availableForCheckin || availableForCheckout),
                   date: calendarDate,
                   minNights: Number(minNights),
                 });
               }
             });
+          }
 
           this.handleSuccess(calendar);
         } catch (err: any) {
