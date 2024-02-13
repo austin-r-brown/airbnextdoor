@@ -55,7 +55,6 @@ export class Calendar extends Map<ISODate, CalendarDay> {
 
   add(date: ISODate, day: CalendarDay) {
     if (!this.has(date)) {
-      this.set(date, day);
       const lastDate = this.last();
       const firstDate = this.first();
 
@@ -68,6 +67,7 @@ export class Calendar extends Map<ISODate, CalendarDay> {
         }
       }
     }
+    this.set(date, day);
   }
 
   dates(): ISODate[] {
