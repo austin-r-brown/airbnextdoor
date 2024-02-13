@@ -63,4 +63,4 @@ Once you've filled these in and saved to the .env file, the application should b
 
 - This is a beta application in very early testing stages, and it is only a best approximation using the data from the calendar shown when booking your stay.
 - If multiple stays are already booked back to back before running this for the first time, or if multiple stays are booked back to back within however many minutes that the interval is set to, then the application will register it as a single booking.
-- If dates are blocked off by Airbnb for any other reason, the app may show innacurate results.
+- If dates are blocked off by Airbnb for any other reason, the app may show inaccurate results.
