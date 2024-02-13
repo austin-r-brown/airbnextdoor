@@ -385,7 +385,7 @@ class App {
 
             apiResponse.forEach(({ calendarDate, availableForCheckin, availableForCheckout, minNights }) => {
               if (calendarDate >= this.today.iso && calendarDate < xMonthsFromNow) {
-                calendar.add(calendarDate, {
+                calendar.addSorted({
                   booked: !(availableForCheckin || availableForCheckout),
                   date: calendarDate,
                   minNights: Number(minNights),

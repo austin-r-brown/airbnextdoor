@@ -53,21 +53,19 @@ export class Calendar extends Map<ISODate, CalendarDay> {
     return this.keyOrder[this.keyOrder.length - 1];
   }
 
-  add(date: ISODate, day: CalendarDay) {
-    if (!this.has(date)) {
-      const lastDate = this.last();
-      const firstDate = this.first();
-
-      if (!lastDate || offsetDay(lastDate, 1) === date) {
-        this.keyOrder.push(date);
-      } else {
-        this.keyOrder.unshift(date);
-        if (offsetDay(firstDate, -1) !== date) {
-          this.keyOrder.sort();
-        }
+  addUnsorted(days: CalendarDay[]) {
+    days.forEach((day) => {
+      if (!this.has(day.date)) {
+        this.keyOrder.push(day.date);
       }
-    }
-    this.set(date, day);
+      this.set(day.date, day);
+    });
+    this.keyOrder.sort();
+  }
+
+  addSorted(day: CalendarDay) {
+    this.set(day.date, day);
+    this.keyOrder.push(day.date);
   }
 
   dates(): ISODate[] {
@@ -128,16 +126,20 @@ export const isBookingInCalendarRange = (booking: Booking, calendar: Calendar): 
     if (booking.lastNight < firstDate) {
       return false;
     } else {
-      const pastDates = getBookingDateRange(booking).filter((d) => d < firstDate);
-      pastDates.reverse().forEach((d) => calendar.add(d, { date: d, booked: true, minNights: 1 }));
+      const pastDays = getBookingDateRange(booking)
+        .filter((d) => d < firstDate)
+        .map((d) => ({ date: d, booked: true, minNights: 1 }));
+      calendar.addUnsorted(pastDays);
     }
   }
   if (booking.lastNight > lastDate) {
     if (booking.firstNight > lastDate) {
       return false;
     } else {
-      const futureDates = getBookingDateRange(booking).filter((d) => d > lastDate);
-      futureDates.forEach((d) => calendar.add(d, { date: d, booked: true, minNights: 1 }));
+      const futureDays = getBookingDateRange(booking)
+        .filter((d) => d > lastDate)
+        .map((d) => ({ date: d, booked: true, minNights: 1 }));
+      calendar.addUnsorted(futureDays);
     }
   }
   return true;
