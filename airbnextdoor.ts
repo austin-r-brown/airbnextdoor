@@ -390,7 +390,7 @@ class App {
             const xMonthsFromNow = offsetMonth(this.today.date, this.monthsFromNow);
 
             apiResponse.forEach(({ calendarDate, availableForCheckin, availableForCheckout, minNights }) => {
-              if (calendarDate >= this.today.iso && calendarDate < xMonthsFromNow) {
+              if (calendarDate >= this.today.iso && calendarDate <= xMonthsFromNow) {
                 calendar.addSorted({
                   booked: !(availableForCheckin || availableForCheckout),
                   date: calendarDate,

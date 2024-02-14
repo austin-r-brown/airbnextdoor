@@ -14,17 +14,12 @@ export class Today {
   public month!: number;
   public year!: number;
 
-  private getTodayIso(): ISODate {
+  public set(): boolean {
     const [m, d, y] = new Date()
       .toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' })
       .split('/');
-    return `${y}-${m}-${d}`;
-  }
-
-  public set(): boolean {
-    const todayIso = this.getTodayIso();
+    const todayIso: ISODate = `${y}-${m}-${d}`;
     const dateChanged = todayIso !== this.iso;
-    const [y, m] = todayIso.split('-');
     this.date = new Date(todayIso);
     this.iso = todayIso;
     this.dayBefore = offsetDay(todayIso, -1);
