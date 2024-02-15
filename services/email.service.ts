@@ -84,8 +84,11 @@ export class EmailService {
   public sendTimeoutError(timeout: number) {
     if (!this.lastNotifiedError) {
       const minutes = timeout / MS_IN_MINUTE;
-      const lastError = this.lastError ? `Last error that occurred: "${this.lastError}"` : '';
-      this.send([`Application has not successfully run in ${Math.round(minutes)} minutes.`, lastError]);
+      const lastError = this.lastError ? `Last error that occurred: <i>"${this.lastError}"</i>` : '';
+      this.send([
+        `Application has not successfully run within past ${Math.round(minutes)} minutes.`,
+        lastError,
+      ]);
     }
   }
 

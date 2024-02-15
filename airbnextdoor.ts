@@ -358,7 +358,7 @@ class App {
   };
 
   private run = () => {
-    const successTimeout = Math.max(INTERVAL * 2, 300000);
+    const successTimeout = Math.max(INTERVAL * 3, 600000);
     this.successTimer = setTimeout(() => this.email.sendTimeoutError(successTimeout), successTimeout);
 
     this.today.set();
