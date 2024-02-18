@@ -337,6 +337,7 @@ class App {
 
     clearTimeout(this.successTimer);
     this.email.clearErrors();
+    console.clear();
     console.info(`Airbnb API Request Successful at ${new Date().toLocaleString()}`);
   };
 
