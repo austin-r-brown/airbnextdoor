@@ -1,4 +1,5 @@
 import { Booking } from '../types';
+import { Logger } from './logger.service';
 const fs = require('fs');
 
 const FILE_NAME: string = 'bookings.json';
@@ -10,9 +11,9 @@ export class DbService {
 
       fs.writeFile(FILE_NAME, jsonString, 'utf8', (err: any) => {
         if (err) {
-          console.error('Error writing to DB file:', JSON.stringify(err));
+          this.logger.error(`Error writing to DB file: ${JSON.stringify(err)}`);
         } else {
-          console.info('Bookings saved to DB successfully');
+          this.logger.info('Bookings saved to DB successfully');
         }
       });
     }
@@ -30,8 +31,10 @@ export class DbService {
         }
       }
     } catch (err) {
-      console.error('Error reading DB file:', err);
+      this.logger.error(`Error reading DB file: ${err}`);
     }
     return result;
   }
+
+  constructor(private readonly logger: Logger) {}
 }

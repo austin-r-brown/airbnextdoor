@@ -23,6 +23,7 @@ import {
 } from './helpers/date.helper';
 import { DbService } from './services/db.service';
 import { EMAIL_TIMEOUT, EmailService } from './services/email.service';
+import { Logger } from './services/logger.service';
 require('dotenv').config();
 
 const { AIRBNB_URL, MONTHS } = process.env;
@@ -32,9 +33,10 @@ const operationName = 'PdpAvailabilityCalendar';
 const sha256Hash = '8f08e03c7bd16fcad3c92a3592c19a8b559a0d0855a84028d1163d4733ed9ade';
 
 class App {
-  private readonly db: DbService = new DbService();
-  private readonly email: EmailService = new EmailService();
   private readonly today: Today = new Today();
+  private readonly logger: Logger = new Logger();
+  private readonly db: DbService = new DbService(this.logger);
+  private readonly email: EmailService = new EmailService(this.today, this.logger);
 
   private bookings: Booking[] = [];
 
@@ -83,7 +85,7 @@ class App {
     const previousBookings = this.db.restore();
     if (previousBookings.length) {
       this.bookings = previousBookings;
-      console.info('Restored previous bookings:', this.bookings);
+      this.logger.info(['Restored previous bookings:', this.bookings]);
     }
 
     this.run();
@@ -337,12 +339,11 @@ class App {
 
     clearTimeout(this.successTimer);
     this.email.clearErrors();
-    console.clear();
-    console.info(`Airbnb API Request Successful at ${new Date().toLocaleString()}`);
+    this.logger.success();
   };
 
   private handleError = (err: Error, response?: AxiosResponse) => {
-    console.error(err);
+    this.logger.error(err);
     if (response) {
       this.email.sendError(
         `<b>Error:</b> Airbnb API response is in unexpected format.<br><br><i>${JSON.stringify(

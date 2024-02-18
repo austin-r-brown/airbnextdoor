@@ -1,5 +1,6 @@
 import { MS_IN_MINUTE, offsetDay, Today } from '../helpers/date.helper';
 import { Booking, EmailConfig } from '../types';
+import { Logger } from './logger.service';
 const SibApiV3Sdk = require('sib-api-v3-sdk');
 require('dotenv').config();
 
@@ -30,7 +31,7 @@ export class EmailService {
     return `[Start Date: ${startDate}, End Date: ${endDate}]`;
   };
 
-  constructor() {
+  constructor(private readonly today: Today, private readonly logger: Logger) {
     SibApiV3Sdk.ApiClient.instance.authentications['api-key'].apiKey = SIB_API_KEY?.trim();
   }
 
@@ -39,8 +40,7 @@ export class EmailService {
       ? '<h3>Current Bookings:</h3>' +
         bookings
           .map((b) => {
-            const today = new Today();
-            const isActive = b.firstNight <= today.iso && b.lastNight >= today.dayBefore;
+            const isActive = b.firstNight <= this.today.iso && b.lastNight >= this.today.dayBefore;
             return isActive ? `<b>${this.formatBooking(b)}</b>` : this.formatBooking(b);
           })
           .join('<br>')
@@ -48,13 +48,14 @@ export class EmailService {
 
     const joinedMessages = [...messages, currentBookings].join('<br><br>');
 
-    console.info('******************** Sending Emails: ********************');
-    console.info(joinedMessages);
+    this.logger.info([
+      '******************** Sending Emails: ********************',
+      joinedMessages,
+      '*********************************************************',
+    ]);
 
     if (!SIB_API_KEY || !SEND_FROM_EMAIL || !SEND_TO_EMAILS) {
-      console.error(`
-        SIB API Key and Email Addresses must be provided in .env file to send emails.
-        `);
+      this.logger.error('SIB API Key and Email Addresses must be provided in .env file to send emails.');
     } else {
       this.smtpConfig.htmlContent = joinedMessages;
 
@@ -63,11 +64,11 @@ export class EmailService {
           if (isError) {
             this.errorsSent.set(messages.join(), true);
           }
-          console.info(`Email Sent successfully. Returned data: ${JSON.stringify(data)}`);
+          this.logger.info(`Email Sent successfully. Returned data: ${JSON.stringify(data)}`);
         },
         (err: Error) => {
           setTimeout(() => this.send(messages, bookings, isError), EMAIL_TIMEOUT);
-          console.error(err);
+          this.logger.error(err);
         }
       );
     }
