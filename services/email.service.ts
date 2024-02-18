@@ -4,6 +4,7 @@ const SibApiV3Sdk = require('sib-api-v3-sdk');
 require('dotenv').config();
 
 const { SIB_API_KEY, SEND_FROM_EMAIL, SEND_TO_EMAILS } = process.env;
+export const EMAIL_TIMEOUT = 10000;
 
 export class EmailService {
   private readonly api = new SibApiV3Sdk.TransactionalEmailsApi();
@@ -17,8 +18,7 @@ export class EmailService {
     subject: 'Nextdoor Airbnb Updates',
   };
 
-  private lastError: string | null = null;
-  private lastNotifiedError: string | null = null;
+  private readonly errorsSent = new Map<string, boolean>();
 
   public readonly formatDate = (date: string): string => {
     const [y, m, d] = date.split('-');
@@ -34,7 +34,7 @@ export class EmailService {
     SibApiV3Sdk.ApiClient.instance.authentications['api-key'].apiKey = SIB_API_KEY?.trim();
   }
 
-  public send(emails: string[], bookings?: Booking[]) {
+  public send(messages: string[], bookings?: Booking[], isError: boolean = false) {
     const currentBookings = bookings?.length
       ? '<h3>Current Bookings:</h3>' +
         bookings
@@ -46,54 +46,59 @@ export class EmailService {
           .join('<br>')
       : '';
 
-    const joinedEmails = [...emails, currentBookings].join('<br><br>');
+    const joinedMessages = [...messages, currentBookings].join('<br><br>');
 
     console.info('******************** Sending Emails: ********************');
-    console.info(joinedEmails);
+    console.info(joinedMessages);
 
     if (!SIB_API_KEY || !SEND_FROM_EMAIL || !SEND_TO_EMAILS) {
       console.error(`
         SIB API Key and Email Addresses must be provided in .env file to send emails.
         `);
     } else {
-      this.smtpConfig.htmlContent = joinedEmails;
+      this.smtpConfig.htmlContent = joinedMessages;
 
       this.api.sendTransacEmail(this.smtpConfig).then(
         (data: any) => {
+          if (isError) {
+            this.errorsSent.set(messages.join(), true);
+          }
           console.info(`Email Sent successfully. Returned data: ${JSON.stringify(data)}`);
         },
         (err: Error) => {
-          this.lastNotifiedError = null;
+          setTimeout(() => this.send(messages, bookings, isError), EMAIL_TIMEOUT);
           console.error(err);
         }
       );
     }
   }
 
-  public sendError(email: string) {
-    // Only send same error once and only if it has occured more than once
-    if (email === this.lastError && email !== this.lastNotifiedError) {
-      this.send([email]);
-      this.lastNotifiedError = email;
-      this.lastError = null;
-    } else {
-      this.lastError = email;
+  public sendError(message: string) {
+    if (this.errorsSent.get(message) === false) {
+      // Send email if error has previously been logged but not yet sent
+      this.send([message], [], true);
+    } else if (!this.errorsSent.has(message)) {
+      this.errorsSent.set(message, false);
     }
   }
 
   public sendTimeoutError(timeout: number) {
-    if (!this.lastNotifiedError) {
-      const minutes = timeout / MS_IN_MINUTE;
-      const lastError = this.lastError ? `Last error that occurred: <i>"${this.lastError}"</i>` : '';
-      this.send([
-        `Application has not successfully run within past ${Math.round(minutes)} minutes.`,
-        lastError,
-      ]);
-    }
+    const minutes = timeout / MS_IN_MINUTE;
+    const recentErrors = this.errorsSent.size
+      ? '<h4>Recent Errors:</h4> <ul>' +
+        Array.from(this.errorsSent.keys())
+          .map((e) => `<li>${e}</li>`)
+          .join('<br>') +
+        '</ul>'
+      : '';
+
+    this.send([
+      `Application has not successfully run within past ${Math.round(minutes)} minutes.`,
+      recentErrors,
+    ]);
   }
 
   public clearErrors() {
-    this.lastError = null;
-    this.lastNotifiedError = null;
+    this.errorsSent.clear();
   }
 }

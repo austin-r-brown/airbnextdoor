@@ -22,7 +22,7 @@ import {
   isBookingInCalendarRange,
 } from './helpers/date.helper';
 import { DbService } from './services/db.service';
-import { EmailService } from './services/email.service';
+import { EMAIL_TIMEOUT, EmailService } from './services/email.service';
 require('dotenv').config();
 
 const { AIRBNB_URL, MONTHS } = process.env;
@@ -358,8 +358,10 @@ class App {
   };
 
   private run = () => {
-    const successTimeout = Math.max(INTERVAL * 3, 600000);
-    this.successTimer = setTimeout(() => this.email.sendTimeoutError(successTimeout), successTimeout);
+    if (!this.successTimer) {
+      const successTimeout = Math.max(INTERVAL * 3 + EMAIL_TIMEOUT, 600000);
+      this.successTimer = setTimeout(() => this.email.sendTimeoutError(successTimeout), successTimeout);
+    }
 
     this.today.set();
 
