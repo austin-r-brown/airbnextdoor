@@ -115,9 +115,10 @@ class App {
       this.db.save(bookings);
 
       const currentBookings = bookings.filter((b) => b.lastNight >= this.today.dayBefore);
-      const footer = currentBookings.length ? [this.email.formatCurrentBookings(currentBookings)] : [];
-
-      this.email.send([...this.notificationBuffer, ...footer]);
+      if (currentBookings.length) {
+        this.notificationBuffer.push(this.email.formatCurrentBookings(currentBookings));
+      }
+      this.email.send(this.notificationBuffer);
 
       this.notificationBuffer = [];
     }, SEND_DEBOUNCE_TIME);
