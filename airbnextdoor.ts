@@ -104,8 +104,11 @@ class App {
   }
 
   /** Sends all notifications that have been attempted within past second, sorts bookings and saves to DB */
-  private sendNotification(message: string) {
+  private sendNotification(title: string, booking: Booking, details?: string) {
     clearTimeout(this.sendDebounceTimer);
+    const body = this.email.formatBooking(booking);
+    const additional = details ? [details] : [];
+    const message = [`<b>${title}:</b>`, body, ...additional].join('<br>');
     this.notificationBuffer.push(message);
 
     this.sendDebounceTimer = setTimeout(() => {
@@ -127,7 +130,7 @@ class App {
       const totalNights = countDaysBetween(booking.firstNight, booking.lastNight) + 1;
       if (totalNights >= minNights) {
         this.bookings.push(booking);
-        this.sendNotification(`<b>${BookingChange.New}:</b><br>${this.email.formatBooking(booking)}`);
+        this.sendNotification(BookingChange.New, booking);
       } else {
         this.checkGapAdjacentBookings(booking, existingBookings);
       }
@@ -160,11 +163,7 @@ class App {
         lastNightChanged ? offsetDay(change.lastNight!, 1) : change.firstNight!
       );
       const dateType = lastNightChanged ? 'End' : 'Start';
-      this.sendNotification(
-        `<b>${changeType}:</b><br>${this.email.formatBooking(
-          booking
-        )}<br>New ${dateType} Date: <b>${formattedDate}</b>`
-      );
+      this.sendNotification(changeType, booking, `New ${dateType} Date: <b>${formattedDate}</b>`);
       Object.assign(booking, change);
     }
   }
@@ -174,7 +173,7 @@ class App {
     indexes.forEach((index, i) => {
       const booking = this.bookings[index];
       if (booking) {
-        this.sendNotification(`<b>${BookingChange.Cancelled}:</b><br>${this.email.formatBooking(booking)}`);
+        this.sendNotification(BookingChange.Cancelled, booking);
         this.bookings.splice(index - i, 1);
       }
     });
@@ -215,23 +214,24 @@ class App {
 
   /** Sends notification when guests are arriving or leaving today */
   private guestChangeNotification() {
-    const startingToday: Booking[] = [];
-    const endingToday: Booking[] = [];
-    this.bookings.forEach((b) => {
-      if (b.firstNight === this.today.iso) {
-        startingToday.push(b);
-      } else if (b.lastNight === this.today.dayBefore) {
-        endingToday.push(b);
-      }
-    });
+    let startingToday;
+    let endingToday;
 
-    if (endingToday.length) {
-      this.sendNotification(`<b>Bookings Ending Today:</b><br>${endingToday.map(this.email.formatBooking)}`);
+    for (const b of this.bookings) {
+      if (b.firstNight > this.today.iso) {
+        break;
+      } else if (b.firstNight === this.today.iso) {
+        startingToday = b;
+      } else if (b.lastNight === this.today.dayBefore) {
+        endingToday = b;
+      }
     }
-    if (startingToday.length) {
-      this.sendNotification(
-        `<b>Bookings Starting Today:</b><br>${startingToday.map(this.email.formatBooking)}`
-      );
+
+    if (endingToday) {
+      this.sendNotification('Bookings Ending Today', endingToday);
+    }
+    if (startingToday) {
+      this.sendNotification('Bookings Starting Today', startingToday);
     }
   }
 
@@ -276,9 +276,8 @@ class App {
       let cancelled = !(calendar.get(b.firstNight)?.booked || calendar.get(b.lastNight)?.booked);
 
       if (!cancelled) {
-        let newFirst: CalendarDay | null = null;
-        let newLast: CalendarDay | null = null;
-
+        let newFirst: CalendarDay | undefined;
+        let newLast: CalendarDay | undefined;
         let previousDay: CalendarDay | undefined;
 
         for (const date of dates) {
