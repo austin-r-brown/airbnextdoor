@@ -104,11 +104,8 @@ class App {
   }
 
   /** Sends all notifications that have been attempted within past second, sorts bookings and saves to DB */
-  private sendNotification(title: string, booking: Booking, details?: string) {
+  private sendNotification(message: string) {
     clearTimeout(this.sendDebounceTimer);
-    const body = this.email.formatBooking(booking);
-    const additional = details ? [details] : [];
-    const message = [`<b>${title}:</b>`, body, ...additional].join('<br>');
     this.notificationBuffer.push(message);
 
     this.sendDebounceTimer = setTimeout(() => {
@@ -118,7 +115,9 @@ class App {
       this.db.save(bookings);
 
       const currentBookings = bookings.filter((b) => b.lastNight >= this.today.dayBefore);
-      this.email.send(this.notificationBuffer, currentBookings);
+      const footer = currentBookings.length ? [this.email.formatCurrentBookings(currentBookings)] : [];
+
+      this.email.send([...this.notificationBuffer, ...footer]);
 
       this.notificationBuffer = [];
     }, SEND_DEBOUNCE_TIME);
@@ -130,7 +129,7 @@ class App {
       const totalNights = countDaysBetween(booking.firstNight, booking.lastNight) + 1;
       if (totalNights >= minNights) {
         this.bookings.push(booking);
-        this.sendNotification(BookingChange.New, booking);
+        this.sendNotification(this.email.createEmail(BookingChange.New, booking));
       } else {
         this.checkGapAdjacentBookings(booking, existingBookings);
       }
@@ -163,7 +162,12 @@ class App {
         lastNightChanged ? offsetDay(change.lastNight!, 1) : change.firstNight!
       );
       const dateType = lastNightChanged ? 'End' : 'Start';
-      this.sendNotification(changeType, booking, `New ${dateType} Date: <b>${formattedDate}</b>`);
+      const email = this.email.createEmail(
+        changeType,
+        booking,
+        `New ${dateType} Date: <b>${formattedDate}</b>`
+      );
+      this.sendNotification(email);
       Object.assign(booking, change);
     }
   }
@@ -173,7 +177,7 @@ class App {
     indexes.forEach((index, i) => {
       const booking = this.bookings[index];
       if (booking) {
-        this.sendNotification(BookingChange.Cancelled, booking);
+        this.sendNotification(this.email.createEmail(BookingChange.Cancelled, booking));
         this.bookings.splice(index - i, 1);
       }
     });
@@ -228,10 +232,10 @@ class App {
     }
 
     if (endingToday) {
-      this.sendNotification('Bookings Ending Today', endingToday);
+      this.sendNotification(this.email.createEmail('Bookings Ending Today', endingToday));
     }
     if (startingToday) {
-      this.sendNotification('Bookings Starting Today', startingToday);
+      this.sendNotification(this.email.createEmail('Bookings Starting Today', startingToday));
     }
   }
 

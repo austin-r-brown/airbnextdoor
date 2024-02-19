@@ -31,22 +31,30 @@ export class EmailService {
     return `[Start Date: ${startDate}, End Date: ${endDate}]`;
   };
 
+  public formatCurrentBookings(bookings: Booking[]) {
+    return (
+      '<h3>Current Bookings:</h3>' +
+      bookings
+        .map((b) => {
+          const isActive = b.firstNight <= this.today.iso && b.lastNight >= this.today.dayBefore;
+          return isActive ? `<b>${this.formatBooking(b)}</b>` : this.formatBooking(b);
+        })
+        .join('<br>')
+    );
+  }
+
+  public createEmail(title: string, booking: Booking, details?: string) {
+    const body = this.formatBooking(booking);
+    const additional = details ? [details] : [];
+    return [`<b>${title}:</b>`, body, ...additional].join('<br>');
+  }
+
   constructor(private readonly today: Today, private readonly logger: Logger) {
     SibApiV3Sdk.ApiClient.instance.authentications['api-key'].apiKey = SIB_API_KEY?.trim();
   }
 
-  public send(messages: string[], bookings?: Booking[], isError: boolean = false) {
-    const currentBookings = bookings?.length
-      ? '<h3>Current Bookings:</h3>' +
-        bookings
-          .map((b) => {
-            const isActive = b.firstNight <= this.today.iso && b.lastNight >= this.today.dayBefore;
-            return isActive ? `<b>${this.formatBooking(b)}</b>` : this.formatBooking(b);
-          })
-          .join('<br>')
-      : '';
-
-    const joinedMessages = [...messages, currentBookings].join('<br><br>');
+  public send(messages: string[], isError: boolean = false) {
+    const joinedMessages = messages.join('<br><br>');
 
     this.logger.info([
       '******************** Sending Emails: ********************',
@@ -68,7 +76,7 @@ export class EmailService {
           this.logger.info(`Email Sent successfully. Returned data: ${JSON.stringify(data)}`);
         },
         (err: Error) => {
-          setTimeout(() => this.send(messages, bookings, isError), EMAIL_TIMEOUT);
+          setTimeout(() => this.send(messages, isError), EMAIL_TIMEOUT);
           this.logger.error(err);
         }
       );
@@ -78,7 +86,7 @@ export class EmailService {
   public sendError(message: string) {
     if (this.errorsSent.get(message) === false) {
       // Send email if error has previously been logged but not yet sent
-      this.send([message], [], true);
+      this.send([message], true);
     } else if (!this.errorsSent.has(message)) {
       // Otherwise log it if hasn't been logged
       this.errorsSent.set(message, false);
