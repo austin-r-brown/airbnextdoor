@@ -75,6 +75,7 @@ export class Calendar extends Map<ISODate, CalendarDay> {
 
 export const getIsoDate = (date: Date): ISODate => date.toISOString().split('T')[0] as ISODate;
 
+/** Retuns true if specified hour (24 hr time) will pass before next run, otherwise false */
 export const isCloseToHour = (hour: number): boolean => {
   const d = new Date();
   d.setHours(hour);
@@ -84,15 +85,18 @@ export const isCloseToHour = (hour: number): boolean => {
   return now.getHours() < hour && d.valueOf() - now.valueOf() <= INTERVAL;
 };
 
-export const countDaysBetween = (dateA: Date | ISODate, dateB: Date | ISODate): number =>
+/** Returns total number of days between two dates */
+export const countDaysBetween = (dateA: ISODate, dateB: ISODate): number =>
   Math.abs(new Date(dateB).valueOf() - new Date(dateA).valueOf()) / MS_IN_DAY;
 
+/** Adds or subtracts specified number of days to date, returns ISO date */
 export const offsetDay = (date: Date | ISODate, days: number): ISODate => {
   const dateObject = new Date(date);
   const ms = days * MS_IN_DAY;
   return getIsoDate(new Date(dateObject.valueOf() + ms));
 };
 
+/** Adds specified number of months to date, returns ISO date */
 export const offsetMonth = (date: Date | ISODate, months: number): ISODate => {
   const isoDate = getIsoDate(new Date(date));
   const [y, m, d] = isoDate.split('-');
@@ -102,6 +106,7 @@ export const offsetMonth = (date: Date | ISODate, months: number): ISODate => {
   return getIsoDate(new Date(`${newYear}-${newMonth}-${d}`));
 };
 
+/** Returns array of ISO dates which includes all nights occupied in specified booking */
 export const getBookingDateRange = (booking: Booking): ISODate[] => {
   const dateArray: ISODate[] = [];
   let currentDate = new Date(booking.firstNight);
@@ -114,6 +119,10 @@ export const getBookingDateRange = (booking: Booking): ISODate[] => {
   return dateArray;
 };
 
+/**
+ * Returns true if at least one date in booking is within calendar date range, otherwise false.
+ * Extends calendar to include all dates from booking if booking dates are already partially included in calendar
+ */
 export const isBookingInCalendarRange = (booking: Booking, calendar: Calendar): boolean => {
   const firstDate = calendar.first();
   const lastDate = calendar.last();

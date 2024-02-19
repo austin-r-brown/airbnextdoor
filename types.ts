@@ -1,17 +1,17 @@
+export type ISODate = `${string}-${string}-${string}`;
+
 export type Booking = {
   firstNight: ISODate;
   lastNight: ISODate;
 };
 
-export type ISODate = `${string}-${string}-${string}`;
+export type BookingsMap = Map<ISODate, Booking>;
 
 export type CalendarDay = {
   booked: boolean;
   date: ISODate;
   minNights: number;
 };
-
-export type BookingsMap = Map<ISODate, Booking>;
 
 export type EmailConfig = {
   sender: { email: string };
@@ -63,4 +63,9 @@ export enum BookingChange {
   Cancelled = 'Booking Cancelled',
   Extended = 'Booking Extended',
   Shortened = 'Booking Shortened',
+}
+
+export enum ConsoleType {
+  Info = 'info',
+  Error = 'error',
 }

@@ -40,17 +40,17 @@ class App {
 
   private bookings: Booking[] = [];
 
-  /* Used for debouncing notifications sent and JSON backups saved */
+  /** Used for debouncing notifications sent and JSON backups saved */
   private sendDebounceTimer?: NodeJS.Timeout;
   private notificationBuffer: string[] = [];
 
-  /* Used for preliminary checking of changes in API response */
+  /** Used for preliminary checking of changes in API response */
   private apiResponseStr?: string;
 
-  /* Used for sending notification if app appears to have stalled */
+  /** Used for sending notification if app appears to have stalled */
   private successTimer?: NodeJS.Timeout;
 
-  /* Used for Airbnb API request */
+  /** Used for Airbnb API request */
   private listingId: string;
   private monthsFromNow: number;
   private apiConfig: AirbnbApiConfig = {
@@ -93,7 +93,7 @@ class App {
     setInterval(this.run, INTERVAL);
   }
 
-  /* Extracts Airbnb listing ID from URL, or returns original value if already ID */
+  /** Extracts Airbnb listing ID from URL, or returns original value if already ID */
   private getListingId(): string | void {
     if (AIRBNB_URL) {
       const trimmed = AIRBNB_URL.trim();
@@ -103,7 +103,7 @@ class App {
     }
   }
 
-  /* Sends all notifications that have been attempted within past second, sorts bookings and saves to DB */
+  /** Sends all notifications that have been attempted within past second, sorts bookings and saves to DB */
   private sendNotification(message: string) {
     clearTimeout(this.sendDebounceTimer);
     this.notificationBuffer.push(message);
@@ -121,7 +121,7 @@ class App {
     }, SEND_DEBOUNCE_TIME);
   }
 
-  /* Adds new booking and sends notification if length requirement is met, otherwise considers it a gap */
+  /** Adds new booking and sends notification if length requirement is met, otherwise considers it a gap */
   private addBooking(booking: Booking, minNights: number, existingBookings: BookingsMap) {
     if (booking.firstNight && booking.lastNight) {
       const totalNights = countDaysBetween(booking.firstNight, booking.lastNight) + 1;
@@ -134,7 +134,7 @@ class App {
     }
   }
 
-  /* Validates changes in booking length, updates booking accordingly and sends notification */
+  /** Validates changes in booking length, updates booking accordingly and sends notification */
   private changeBookingLength(booking: Booking, change: Partial<Booking>) {
     let changeType: BookingChange | undefined;
 
@@ -169,7 +169,7 @@ class App {
     }
   }
 
-  /* Takes an array of indexes from this.bookings array, splices them from the array and sends notification */
+  /** Takes an array of indexes from this.bookings array, splices them from the array and sends notification */
   private cancelBookings(indexes: number[]) {
     indexes.forEach((index, i) => {
       const booking = this.bookings[index];
@@ -180,7 +180,7 @@ class App {
     });
   }
 
-  /* Checks for new bookings using calendar of current booked dates and map of known existing bookings */
+  /** Checks for new bookings using calendar of current booked dates and map of known existing bookings */
   private checkNewBookings(calendar: Calendar, existingBookings: BookingsMap) {
     let minNights: number = 1;
     let firstNight: ISODate | null = null;
@@ -213,7 +213,7 @@ class App {
     }
   }
 
-  /* Sends notification when guests are arriving or leaving today */
+  /** Sends notification when guests are arriving or leaving today */
   private guestChangeNotification() {
     const startingToday: Booking[] = [];
     const endingToday: Booking[] = [];
@@ -235,7 +235,7 @@ class App {
     }
   }
 
-  /* Checks if blocked off gaps that are too short to be bookings belong to another booking */
+  /** Checks if blocked off gaps that are too short to be bookings belong to another booking */
   private checkGapAdjacentBookings(gap: Booking, existingBookings: BookingsMap) {
     let preceding;
     let succeeding;
@@ -262,7 +262,7 @@ class App {
     }
   }
 
-  /* Uses calendar of current booked dates to check for changes in existing bookings, returns map of updated existing bookings  */
+  /** Uses calendar of current booked dates to check for changes in existing bookings, returns map of updated existing bookings  */
   private checkExistingBookings(calendar: Calendar): BookingsMap {
     const existingBookings: BookingsMap = new Map();
     const cancelledBookings: number[] = [];

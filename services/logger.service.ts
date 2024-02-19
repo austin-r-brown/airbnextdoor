@@ -1,7 +1,4 @@
-enum ConsoleType {
-  Info = 'info',
-  Error = 'error',
-}
+import { ConsoleType } from '../types';
 
 export class Logger {
   private logged: [any, ConsoleType][] = [];
