@@ -73,6 +73,7 @@ class App {
   };
 
   constructor() {
+    this.logger.info('Starting application...');
     const listingId = this.getListingId();
 
     if (!listingId) {
