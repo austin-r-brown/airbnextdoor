@@ -360,6 +360,7 @@ class App {
     }
   };
 
+  /** Sends Airbnb request and builds Calendar object from response if there are differences from previous response */
   private run = () => {
     if (!this.successTimer) {
       const successTimeout = Math.max(INTERVAL * 3 + EMAIL_TIMEOUT, 600000);
