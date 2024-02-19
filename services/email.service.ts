@@ -62,7 +62,8 @@ export class EmailService {
       this.api.sendTransacEmail(this.smtpConfig).then(
         (data: any) => {
           if (isError) {
-            this.errorsSent.set(messages.join(), true);
+            // If successfully sent email was an error message, mark it as sent in the errorsSent map
+            this.errorsSent.set(messages.toString(), true);
           }
           this.logger.info(`Email Sent successfully. Returned data: ${JSON.stringify(data)}`);
         },
@@ -79,6 +80,7 @@ export class EmailService {
       // Send email if error has previously been logged but not yet sent
       this.send([message], [], true);
     } else if (!this.errorsSent.has(message)) {
+      // Otherwise log it if hasn't been logged
       this.errorsSent.set(message, false);
     }
   }
