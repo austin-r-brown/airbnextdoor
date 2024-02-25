@@ -56,11 +56,11 @@ export class EmailService {
   public send(messages: string[], isError: boolean = false) {
     const joinedMessages = messages.join('<br><br>');
 
-    this.logger.info([
-      '******************** Sending Emails: ********************',
-      joinedMessages,
-      '*********************************************************',
-    ]);
+    this.logger.info(
+      '********************** Sending Emails: **********************\n' +
+        joinedMessages +
+        '\n*************************************************************'
+    );
 
     if (!SIB_API_KEY || !SEND_FROM_EMAIL || !SEND_TO_EMAILS) {
       this.logger.error('SIB API Key and Email Addresses must be provided in .env file to send emails.');

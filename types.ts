@@ -3,6 +3,7 @@ export type ISODate = `${string}-${string}-${string}`;
 export type Booking = {
   firstNight: ISODate;
   lastNight: ISODate;
+  isBlockedOff?: boolean;
 };
 
 export type BookingsMap = Map<ISODate, Booking>;

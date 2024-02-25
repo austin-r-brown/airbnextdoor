@@ -104,9 +104,11 @@ class App {
   }
 
   /** Sends all notifications that have been attempted within past second, sorts bookings and saves to DB */
-  private sendNotification(message: string) {
+  private send(message?: string) {
     clearTimeout(this.sendDebounceTimer);
-    this.notificationBuffer.push(message);
+    if (message) {
+      this.notificationBuffer.push(message);
+    }
 
     this.sendDebounceTimer = setTimeout(() => {
       const bookings = this.bookings.sort(
@@ -114,14 +116,28 @@ class App {
       );
       this.db.save(bookings);
 
-      const currentBookings = bookings.filter((b) => b.lastNight >= this.today.dayBefore);
-      if (currentBookings.length) {
-        this.notificationBuffer.push(this.email.formatCurrentBookings(currentBookings));
-      }
-      this.email.send(this.notificationBuffer);
+      if (this.notificationBuffer.length) {
+        const currentBookings = bookings.filter((b) => b.lastNight >= this.today.dayBefore);
+        if (currentBookings.length) {
+          this.notificationBuffer.push(this.email.formatCurrentBookings(currentBookings));
+        }
+        this.email.send(this.notificationBuffer);
 
-      this.notificationBuffer = [];
+        this.notificationBuffer = [];
+      }
     }, SEND_DEBOUNCE_TIME);
+  }
+
+  /** Sets isBlockedOff property on booking to true and saves to DB */
+  private changeToBlockedOff(booking: Booking) {
+    booking.isBlockedOff = true;
+    this.send();
+  }
+
+  /** Sets isBlockedOff property on booking to true, adds to bookings array and saves to DB */
+  private addBlockedOff(booking: Booking) {
+    this.changeToBlockedOff(booking);
+    this.bookings.push(booking);
   }
 
   /** Adds new booking and sends notification if length requirement is met, otherwise considers it a gap */
@@ -130,9 +146,9 @@ class App {
       const totalNights = countDaysBetween(booking.firstNight, booking.lastNight) + 1;
       if (totalNights >= minNights) {
         this.bookings.push(booking);
-        this.sendNotification(this.email.createEmail(BookingChange.New, booking));
+        this.send(this.email.createEmail(BookingChange.New, booking));
       } else {
-        this.checkGapAdjacentBookings(booking, existingBookings);
+        this.checkAdjacentBookings(booking, existingBookings);
       }
     }
   }
@@ -168,7 +184,7 @@ class App {
         booking,
         `New ${dateType} Date: <b>${formattedDate}</b>`
       );
-      this.sendNotification(email);
+      this.send(email);
       Object.assign(booking, change);
     }
   }
@@ -178,7 +194,7 @@ class App {
     indexes.forEach((index, i) => {
       const booking = this.bookings[index];
       if (booking) {
-        this.sendNotification(this.email.createEmail(BookingChange.Cancelled, booking));
+        this.send(this.email.createEmail(BookingChange.Cancelled, booking));
         this.bookings.splice(index - i, 1);
       }
     });
@@ -233,27 +249,27 @@ class App {
     }
 
     if (endingToday) {
-      this.sendNotification(this.email.createEmail('Bookings Ending Today', endingToday));
+      this.send(this.email.createEmail('Bookings Ending Today', endingToday));
     }
     if (startingToday) {
-      this.sendNotification(this.email.createEmail('Bookings Starting Today', startingToday));
+      this.send(this.email.createEmail('Bookings Starting Today', startingToday));
     }
   }
 
-  /** Checks if blocked off gaps that are too short to be bookings belong to another booking */
-  private checkGapAdjacentBookings(gap: Booking, existingBookings: BookingsMap) {
+  /** Checks if gaps that appear to be booked but are too short to be bookings belong to another booking */
+  private checkAdjacentBookings(gap: Booking, existingBookings: BookingsMap) {
     let preceding;
     let succeeding;
 
     const precedingDate = offsetDay(gap.firstNight, -1);
     const precedingBooking = existingBookings.get(precedingDate);
-    if (precedingBooking?.lastNight === precedingDate) {
+    if (precedingBooking?.lastNight === precedingDate && !precedingBooking.isBlockedOff) {
       preceding = precedingBooking;
     }
 
     const succeedingDate = offsetDay(gap.lastNight, 1);
     const succeedingBooking = existingBookings.get(succeedingDate);
-    if (succeedingBooking?.firstNight === succeedingDate) {
+    if (succeedingBooking?.firstNight === succeedingDate && !succeedingBooking.isBlockedOff) {
       succeeding = succeedingBooking;
     }
 
@@ -264,6 +280,9 @@ class App {
       this.changeBookingLength(preceding, { lastNight: gap.lastNight });
     } else if (succeeding) {
       this.changeBookingLength(succeeding, { firstNight: gap.firstNight });
+    } else {
+      // Definitely blocked off, save to exclude from future bookings adjacent to it
+      this.addBlockedOff(gap);
     }
   }
 
@@ -277,13 +296,14 @@ class App {
         return;
       }
       const dates = getBookingDateRange(b);
+
+      let newFirst: CalendarDay | undefined;
+      let newLast: CalendarDay | undefined;
       // Consider cancelled if both first and last nights are no longer booked
       let cancelled = !(calendar.get(b.firstNight)?.booked || calendar.get(b.lastNight)?.booked);
 
       if (!cancelled) {
-        let newFirst: CalendarDay | undefined;
-        let newLast: CalendarDay | undefined;
-        let previousDay: CalendarDay | undefined;
+        let previousDay;
 
         for (const date of dates) {
           const currentDay = calendar.get(date);
@@ -307,8 +327,12 @@ class App {
             previousDay = currentDay;
           }
         }
+      }
 
-        if (!cancelled && (newFirst || newLast)) {
+      if (cancelled) {
+        cancelledBookings.push(i);
+      } else {
+        if (newFirst || newLast) {
           const minNights = newFirst?.minNights ?? calendar.get(b.firstNight)?.minNights ?? 1;
           const firstNight = newFirst?.date ?? b.firstNight;
           const lastNight = newLast?.date ?? b.lastNight;
@@ -317,18 +341,14 @@ class App {
           if (totalNights >= minNights) {
             this.changeBookingLength(b, { firstNight, lastNight });
           } else {
-            // Consider cancelled if booking is now shorter than minimum length requirement
-            cancelled = true;
+            // Consider blocked off if booking is now shorter than minimum length requirement
+            this.changeToBlockedOff(b);
           }
         }
-      }
 
-      if (!cancelled) {
         getBookingDateRange(b).forEach((date) => {
           existingBookings.set(date, b);
         });
-      } else {
-        cancelledBookings.push(i);
       }
     });
 
@@ -348,20 +368,20 @@ class App {
   };
 
   private handleError = (err: Error, response?: AxiosResponse) => {
-    this.logger.error(err);
+    let description, details;
+
     if (response) {
-      this.email.sendError(
-        `<b>Error:</b> Airbnb API response is in unexpected format.<br><br><i>${JSON.stringify(
-          response.data
-        )}</i>`
-      );
+      description = 'Airbnb API response is in unexpected format.';
+      details = response.data;
     } else {
-      this.email.sendError(
-        `<b>Error:</b> Airbnb API responded with an error.<br><br><i>${JSON.stringify(
-          err?.message || err
-        )}</i>`
-      );
+      description = 'Airbnb API responded with an error.';
+      details = err?.message || err;
     }
+
+    const errorMsg = [`<b>Error:</b> ${description}`, `<i>${JSON.stringify(details)}</i>`].join('<br><br>');
+
+    this.logger.error(errorMsg);
+    this.email.sendError(errorMsg);
   };
 
   /** Sends Airbnb request and builds Calendar object from response if there are differences from previous response */

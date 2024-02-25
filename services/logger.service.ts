@@ -27,6 +27,6 @@ export class Logger {
   public success() {
     console.clear();
     this.logged.forEach(([item, type]) => this.display(item, type));
-    console.info(`Airbnb API Request Successful at ${new Date().toLocaleString()}`);
+    console.info(`Airbnb API Request Successful at ${new Date().toLocaleString()}\n`);
   }
 }
