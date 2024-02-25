@@ -276,15 +276,12 @@ class App {
       succeeding = succeedingBooking;
     }
 
-    if (preceding && succeeding) {
-      // Gap is likely blocked off due to being in between two bookings
-      this.addBlockedOff(gap);
-    } else if (preceding) {
+    if (preceding && !succeeding) {
       this.changeBookingLength(preceding, { lastNight: gap.lastNight });
-    } else if (succeeding) {
+    } else if (succeeding && !preceding) {
       this.changeBookingLength(succeeding, { firstNight: gap.firstNight });
     } else {
-      // Definitely blocked off, save to exclude from future bookings adjacent to it
+      // Gap is either between two bookings or orphaned, save to exclude from adjacent future bookings
       this.addBlockedOff(gap);
     }
   }
