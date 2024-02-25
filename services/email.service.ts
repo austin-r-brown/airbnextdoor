@@ -44,9 +44,11 @@ export class EmailService {
   }
 
   public createEmail(title: string, booking: Booking, details?: string) {
-    const body = this.formatBooking(booking);
-    const additional = details ? [details] : [];
-    return [`<b>${title}:</b>`, body, ...additional].join('<br>');
+    if (!booking.isBlockedOff) {
+      const body = this.formatBooking(booking);
+      const additional = details ? [details] : [];
+      return [`<b>${title}:</b>`, body, ...additional].join('<br>');
+    }
   }
 
   constructor(private readonly today: Today, private readonly logger: Logger) {

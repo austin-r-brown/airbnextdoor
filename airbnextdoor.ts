@@ -117,7 +117,9 @@ class App {
       this.db.save(bookings);
 
       if (this.notificationBuffer.length) {
-        const currentBookings = bookings.filter((b) => b.lastNight >= this.today.dayBefore);
+        const currentBookings = bookings.filter(
+          (b) => !b.isBlockedOff && b.lastNight >= this.today.dayBefore
+        );
         if (currentBookings.length) {
           this.notificationBuffer.push(this.email.formatCurrentBookings(currentBookings));
         }
@@ -128,16 +130,17 @@ class App {
     }, SEND_DEBOUNCE_TIME);
   }
 
-  /** Sets isBlockedOff property on booking to true and saves to DB */
+  /** Sets isBlockedOff property on booking to true and sends cancelled notification */
   private changeToBlockedOff(booking: Booking) {
     booking.isBlockedOff = true;
-    this.send();
+    this.send(this.email.createEmail(BookingChange.Cancelled, booking));
   }
 
-  /** Sets isBlockedOff property on booking to true, adds to bookings array and saves to DB */
+  /** Adds blocked off booking to this.bookings array and saves to DB */
   private addBlockedOff(booking: Booking) {
-    this.changeToBlockedOff(booking);
+    booking.isBlockedOff = true;
     this.bookings.push(booking);
+    this.send();
   }
 
   /** Adds new booking and sends notification if length requirement is met, otherwise considers it a gap */
@@ -275,7 +278,7 @@ class App {
 
     if (preceding && succeeding) {
       // Gap is likely blocked off due to being in between two bookings
-      return;
+      this.addBlockedOff(gap);
     } else if (preceding) {
       this.changeBookingLength(preceding, { lastNight: gap.lastNight });
     } else if (succeeding) {
@@ -338,7 +341,7 @@ class App {
           const lastNight = newLast?.date ?? b.lastNight;
           const totalNights = countDaysBetween(firstNight, lastNight) + 1;
 
-          if (totalNights >= minNights) {
+          if (totalNights >= minNights || b.isBlockedOff) {
             this.changeBookingLength(b, { firstNight, lastNight });
           } else {
             // Consider blocked off if booking is now shorter than minimum length requirement
