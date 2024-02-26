@@ -367,16 +367,16 @@ class App {
     let description, details;
 
     if (response) {
-      description = 'Airbnb API response is in unexpected format.';
+      description = 'Airbnb API response is in unexpected format';
       details = response.data;
     } else {
-      description = 'Airbnb API responded with an error.';
+      description = 'Airbnb API responded with an error';
       details = err?.message || err;
     }
 
-    const errorMsg = [`<b>Error:</b> ${description}`, `<i>${JSON.stringify(details)}</i>`].join('<br><br>');
+    const errorMsg = [`<b>Error:</b> ${description}.`, `<i>${JSON.stringify(details)}</i>`].join('<br><br>');
 
-    this.logger.error(`Error: ${details}`);
+    this.logger.error(`${description}: ${details}`);
     this.email.sendError(errorMsg);
   };
 
