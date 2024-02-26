@@ -90,7 +90,7 @@ class App {
     setInterval(this.run, INTERVAL);
   }
 
-  /** Extracts Airbnb listing ID from URL, or returns original value if already ID */
+  /** Validates AIRBNB_URL value, returns ID from URL if value is URL, trimmed ID if value is ID, otherwise undefined */
   private getListingId(): string | void {
     if (AIRBNB_URL) {
       const trimmed = AIRBNB_URL.trim();
