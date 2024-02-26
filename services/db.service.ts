@@ -13,7 +13,7 @@ export class DbService {
 
       fs.writeFile(FILE_NAME, jsonString, 'utf8', (err: any) => {
         if (err) {
-          this.log.error(`Error writing to DB file: ${JSON.stringify(err)}`);
+          this.log.error(`Error writing to DB file: "${err}"`);
         } else {
           this.log.info('Bookings saved to DB successfully');
         }
@@ -33,7 +33,7 @@ export class DbService {
         }
       }
     } catch (err) {
-      this.log.error(`Error reading DB file: ${err}`);
+      this.log.error(`Error reading DB file: "${err}"`);
     }
     return result;
   }

@@ -77,9 +77,10 @@ export class EmailService {
           }
           this.log.info(`Email Sent successfully. Returned data: ${JSON.stringify(data)}`);
         },
-        (err: Error) => {
+        (err: any) => {
           setTimeout(() => this.send(messages, isError), EMAIL_TIMEOUT);
-          this.log.error(err);
+          const { message } = JSON.parse(err?.response?.text ?? '{}');
+          this.log.error(`Error occurred sending email: ${JSON.stringify(message ?? err)}`);
         }
       );
     }

@@ -12,7 +12,7 @@ export class Logger {
 
   private log(values: any[], type: ConsoleType) {
     const [first] = values;
-    if (typeof first === 'string') {
+    if (values.length === 1 && typeof first === 'string') {
       values[0] = `${first} ${this.timestamp()}`;
     } else {
       values.push(this.timestamp());
