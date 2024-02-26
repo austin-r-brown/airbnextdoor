@@ -75,12 +75,12 @@ export class EmailService {
             // If successfully sent email was an error message, mark it as sent in the errorsSent map
             this.errorsSent.set(messages.toString(), true);
           }
-          this.log.info(`Email Sent successfully. Returned data: ${JSON.stringify(data)}`);
+          this.log.info(`Email sent successfully. Returned data: ${JSON.stringify(data)}`);
         },
         (err: any) => {
           setTimeout(() => this.send(messages, isError), EMAIL_TIMEOUT);
           const { message } = JSON.parse(err?.response?.text ?? '{}');
-          this.log.error(`Error occurred sending email: ${JSON.stringify(message ?? err)}`);
+          this.log.error(`Error occurred sending email: ${message ? JSON.stringify(message) : err}`);
         }
       );
     }
