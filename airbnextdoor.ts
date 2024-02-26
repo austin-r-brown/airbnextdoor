@@ -377,7 +377,10 @@ class App {
     this.email.sendError(errorMsg);
   };
 
-  /** Sends Airbnb request and builds Calendar object from response if there are differences from previous response */
+  /**
+   * Sends Airbnb request and builds Calendar object from response.
+   * Returns empty calendar if no changes were found from previous response, or null if request is unsuccessful
+   */
   private async pollAirbnb(): Promise<Calendar | null> {
     const { apiConfig, months, listingId, previousResponse } = this.airbnbRequest;
     const requestVariables: AirbnbRequestVariables = {
