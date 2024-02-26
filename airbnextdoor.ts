@@ -71,8 +71,8 @@ class App {
 
   constructor() {
     this.log.start();
-    const listingId = this.getListingId();
 
+    const listingId = this.getListingId();
     if (!listingId) {
       throw new Error('Valid Airbnb URL or Listing ID must be provided in .env file.');
     }
@@ -379,7 +379,7 @@ class App {
 
   /**
    * Sends Airbnb request and builds Calendar object from response.
-   * Returns empty calendar if no changes were found from previous response, or null if request is unsuccessful
+   * Returns empty calendar if no changes were found from previous response, null if request is unsuccessful
    */
   private async pollAirbnb(): Promise<Calendar | null> {
     const { apiConfig, months, listingId, previousResponse } = this.airbnbRequest;
@@ -437,7 +437,6 @@ class App {
     return result;
   }
 
-  /** Starts timer to monitor timeouts and kicks of entire Airbnb check process */
   private run = async () => {
     if (!this.successTimer) {
       const successTimeout = Math.max(INTERVAL * 3 + EMAIL_TIMEOUT, 600000);
