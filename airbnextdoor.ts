@@ -197,9 +197,6 @@ class App {
 
   /** Returns tuple of newly found bookings and newly found gaps that are too short to be bookings */
   private checkForNewBookings(calendar: Calendar, existingBookings: BookingsMap): [Booking[], Booking[]] {
-    let firstNight: ISODate | null = null;
-    let lastNight: ISODate | null = null;
-
     const bookings: Booking[] = [];
     const gaps: Booking[] = [];
 
@@ -212,6 +209,9 @@ class App {
         gaps.push(b);
       }
     };
+
+    let firstNight: ISODate | null = null;
+    let lastNight: ISODate | null = null;
 
     calendar.days().forEach((day) => {
       if (day.booked && !existingBookings.has(day.date)) {
@@ -244,9 +244,7 @@ class App {
     let endingToday;
 
     for (const b of this.bookings) {
-      if (b.firstNight > this.today.iso) {
-        break;
-      } else if (b.firstNight === this.today.iso) {
+      if (b.firstNight === this.today.iso) {
         startingToday = b;
       } else if (b.lastNight === this.today.dayBefore) {
         endingToday = b;
@@ -261,7 +259,7 @@ class App {
     }
   }
 
-  /** Extends adjacent booking with gap if one adjacent booking exists, otherwise blocks off dates from calendar */
+  /** Extends adjacent booking with gap if one adjacent booking exists, otherwise blocks off gap from future bookings */
   private checkAdjacentBookings(gaps: Booking[], existingBookings: BookingsMap) {
     gaps.forEach((gap) => {
       let preceding;
@@ -290,7 +288,7 @@ class App {
     });
   }
 
-  /** Handles changes found in existing bookings, returns map of updated existing bookings */
+  /** Handles changes if existing bookings have shortened or cancelled, returns map of updated existing bookings */
   private checkExistingBookings(calendar: Calendar): BookingsMap {
     const existingBookings: BookingsMap = new Map();
     const cancelledBookings: number[] = [];
@@ -371,10 +369,11 @@ class App {
       details = err?.message || err;
     }
 
-    const errorMsg = [`<b>Error:</b> ${description}.`, `<i>${JSON.stringify(details)}</i>`].join('<br><br>');
-
+    const errorEmail = [`<b>Error:</b> ${description}.`, `<i>${JSON.stringify(details)}</i>`].join(
+      '<br><br>'
+    );
     this.logger.error(`${description}: ${details}`);
-    this.email.sendError(errorMsg);
+    this.email.sendError(errorEmail);
   };
 
   /**

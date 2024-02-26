@@ -31,6 +31,10 @@ export class EmailService {
     return `[Start Date: ${startDate}, End Date: ${endDate}]`;
   };
 
+  constructor(private readonly today: Today, private readonly logger: Logger) {
+    SibApiV3Sdk.ApiClient.instance.authentications['api-key'].apiKey = SIB_API_KEY?.trim();
+  }
+
   public formatCurrentBookings(bookings: Booking[]) {
     return (
       '<h3>Current Bookings:</h3>' +
@@ -49,10 +53,6 @@ export class EmailService {
       const additional = details ? [details] : [];
       return [`<b>${title}:</b>`, body, ...additional].join('<br>');
     }
-  }
-
-  constructor(private readonly today: Today, private readonly logger: Logger) {
-    SibApiV3Sdk.ApiClient.instance.authentications['api-key'].apiKey = SIB_API_KEY?.trim();
   }
 
   public send(messages: string[], isError: boolean = false) {

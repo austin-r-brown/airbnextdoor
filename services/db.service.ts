@@ -5,6 +5,8 @@ const fs = require('fs');
 const FILE_NAME: string = 'bookings.json';
 
 export class DbService {
+  constructor(private readonly logger: Logger) {}
+
   public save(bookings: Booking[]) {
     if (bookings.length) {
       const jsonString = JSON.stringify(bookings, null, 2);
@@ -35,6 +37,4 @@ export class DbService {
     }
     return result;
   }
-
-  constructor(private readonly logger: Logger) {}
 }
