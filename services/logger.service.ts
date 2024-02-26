@@ -3,12 +3,21 @@ import { ConsoleType, LogItem } from '../types';
 export class Logger {
   private logged: LogItem[] = [];
 
+  private readonly timestamp = () => `(${new Date().toLocaleString()})`;
+
   private display(values: any[], type: ConsoleType) {
     values.forEach((val: any) => console[type]?.(val));
     console[type]?.('');
   }
 
   private log(values: any[], type: ConsoleType) {
+    const [first] = values;
+    if (typeof first === 'string') {
+      values[0] = `${first} ${this.timestamp()}`;
+    } else {
+      values.push(this.timestamp());
+    }
+
     const item: LogItem = [
       values.map((val) => (typeof val === 'object' ? JSON.parse(JSON.stringify(val)) : val)),
       type,
@@ -27,10 +36,12 @@ export class Logger {
 
   public success() {
     console.clear();
-    const successItem: LogItem = [
-      [`Airbnb API Request Successful at ${new Date().toLocaleString()}`],
-      ConsoleType.Info,
-    ];
+    const successItem: LogItem = [[`Airbnb API Request Successful ${this.timestamp()}`], ConsoleType.Info];
     [...this.logged, successItem].forEach((item) => this.display(...item));
+  }
+
+  public start() {
+    console.clear();
+    this.info('Starting application...');
   }
 }

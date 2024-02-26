@@ -70,7 +70,7 @@ class App {
   } as AirbnbApiRequest;
 
   constructor() {
-    this.log.info('Starting application...');
+    this.log.start();
     const listingId = this.getListingId();
 
     if (!listingId) {
@@ -364,15 +364,16 @@ class App {
     if (response) {
       description = 'Airbnb API response is in unexpected format';
       details = response.data;
+      this.log.error(`${description}:`, details);
     } else {
       description = 'Airbnb API responded with an error';
       details = err?.message || err;
+      this.log.error(`${description}: "${details}"`);
     }
 
     const errorEmail = [`<b>Error:</b> ${description}.`, `<i>${JSON.stringify(details)}</i>`].join(
       '<br><br>'
     );
-    this.log.error(`${description}: ${details}`);
     this.email.sendError(errorEmail);
   };
 
