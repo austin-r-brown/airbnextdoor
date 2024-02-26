@@ -2,13 +2,13 @@ import axios, { AxiosResponse } from 'axios';
 import {
   Booking,
   MerlinCalendarDay,
-  AirbnbApiConfig,
-  AirbnbRequest,
+  AirbnbRequestVariables,
   MerlinCalendarMonth,
   BookingChange,
   ISODate,
   CalendarDay,
   BookingsMap,
+  AirbnbApiRequest,
 } from './types';
 import {
   INTERVAL,
@@ -38,39 +38,36 @@ class App {
   private readonly db: DbService = new DbService(this.logger);
   private readonly email: EmailService = new EmailService(this.today, this.logger);
 
+  /** Array of all known bookings and blocked off dates */
   private bookings: Booking[] = [];
 
   /** Used for debouncing notifications sent and JSON backups saved */
   private sendDebounceTimer?: NodeJS.Timeout;
   private notificationBuffer: string[] = [];
 
-  /** Used for preliminary checking of changes in API response */
-  private apiResponseStr?: string;
-
   /** Used for sending notification if app appears to have stalled */
   private successTimer?: NodeJS.Timeout;
 
-  /** Used for Airbnb API request */
-  private listingId: string;
-  private monthsFromNow: number;
-  private apiConfig: AirbnbApiConfig = {
-    method: 'get',
-    url: `https://www.airbnb.com/api/v3/${operationName}/${sha256Hash}`,
-    headers: {
-      'X-Airbnb-Api-Key': 'd306zoyjsyarp7ifhu67rjxn52tv0t20',
+  private airbnbRequest: AirbnbApiRequest = {
+    apiConfig: {
+      method: 'get',
+      url: `https://www.airbnb.com/api/v3/${operationName}/${sha256Hash}`,
+      headers: {
+        'X-Airbnb-Api-Key': 'd306zoyjsyarp7ifhu67rjxn52tv0t20',
+      },
+      params: {
+        operationName,
+        locale: 'en',
+        currency: 'USD',
+        extensions: JSON.stringify({
+          persistedQuery: {
+            version: 1,
+            sha256Hash,
+          },
+        }),
+      },
     },
-    params: {
-      operationName,
-      locale: 'en',
-      currency: 'USD',
-      extensions: JSON.stringify({
-        persistedQuery: {
-          version: 1,
-          sha256Hash,
-        },
-      }),
-    },
-  };
+  } as AirbnbApiRequest;
 
   constructor() {
     this.logger.info('Starting application...');
@@ -80,8 +77,8 @@ class App {
       throw new Error('Valid Airbnb URL or Listing ID must be provided in .env file.');
     }
 
-    this.listingId = listingId;
-    this.monthsFromNow = Number(MONTHS) || 3;
+    this.airbnbRequest.listingId = listingId;
+    this.airbnbRequest.months = Number(MONTHS) || 3;
 
     const previousBookings = this.db.restore();
     if (previousBookings.length) {
@@ -143,7 +140,7 @@ class App {
     this.send();
   }
 
-  /** Adds new booking and sends notification if length requirement is met, returns bookings that weren't added */
+  /** Adds new booking and sends notification */
   private addBookings(bookings: Booking[]) {
     bookings.forEach((b) => {
       this.bookings.push(b);
@@ -187,7 +184,7 @@ class App {
     }
   }
 
-  /** Takes an array of indexes from this.bookings array, splices them from the array and sends notification */
+  /** Removes bookings from this.bookings array and sends cancelled notifications */
   private cancelBookings(indexes: number[]) {
     indexes.forEach((index, i) => {
       const booking = this.bookings[index];
@@ -198,7 +195,7 @@ class App {
     });
   }
 
-  /** Checks for new bookings using calendar of current booked dates and map of known existing bookings */
+  /** Returns tuple of newly found bookings and newly found gaps that are too short to be bookings */
   private checkForNewBookings(calendar: Calendar, existingBookings: BookingsMap): [Booking[], Booking[]] {
     let firstNight: ISODate | null = null;
     let lastNight: ISODate | null = null;
@@ -293,7 +290,7 @@ class App {
     });
   }
 
-  /** Uses calendar of current booked dates to check for changes in existing bookings, returns map of updated existing bookings  */
+  /** Handles changes found in existing bookings, returns map of updated existing bookings */
   private checkExistingBookings(calendar: Calendar): BookingsMap {
     const existingBookings: BookingsMap = new Map();
     const cancelledBookings: number[] = [];
@@ -382,20 +379,21 @@ class App {
 
   /** Sends Airbnb request and builds Calendar object from response if there are differences from previous response */
   private async pollAirbnb(): Promise<Calendar | null> {
-    const requestVariables: AirbnbRequest = {
+    const { apiConfig, months, listingId, previousResponse } = this.airbnbRequest;
+    const requestVariables: AirbnbRequestVariables = {
       request: {
-        count: this.monthsFromNow + 1,
-        listingId: this.listingId,
+        count: months + 1,
+        listingId,
         month: this.today.month,
         year: this.today.year,
       },
     };
-    this.apiConfig.params.variables = JSON.stringify(requestVariables);
+    apiConfig.params.variables = JSON.stringify(requestVariables);
 
     let result: Calendar | null = null;
 
     await axios
-      .request(this.apiConfig)
+      .request(apiConfig)
       .then((response) => {
         try {
           const { calendarMonths } = response.data.data.merlin.pdpAvailabilityCalendar;
@@ -403,8 +401,8 @@ class App {
           const apiResponseStr = JSON.stringify(apiResponse);
           const calendar = new Calendar();
 
-          if (apiResponseStr !== this.apiResponseStr) {
-            const xMonthsFromNow = offsetMonth(this.today.date, this.monthsFromNow);
+          if (apiResponseStr !== previousResponse) {
+            const xMonthsFromNow = offsetMonth(this.today.date, this.airbnbRequest.months);
 
             apiResponse.forEach(({ calendarDate, availableForCheckin, availableForCheckout, minNights }) => {
               if (calendarDate >= this.today.iso && calendarDate <= xMonthsFromNow) {
@@ -415,7 +413,7 @@ class App {
                 });
               }
             });
-            this.apiResponseStr = apiResponseStr;
+            this.airbnbRequest.previousResponse = apiResponseStr;
           }
           result = calendar;
         } catch (err: any) {
