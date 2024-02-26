@@ -66,14 +66,16 @@ export type MerlinCalendarMonth = {
   days: MerlinCalendarDay[];
 };
 
+export type LogItem = [any[], ConsoleType];
+
+export enum ConsoleType {
+  Info = 'info',
+  Error = 'error',
+}
+
 export enum BookingChange {
   New = 'New Booking',
   Cancelled = 'Booking Cancelled',
   Extended = 'Booking Extended',
   Shortened = 'Booking Shortened',
-}
-
-export enum ConsoleType {
-  Info = 'info',
-  Error = 'error',
 }

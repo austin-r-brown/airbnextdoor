@@ -5,7 +5,7 @@ const fs = require('fs');
 const FILE_NAME: string = 'bookings.json';
 
 export class DbService {
-  constructor(private readonly logger: Logger) {}
+  constructor(private readonly log: Logger) {}
 
   public save(bookings: Booking[]) {
     if (bookings.length) {
@@ -13,9 +13,9 @@ export class DbService {
 
       fs.writeFile(FILE_NAME, jsonString, 'utf8', (err: any) => {
         if (err) {
-          this.logger.error(`Error writing to DB file: ${JSON.stringify(err)}`);
+          this.log.error(`Error writing to DB file: ${JSON.stringify(err)}`);
         } else {
-          this.logger.info('Bookings saved to DB successfully');
+          this.log.info('Bookings saved to DB successfully');
         }
       });
     }
@@ -33,7 +33,7 @@ export class DbService {
         }
       }
     } catch (err) {
-      this.logger.error(`Error reading DB file: ${err}`);
+      this.log.error(`Error reading DB file: ${err}`);
     }
     return result;
   }

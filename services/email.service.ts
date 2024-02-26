@@ -31,7 +31,7 @@ export class EmailService {
     return `[Start Date: ${startDate}, End Date: ${endDate}]`;
   };
 
-  constructor(private readonly today: Today, private readonly logger: Logger) {
+  constructor(private readonly today: Today, private readonly log: Logger) {
     SibApiV3Sdk.ApiClient.instance.authentications['api-key'].apiKey = SIB_API_KEY?.trim();
   }
 
@@ -58,14 +58,14 @@ export class EmailService {
   public send(messages: string[], isError: boolean = false) {
     const joinedMessages = messages.join('<br><br>');
 
-    this.logger.info(
-      '********************** Sending Emails: **********************\n' +
-        joinedMessages +
-        '\n*************************************************************'
+    this.log.info(
+      '*********************** Sending Email: ***********************',
+      joinedMessages,
+      '**************************************************************'
     );
 
     if (!SIB_API_KEY || !SEND_FROM_EMAIL || !SEND_TO_EMAILS) {
-      this.logger.error('SIB API Key and Email Addresses must be provided in .env file to send emails.');
+      this.log.error('SIB API Key and Email Addresses must be provided in .env file to send emails.');
     } else {
       this.smtpConfig.htmlContent = joinedMessages;
 
@@ -75,11 +75,11 @@ export class EmailService {
             // If successfully sent email was an error message, mark it as sent in the errorsSent map
             this.errorsSent.set(messages.toString(), true);
           }
-          this.logger.info(`Email Sent successfully. Returned data: ${JSON.stringify(data)}`);
+          this.log.info(`Email Sent successfully. Returned data: ${JSON.stringify(data)}`);
         },
         (err: Error) => {
           setTimeout(() => this.send(messages, isError), EMAIL_TIMEOUT);
-          this.logger.error(err);
+          this.log.error(err);
         }
       );
     }

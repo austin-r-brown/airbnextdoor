@@ -34,9 +34,9 @@ const sha256Hash = '8f08e03c7bd16fcad3c92a3592c19a8b559a0d0855a84028d1163d4733ed
 
 class App {
   private readonly today: Today = new Today();
-  private readonly logger: Logger = new Logger();
-  private readonly db: DbService = new DbService(this.logger);
-  private readonly email: EmailService = new EmailService(this.today, this.logger);
+  private readonly log: Logger = new Logger();
+  private readonly db: DbService = new DbService(this.log);
+  private readonly email: EmailService = new EmailService(this.today, this.log);
 
   /** Array of all known bookings and blocked off dates */
   private bookings: Booking[] = [];
@@ -70,7 +70,7 @@ class App {
   } as AirbnbApiRequest;
 
   constructor() {
-    this.logger.info('Starting application...');
+    this.log.info('Starting application...');
     const listingId = this.getListingId();
 
     if (!listingId) {
@@ -83,7 +83,7 @@ class App {
     const previousBookings = this.db.restore();
     if (previousBookings.length) {
       this.bookings = previousBookings;
-      this.logger.info(['Restored previous bookings:', this.bookings]);
+      this.log.info('Restored previous bookings:', this.bookings);
     }
 
     this.run();
@@ -372,7 +372,7 @@ class App {
     const errorEmail = [`<b>Error:</b> ${description}.`, `<i>${JSON.stringify(details)}</i>`].join(
       '<br><br>'
     );
-    this.logger.error(`${description}: ${details}`);
+    this.log.error(`${description}: ${details}`);
     this.email.sendError(errorEmail);
   };
 
@@ -461,7 +461,7 @@ class App {
 
       clearTimeout(this.successTimer);
       this.email.clearErrors();
-      this.logger.success();
+      this.log.success();
     }
   };
 }
