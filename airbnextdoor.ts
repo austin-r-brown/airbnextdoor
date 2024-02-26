@@ -143,17 +143,12 @@ class App {
     this.send();
   }
 
-  /** Adds new booking and sends notification if length requirement is met, otherwise considers it a gap */
-  private addBooking(booking: Booking, minNights: number, existingBookings: BookingsMap) {
-    if (booking.firstNight && booking.lastNight) {
-      const totalNights = countDaysBetween(booking.firstNight, booking.lastNight) + 1;
-      if (totalNights >= minNights) {
-        this.bookings.push(booking);
-        this.send(this.email.createEmail(BookingChange.New, booking));
-      } else {
-        this.checkAdjacentBookings(booking, existingBookings);
-      }
-    }
+  /** Adds new booking and sends notification if length requirement is met, returns bookings that weren't added */
+  private addBookings(bookings: Booking[]) {
+    bookings.forEach((b) => {
+      this.bookings.push(b);
+      this.send(this.email.createEmail(BookingChange.New, b));
+    });
   }
 
   /** Validates changes in booking length, updates booking accordingly and sends notification */
@@ -204,27 +199,36 @@ class App {
   }
 
   /** Checks for new bookings using calendar of current booked dates and map of known existing bookings */
-  private checkNewBookings(calendar: Calendar, existingBookings: BookingsMap) {
-    let minNights: number = 1;
+  private checkForNewBookings(calendar: Calendar, existingBookings: BookingsMap): [Booking[], Booking[]] {
     let firstNight: ISODate | null = null;
     let lastNight: ISODate | null = null;
 
-    const days = calendar.days();
+    const bookings: Booking[] = [];
+    const gaps: Booking[] = [];
 
-    days.forEach((day) => {
+    const save = (b: Booking, minNights?: number) => {
+      const min = minNights ?? calendar.get(b.firstNight)?.minNights ?? 1;
+      const totalNights = countDaysBetween(b.firstNight, b.lastNight) + 1;
+      if (totalNights >= min) {
+        bookings.push(b);
+      } else {
+        gaps.push(b);
+      }
+    };
+
+    calendar.days().forEach((day) => {
       if (day.booked && !existingBookings.has(day.date)) {
         // If a booking is in progress, update the end date
         if (firstNight !== null) {
           lastNight = day.date;
         } else {
           // Otherwise, start a new booking
-          minNights = day.minNights;
           firstNight = day.date;
           lastNight = day.date;
         }
-      } else {
+      } else if (firstNight && lastNight) {
         // If a booking was in progress and now it's not, save it
-        this.addBooking({ firstNight, lastNight } as Booking, minNights, existingBookings);
+        save({ firstNight, lastNight }, day.minNights);
         firstNight = null;
         lastNight = null;
       }
@@ -232,8 +236,9 @@ class App {
 
     // Add a booking if a booking was in progress at the end of the loop
     if (firstNight && lastNight) {
-      this.addBooking({ firstNight, lastNight }, minNights, existingBookings);
+      save({ firstNight, lastNight });
     }
+    return [bookings, gaps];
   }
 
   /** Sends notification when guests are arriving or leaving today */
@@ -259,31 +264,33 @@ class App {
     }
   }
 
-  /** Checks if gaps that appear to be booked but are too short to be bookings belong to another booking */
-  private checkAdjacentBookings(gap: Booking, existingBookings: BookingsMap) {
-    let preceding;
-    let succeeding;
+  /** Extends adjacent booking with gap if one adjacent booking exists, otherwise blocks off dates from calendar */
+  private checkAdjacentBookings(gaps: Booking[], existingBookings: BookingsMap) {
+    gaps.forEach((gap) => {
+      let preceding;
+      let succeeding;
 
-    const precedingDate = offsetDay(gap.firstNight, -1);
-    const precedingBooking = existingBookings.get(precedingDate);
-    if (precedingBooking?.lastNight === precedingDate && !precedingBooking.isBlockedOff) {
-      preceding = precedingBooking;
-    }
+      const precedingDate = offsetDay(gap.firstNight, -1);
+      const precedingBooking = existingBookings.get(precedingDate);
+      if (precedingBooking?.lastNight === precedingDate && !precedingBooking.isBlockedOff) {
+        preceding = precedingBooking;
+      }
 
-    const succeedingDate = offsetDay(gap.lastNight, 1);
-    const succeedingBooking = existingBookings.get(succeedingDate);
-    if (succeedingBooking?.firstNight === succeedingDate && !succeedingBooking.isBlockedOff) {
-      succeeding = succeedingBooking;
-    }
+      const succeedingDate = offsetDay(gap.lastNight, 1);
+      const succeedingBooking = existingBookings.get(succeedingDate);
+      if (succeedingBooking?.firstNight === succeedingDate && !succeedingBooking.isBlockedOff) {
+        succeeding = succeedingBooking;
+      }
 
-    if (preceding && !succeeding) {
-      this.changeBookingLength(preceding, { lastNight: gap.lastNight });
-    } else if (succeeding && !preceding) {
-      this.changeBookingLength(succeeding, { firstNight: gap.firstNight });
-    } else {
-      // Gap is either between two bookings or orphaned, save to exclude from adjacent future bookings
-      this.addBlockedOff(gap);
-    }
+      if (preceding && !succeeding) {
+        this.changeBookingLength(preceding, { lastNight: gap.lastNight });
+      } else if (succeeding && !preceding) {
+        this.changeBookingLength(succeeding, { firstNight: gap.firstNight });
+      } else {
+        // Gap is either between two bookings or orphaned, save to exclude from adjacent future bookings
+        this.addBlockedOff(gap);
+      }
+    });
   }
 
   /** Uses calendar of current booked dates to check for changes in existing bookings, returns map of updated existing bookings  */
@@ -356,17 +363,6 @@ class App {
     return existingBookings;
   }
 
-  private handleSuccess = (calendar: Calendar) => {
-    if (calendar.size) {
-      const existingBookings = this.checkExistingBookings(calendar);
-      this.checkNewBookings(calendar, existingBookings);
-    }
-
-    clearTimeout(this.successTimer);
-    this.email.clearErrors();
-    this.logger.success();
-  };
-
   private handleError = (err: Error, response?: AxiosResponse) => {
     let description, details;
 
@@ -380,23 +376,12 @@ class App {
 
     const errorMsg = [`<b>Error:</b> ${description}`, `<i>${JSON.stringify(details)}</i>`].join('<br><br>');
 
-    this.logger.error(errorMsg);
+    this.logger.error(`Error: ${details}`);
     this.email.sendError(errorMsg);
   };
 
   /** Sends Airbnb request and builds Calendar object from response if there are differences from previous response */
-  private run = () => {
-    if (!this.successTimer) {
-      const successTimeout = Math.max(INTERVAL * 3 + EMAIL_TIMEOUT, 600000);
-      this.successTimer = setTimeout(() => this.email.sendTimeoutError(successTimeout), successTimeout);
-    }
-
-    this.today.set();
-
-    if (isCloseToHour(9)) {
-      this.guestChangeNotification();
-    }
-
+  private async pollAirbnb(): Promise<Calendar | null> {
     const requestVariables: AirbnbRequest = {
       request: {
         count: this.monthsFromNow + 1,
@@ -407,7 +392,9 @@ class App {
     };
     this.apiConfig.params.variables = JSON.stringify(requestVariables);
 
-    axios
+    let result: Calendar | null = null;
+
+    await axios
       .request(this.apiConfig)
       .then((response) => {
         try {
@@ -430,8 +417,7 @@ class App {
             });
             this.apiResponseStr = apiResponseStr;
           }
-
-          this.handleSuccess(calendar);
+          result = calendar;
         } catch (err: any) {
           const errors = response?.data?.errors;
 
@@ -446,6 +432,37 @@ class App {
         }
       })
       .catch(this.handleError);
+
+    return result;
+  }
+
+  /** Starts timer to monitor timeouts and kicks of entire Airbnb check process */
+  private run = async () => {
+    if (!this.successTimer) {
+      const successTimeout = Math.max(INTERVAL * 3 + EMAIL_TIMEOUT, 600000);
+      this.successTimer = setTimeout(() => this.email.sendTimeoutError(successTimeout), successTimeout);
+    }
+
+    this.today.set();
+
+    if (isCloseToHour(9)) {
+      this.guestChangeNotification();
+    }
+
+    const calendar = await this.pollAirbnb();
+
+    if (calendar) {
+      if (calendar.size) {
+        const existingBookings = this.checkExistingBookings(calendar);
+        const [newBookings, gaps] = this.checkForNewBookings(calendar, existingBookings);
+        this.addBookings(newBookings);
+        this.checkAdjacentBookings(gaps, existingBookings);
+      }
+
+      clearTimeout(this.successTimer);
+      this.email.clearErrors();
+      this.logger.success();
+    }
   };
 }
 
