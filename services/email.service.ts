@@ -80,7 +80,7 @@ export class EmailService {
         (err: any) => {
           setTimeout(() => this.send(messages, isError), EMAIL_TIMEOUT);
           const { message } = JSON.parse(err?.response?.text ?? '{}');
-          this.log.error(`Error occurred sending email: ${message ? JSON.stringify(message) : err}`);
+          this.log.error(`Error occurred sending email: ${message ? `"${message}"` : err}`);
         }
       );
     }
