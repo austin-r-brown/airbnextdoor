@@ -318,11 +318,11 @@ class App {
                   cancelled = true;
                   break;
                 } else {
-                  // First night has been moved up
+                  // First night has been moved back
                   newFirst = currentDay;
                 }
               } else if (!currentDay.booked && previousDay.booked) {
-                // Last night has been moved back
+                // Last night has been moved up
                 newLast = previousDay;
               }
             }
