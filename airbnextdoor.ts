@@ -38,7 +38,7 @@ class App {
   private readonly db: DbService = new DbService(this.log);
   private readonly email: EmailService = new EmailService(this.today, this.log);
 
-  /** Array of all known bookings and blocked off dates */
+  /** Array of all known bookings and blocked off periods */
   private bookings: Booking[] = [];
 
   /** Used for debouncing notifications sent and JSON backups saved */
@@ -129,15 +129,15 @@ class App {
 
   /** Sets isBlockedOff property on booking to true and sends cancelled notification */
   private changeToBlockedOff(booking: Booking) {
-    booking.isBlockedOff = true;
     this.send(this.email.createEmail(BookingChange.Cancelled, booking));
+    booking.isBlockedOff = true;
   }
 
   /** Adds blocked off booking to this.bookings array and saves to DB */
   private addBlockedOff(booking: Booking) {
     booking.isBlockedOff = true;
     this.bookings.push(booking);
-    this.send();
+    this.send(this.email.createEmail(BookingChange.New, booking));
   }
 
   /** Adds new booking and sends notification */

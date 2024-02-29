@@ -15,7 +15,7 @@ export class DbService {
         if (err) {
           this.log.error(`Error writing to DB file: "${err}"`);
         } else {
-          this.log.info('Bookings saved to DB successfully');
+          this.log.info('Data saved to DB successfully');
         }
       });
     }

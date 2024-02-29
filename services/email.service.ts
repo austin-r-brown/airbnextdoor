@@ -48,10 +48,13 @@ export class EmailService {
   }
 
   public createEmail(title: string, booking: Booking, details?: string) {
+    const body = this.formatBooking(booking);
+    const additional = details ? [details] : [];
+
     if (!booking.isBlockedOff) {
-      const body = this.formatBooking(booking);
-      const additional = details ? [details] : [];
       return [`<b>${title}:</b>`, body, ...additional].join('<br>');
+    } else {
+      this.log.info(title.replace('ooking', 'locked Off Period') + ':', body, ...additional);
     }
   }
 
