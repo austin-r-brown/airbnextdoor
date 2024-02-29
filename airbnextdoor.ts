@@ -170,10 +170,14 @@ class App {
     const firstNightChanged = change.firstNight && change.firstNight !== booking.firstNight;
 
     if (changeType && (lastNightChanged || firstNightChanged)) {
-      const formattedDate = this.email.formatDate(
-        lastNightChanged ? offsetDay(change.lastNight!, 1) : change.firstNight!
-      );
+      const date = lastNightChanged
+        ? !booking.isBlockedOff
+          ? offsetDay(change.lastNight!, 1)
+          : change.lastNight!
+        : change.firstNight!;
+      const formattedDate = this.email.formatDate(date);
       const dateType = lastNightChanged ? 'End' : 'Start';
+
       const email = this.email.createEmail(
         changeType,
         booking,
@@ -187,10 +191,11 @@ class App {
   /** Removes bookings from this.bookings array and sends cancelled notifications */
   private cancelBookings(indexes: number[]) {
     indexes.forEach((index, i) => {
-      const booking = this.bookings[index];
+      const currentIndex = index - i;
+      const booking = this.bookings[currentIndex];
       if (booking) {
         this.send(this.email.createEmail(BookingChange.Cancelled, booking));
-        this.bookings.splice(index - i, 1);
+        this.bookings.splice(currentIndex, 1);
       }
     });
   }

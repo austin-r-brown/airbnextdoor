@@ -21,13 +21,18 @@ export class EmailService {
 
   private readonly errorsSent = new Map<string, boolean>();
 
+  private readonly removeHtmlTags = (str: string) =>
+    str.replace(/<br>|<\/h[1-4]>|<\/p>/g, '\n').replace(/<[^>]*>/g, '');
+
   public readonly formatDate = (date: string): string => {
     const [y, m, d] = date.split('-');
     return `${Number(m)}/${Number(d)}/${y.slice(2)}`;
   };
 
-  public readonly formatBooking = (booking: Booking): string => {
-    const [startDate, endDate] = [booking.firstNight, offsetDay(booking.lastNight, 1)].map(this.formatDate);
+  public readonly formatBooking = ({ firstNight, lastNight, isBlockedOff }: Booking): string => {
+    const [startDate, endDate] = [firstNight, isBlockedOff ? lastNight : offsetDay(lastNight, 1)].map(
+      this.formatDate
+    );
     return `[Start Date: ${startDate}, End Date: ${endDate}]`;
   };
 
@@ -50,11 +55,13 @@ export class EmailService {
   public createEmail(title: string, booking: Booking, details?: string) {
     const body = this.formatBooking(booking);
     const additional = details ? [details] : [];
+    const email = [`<b>${title}:</b>`, body, ...additional];
 
     if (!booking.isBlockedOff) {
-      return [`<b>${title}:</b>`, body, ...additional].join('<br>');
+      return email.join('<br>');
     } else {
-      this.log.info(title.replace('ooking', 'locked Off Period') + ':', body, ...additional);
+      email[0] = title.replace('ooking', 'locked Off Period');
+      this.log.info(...email.map(this.removeHtmlTags));
     }
   }
 
@@ -63,7 +70,7 @@ export class EmailService {
 
     this.log.info(
       '*********************** Sending Email: ***********************',
-      joinedMessages,
+      this.removeHtmlTags(joinedMessages),
       '**************************************************************'
     );
 
