@@ -78,6 +78,7 @@ export class Calendar extends Map<ISODate, CalendarDay> {
   }
 }
 
+/** Converts Date object to 'YYYY-MM-DD' formatted string */
 export const getIsoDate = (date: Date): ISODate => date.toISOString().split('T')[0] as ISODate;
 
 /** Retuns true if specified hour (24 hr time) will pass before next run, otherwise false */

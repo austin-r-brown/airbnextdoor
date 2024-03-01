@@ -68,7 +68,8 @@ class App {
         }),
       },
     },
-  } as AirbnbApiRequest;
+    listingId: '',
+  };
 
   constructor() {
     this.log.start();
@@ -76,13 +77,14 @@ class App {
     const listingId = this.getListingId();
     if (!listingId) {
       throw new Error('Valid Airbnb URL or Listing ID must be provided in .env file.');
+    } else {
+      this.airbnbRequest.listingId = listingId;
     }
-    this.airbnbRequest.listingId = listingId;
 
     const previousBookings = this.db.restore();
     if (previousBookings.length) {
       this.bookings = previousBookings;
-      this.log.info('Restored previous bookings:', this.bookings);
+      this.log.info(`Restored ${this.bookings.length} bookings from DB`);
     }
 
     this.run();
@@ -191,11 +193,9 @@ class App {
   private cancelBookings(indexes: number[]) {
     indexes.forEach((index, i) => {
       const currentIndex = index - i;
-      const booking = this.bookings[currentIndex];
-      if (booking) {
-        this.send(this.email.createEmail(BookingChange.Cancelled, booking));
-        this.bookings.splice(currentIndex, 1);
-      }
+      const booking: Booking = this.bookings[currentIndex];
+      this.send(this.email.createEmail(BookingChange.Cancelled, booking));
+      this.bookings.splice(currentIndex, 1);
     });
   }
 
