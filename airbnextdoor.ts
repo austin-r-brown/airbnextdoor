@@ -81,10 +81,10 @@ class App {
       this.airbnbRequest.listingId = listingId;
     }
 
-    const previousBookings = this.db.restore();
+    const previousBookings = this.db.load();
     if (previousBookings.length) {
       this.bookings = previousBookings;
-      this.log.info(`Restored ${this.bookings.length} bookings from DB`);
+      this.log.info(`Loaded ${this.bookings.length} bookings from DB`);
     }
 
     this.run();
