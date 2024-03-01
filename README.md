@@ -17,8 +17,6 @@ SIB_API_KEY=
 AIRBNB_URL=
 SEND_FROM_EMAIL=
 SEND_TO_EMAILS=
-
-MONTHS=3
 INTERVAL_MINS=5
 ```
 
@@ -46,10 +44,6 @@ The email address you would like the emails to appear to have been sent from.
 #### SEND_TO_EMAILS
 
 The email address you would like the notifications to be sent to. Either single email address or multiple emails separated by comma can be entered here.
-
-#### MONTHS
-
-This number determines how many months from today's date that will be checked for booked dates. Depending on the listing, dates may be blocked off after a certain number of months in the future. Since it is specific to the listing and I haven't yet found a good way to determine this number, you may have to just manually check to see how many months in advance your desired Airbnb listing allows you to book. Otherwise, if the dates are blocked off and the app is checking those dates, it will register as a booking that keeps getting longer every day.
 
 #### INTERVAL_MINS
 

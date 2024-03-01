@@ -5,8 +5,7 @@ const fileName = '.env';
 const env = `SIB_API_KEY=\r\n` +
     `AIRBNB_URL=\r\n` +
     `SEND_FROM_EMAIL=\r\n` +
-    `SEND_TO_EMAILS=\r\n\r\n` +
-    `MONTHS=3\r\n` +
+    `SEND_TO_EMAILS=\r\n` +
     `INTERVAL_MINS=5\r\n`;
 
 const createEnv = () => {

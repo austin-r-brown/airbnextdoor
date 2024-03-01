@@ -24,7 +24,6 @@ export type EmailConfig = {
 export type AirbnbApiRequest = {
   apiConfig: AirbnbApiConfig;
   listingId: string;
-  months: number;
   previousResponse?: string;
 };
 

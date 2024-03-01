@@ -15,7 +15,6 @@ import {
   isCloseToHour,
   countDaysBetween,
   offsetDay,
-  offsetMonth,
   Today,
   getBookingDateRange,
   Calendar,
@@ -26,7 +25,7 @@ import { EMAIL_TIMEOUT, EmailService } from './services/email.service';
 import { Logger } from './services/logger.service';
 require('dotenv').config();
 
-const { AIRBNB_URL, MONTHS } = process.env;
+const { AIRBNB_URL } = process.env;
 const SEND_DEBOUNCE_TIME: number = 1000;
 
 const operationName = 'PdpAvailabilityCalendar';
@@ -40,6 +39,8 @@ class App {
 
   /** Array of all known bookings and blocked off periods */
   private bookings: Booking[] = [];
+  /** Furthest date in the future known as having been available to book */
+  private calendarRange?: ISODate;
 
   /** Used for debouncing notifications sent and JSON backups saved */
   private sendDebounceTimer?: NodeJS.Timeout;
@@ -76,9 +77,7 @@ class App {
     if (!listingId) {
       throw new Error('Valid Airbnb URL or Listing ID must be provided in .env file.');
     }
-
     this.airbnbRequest.listingId = listingId;
-    this.airbnbRequest.months = Number(MONTHS) || 3;
 
     const previousBookings = this.db.restore();
     if (previousBookings.length) {
@@ -387,10 +386,10 @@ class App {
    * Returns empty calendar if no changes were found from previous response, null if request is unsuccessful
    */
   private async pollAirbnb(): Promise<Calendar | null> {
-    const { apiConfig, months, listingId, previousResponse } = this.airbnbRequest;
+    const { apiConfig, listingId, previousResponse } = this.airbnbRequest;
     const requestVariables: AirbnbRequestVariables = {
       request: {
-        count: months + 1,
+        count: 13,
         listingId,
         month: this.today.month,
         year: this.today.year,
@@ -410,17 +409,25 @@ class App {
           const calendar = new Calendar();
 
           if (apiResponseStr !== previousResponse) {
-            const xMonthsFromNow = offsetMonth(this.today.date, this.airbnbRequest.months);
+            apiResponse
+              .reverse()
+              .forEach(({ calendarDate, availableForCheckin, availableForCheckout, minNights }) => {
+                if (calendarDate >= this.today.iso) {
+                  const available = availableForCheckin || availableForCheckout;
 
-            apiResponse.forEach(({ calendarDate, availableForCheckin, availableForCheckout, minNights }) => {
-              if (calendarDate >= this.today.iso && calendarDate <= xMonthsFromNow) {
-                calendar.addSorted({
-                  booked: !(availableForCheckin || availableForCheckout),
-                  date: calendarDate,
-                  minNights: Number(minNights),
-                });
-              }
-            });
+                  if (available && (!this.calendarRange || calendarDate > this.calendarRange)) {
+                    this.calendarRange = calendarDate;
+                  }
+
+                  if (this.calendarRange && calendarDate <= this.calendarRange) {
+                    calendar.unshift({
+                      booked: !available,
+                      date: calendarDate,
+                      minNights: Number(minNights),
+                    });
+                  }
+                }
+              });
             this.airbnbRequest.previousResponse = apiResponseStr;
           }
           result = calendar;

@@ -59,9 +59,14 @@ export class Calendar extends Map<ISODate, CalendarDay> {
     this.keyOrder.sort();
   }
 
-  addSorted(day: CalendarDay) {
+  push(day: CalendarDay) {
     this.set(day.date, day);
     this.keyOrder.push(day.date);
+  }
+
+  unshift(day: CalendarDay) {
+    this.set(day.date, day);
+    this.keyOrder.unshift(day.date);
   }
 
   dates(): ISODate[] {
