@@ -1,7 +1,7 @@
 import { Booking } from '../types';
 import { Logger } from './logger.service';
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
 
 const FILE_NAME: string = 'bookings.json';
 const BACKUPS_DIR: string = 'backups';
@@ -60,23 +60,24 @@ export class DbService {
   }
 
   private restoreBackup(): Booking[] | null {
-    try {
-      const backupFiles = fs.readdirSync(BACKUPS_DIR).filter((f: string) => f.endsWith('.json'));
-      if (backupFiles.length > 0) {
-        const mostRecentBackup = backupFiles.reduce((a: string, b: string) =>
-          this.getDateFromFile(a) > this.getDateFromFile(b) ? a : b
-        );
-        const backupData = fs.readFileSync(path.join(BACKUPS_DIR, mostRecentBackup), 'utf8');
-        const backupJsonData = JSON.parse(backupData);
+    if (fs.existsSync(BACKUPS_DIR)) {
+      const backupFiles: string[] = fs.readdirSync(BACKUPS_DIR).filter((f: string) => f.endsWith('.json'));
+      backupFiles.sort((a, b) => this.getDateFromFile(b).valueOf() - this.getDateFromFile(a).valueOf());
 
-        if (Array.isArray(backupJsonData) && backupJsonData.length) {
-          const date = this.getDateFromFile(mostRecentBackup).toLocaleString();
-          this.log.info(`Successfully restored most recent backup from ${date}`);
-          return backupJsonData;
+      for (const file of backupFiles) {
+        try {
+          const backupData = fs.readFileSync(path.join(BACKUPS_DIR, file), 'utf8');
+          const backupJsonData = JSON.parse(backupData);
+
+          if (Array.isArray(backupJsonData) && backupJsonData.length) {
+            const date = this.getDateFromFile(file).toLocaleString();
+            this.log.info(`Successfully restored ${date} backup`);
+            return backupJsonData;
+          }
+        } catch (err) {
+          this.log.error(`Error reading backup file ${file}: "${err}"`);
         }
       }
-    } catch (err) {
-      this.log.error(`Error reading backup file: "${err}"`);
     }
     return null;
   }

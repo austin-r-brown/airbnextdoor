@@ -27,6 +27,7 @@ require('dotenv').config();
 
 const { AIRBNB_URL } = process.env;
 const SEND_DEBOUNCE_TIME: number = 1000;
+const SUCCESS_TIMEOUT: number = Math.max(INTERVAL * 3 + EMAIL_TIMEOUT, 600000);
 
 const operationName = 'PdpAvailabilityCalendar';
 const sha256Hash = '8f08e03c7bd16fcad3c92a3592c19a8b559a0d0855a84028d1163d4733ed9ade';
@@ -451,8 +452,7 @@ class App {
 
   private run = async () => {
     if (!this.successTimer) {
-      const successTimeout = Math.max(INTERVAL * 3 + EMAIL_TIMEOUT, 600000);
-      this.successTimer = setTimeout(() => this.email.sendTimeoutError(successTimeout), successTimeout);
+      this.successTimer = setTimeout(() => this.email.sendTimeoutError(SUCCESS_TIMEOUT), SUCCESS_TIMEOUT);
     }
 
     this.today.set();
