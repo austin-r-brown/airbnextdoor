@@ -1,5 +1,5 @@
-import { INTERVAL, MS_IN_DAY } from '../constants';
 import { Booking, CalendarDay, ISODate } from '../types';
+import { INTERVAL, MS_IN_DAY } from '../constants';
 
 export class Today {
   public date!: Date;

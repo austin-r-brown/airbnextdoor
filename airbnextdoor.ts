@@ -1,15 +1,4 @@
-import axios, { AxiosResponse } from 'axios';
-import {
-  Booking,
-  MerlinCalendarDay,
-  AirbnbRequestVariables,
-  MerlinCalendarMonth,
-  BookingChange,
-  ISODate,
-  CalendarDay,
-  BookingsMap,
-  AirbnbApiRequest,
-} from './types';
+import { Booking, BookingChange, ISODate, CalendarDay, BookingsMap } from './types';
 import {
   isCloseToHour,
   countDaysBetween,
@@ -22,18 +11,18 @@ import {
 import { DbService } from './services/db.service';
 import { EmailService } from './services/email.service';
 import { Logger } from './services/logger.service';
-import { API_CONFIG, INTERVAL, SEND_DEBOUNCE_TIME, SUCCESS_TIMEOUT } from './constants';
+import { AirbnbService } from './services/airbnb.service';
+import { INTERVAL, SEND_DEBOUNCE_TIME, SUCCESS_TIMEOUT } from './constants';
 
 class App {
   private readonly today: Today = new Today();
   private readonly log: Logger = new Logger();
   private readonly db: DbService = new DbService(this.log);
   private readonly email: EmailService = new EmailService(this.today, this.log);
+  private readonly airbnb: AirbnbService = new AirbnbService(this.today, this.log, this.email);
 
   /** Array of all known bookings and blocked off periods */
   private bookings: Booking[] = [];
-  /** Furthest date in the future known as having been available to book */
-  private calendarRange?: ISODate;
 
   /** Used for debouncing notifications sent and JSON backups saved */
   private sendDebounceTimer?: NodeJS.Timeout;
@@ -42,21 +31,8 @@ class App {
   /** Used for sending notification if app appears to have stalled */
   private successTimer?: NodeJS.Timeout;
 
-  private airbnbRequest: AirbnbApiRequest = {
-    apiConfig: API_CONFIG,
-    listingId: '',
-  };
-
   constructor() {
-    require('dotenv').config();
     this.log.start();
-
-    const listingId = this.getListingId();
-    if (!listingId) {
-      throw new Error('Valid Airbnb URL or Listing ID must be provided in .env file.');
-    } else {
-      this.airbnbRequest.listingId = listingId;
-    }
 
     const previousBookings = this.db.load();
     if (previousBookings.length) {
@@ -66,17 +42,6 @@ class App {
 
     this.run();
     setInterval(this.run, INTERVAL);
-  }
-
-  /** Validates AIRBNB_URL value, returns ID from URL if value is URL, trimmed ID if value is ID, otherwise undefined */
-  private getListingId(): string | void {
-    const { AIRBNB_URL } = process.env;
-    if (AIRBNB_URL) {
-      const trimmed = AIRBNB_URL.trim();
-      const isId = Array.from(trimmed).every((c) => Number.isInteger(Number.parseInt(c)));
-      const [, idFromUrl] = !isId ? trimmed.match(/airbnb\.com\/rooms\/(\d+)(\?.*)?/) ?? [] : [];
-      return isId ? trimmed : idFromUrl;
-    }
   }
 
   /** Sends all notifications that have been attempted within past second, sorts bookings and saves to DB */
@@ -340,93 +305,6 @@ class App {
     return existingBookings;
   }
 
-  private handleError = (err: Error, response?: AxiosResponse) => {
-    let description, details;
-
-    if (response) {
-      description = 'Airbnb API response is in unexpected format';
-      details = response.data;
-      this.log.error(`${description}:`, details);
-    } else {
-      description = 'Airbnb API responded with an error';
-      details = err?.message || err;
-      this.log.error(`${description}: "${details}"`);
-    }
-
-    const errorEmail = [`<b>Error:</b> ${description}.`, `<i>${JSON.stringify(details)}</i>`].join(
-      '<br><br>'
-    );
-    this.email.sendError(errorEmail);
-  };
-
-  /**
-   * Sends Airbnb request and builds Calendar object from response.
-   * Returns empty calendar if no changes were found from previous response, null if request is unsuccessful
-   */
-  private async pollAirbnb(): Promise<Calendar | null> {
-    const { apiConfig, listingId, previousResponse } = this.airbnbRequest;
-    const requestVariables: AirbnbRequestVariables = {
-      request: {
-        count: 13,
-        listingId,
-        month: this.today.month,
-        year: this.today.year,
-      },
-    };
-    apiConfig.params.variables = JSON.stringify(requestVariables);
-
-    let result: Calendar | null = null;
-
-    await axios
-      .request(apiConfig)
-      .then((response) => {
-        try {
-          const { calendarMonths } = response.data.data.merlin.pdpAvailabilityCalendar;
-          const apiResponse: MerlinCalendarDay[] = calendarMonths.flatMap((m: MerlinCalendarMonth) => m.days);
-          const apiResponseStr = JSON.stringify(apiResponse);
-          const calendar = new Calendar();
-
-          if (apiResponseStr !== previousResponse) {
-            apiResponse
-              .reverse()
-              .forEach(({ calendarDate, availableForCheckin, availableForCheckout, minNights }) => {
-                if (calendarDate >= this.today.iso) {
-                  const available = availableForCheckin || availableForCheckout;
-
-                  if (available && (!this.calendarRange || calendarDate > this.calendarRange)) {
-                    this.calendarRange = calendarDate;
-                  }
-
-                  if (this.calendarRange && calendarDate <= this.calendarRange) {
-                    calendar.unshift({
-                      booked: !available,
-                      date: calendarDate,
-                      minNights: Number(minNights),
-                    });
-                  }
-                }
-              });
-            this.airbnbRequest.previousResponse = apiResponseStr;
-          }
-          result = calendar;
-        } catch (err: any) {
-          const errors = response?.data?.errors;
-
-          if (errors?.length) {
-            errors.forEach((e: any) => {
-              const message = e?.extensions?.response?.body?.error_message || e?.message;
-              this.handleError(message ? { message } : e);
-            });
-          } else {
-            this.handleError(err, response);
-          }
-        }
-      })
-      .catch(this.handleError);
-
-    return result;
-  }
-
   private run = async () => {
     if (!this.successTimer) {
       this.successTimer = setTimeout(() => this.email.sendTimeoutError(SUCCESS_TIMEOUT), SUCCESS_TIMEOUT);
@@ -438,7 +316,7 @@ class App {
       this.guestChangeNotification();
     }
 
-    const calendar = await this.pollAirbnb();
+    const calendar = await this.airbnb.fetch();
 
     if (calendar) {
       if (calendar.size) {

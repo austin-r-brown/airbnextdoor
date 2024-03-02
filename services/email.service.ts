@@ -1,7 +1,7 @@
-import { EMAIL_TIMEOUT, MS_IN_MINUTE } from '../constants';
 import { offsetDay, Today } from '../helpers/date.helper';
 import { Booking, EmailConfig } from '../types';
 import { Logger } from './logger.service';
+import { EMAIL_TIMEOUT, MS_IN_MINUTE } from '../constants';
 
 const SibApiV3Sdk = require('sib-api-v3-sdk');
 const { SIB_API_KEY, SEND_FROM_EMAIL, SEND_TO_EMAILS } = process.env;
