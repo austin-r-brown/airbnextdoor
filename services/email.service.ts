@@ -1,11 +1,10 @@
-import { MS_IN_MINUTE, offsetDay, Today } from '../helpers/date.helper';
+import { EMAIL_TIMEOUT, MS_IN_MINUTE } from '../constants';
+import { offsetDay, Today } from '../helpers/date.helper';
 import { Booking, EmailConfig } from '../types';
 import { Logger } from './logger.service';
-const SibApiV3Sdk = require('sib-api-v3-sdk');
-require('dotenv').config();
 
+const SibApiV3Sdk = require('sib-api-v3-sdk');
 const { SIB_API_KEY, SEND_FROM_EMAIL, SEND_TO_EMAILS } = process.env;
-export const EMAIL_TIMEOUT = 10000;
 
 export class EmailService {
   private readonly api = new SibApiV3Sdk.TransactionalEmailsApi();
@@ -37,6 +36,7 @@ export class EmailService {
   };
 
   constructor(private readonly today: Today, private readonly log: Logger) {
+    require('dotenv').config();
     SibApiV3Sdk.ApiClient.instance.authentications['api-key'].apiKey = SIB_API_KEY?.trim();
   }
 

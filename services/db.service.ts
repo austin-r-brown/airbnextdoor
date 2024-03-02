@@ -3,7 +3,7 @@ import { Logger } from './logger.service';
 import fs from 'fs';
 import path from 'path';
 
-const FILE_NAME: string = 'bookings.json';
+const DB_FILE: string = 'bookings.json';
 const BACKUPS_DIR: string = 'backups';
 
 export class DbService {
@@ -11,12 +11,12 @@ export class DbService {
 
   public async save(bookings: Booking[]) {
     if (bookings.length) {
-      if (fs.existsSync(FILE_NAME)) {
+      if (fs.existsSync(DB_FILE)) {
         await this.backup();
       }
       const jsonString = JSON.stringify(bookings, null, 2);
 
-      fs.writeFile(FILE_NAME, jsonString, 'utf8', (err: any) => {
+      fs.writeFile(DB_FILE, jsonString, 'utf8', (err: any) => {
         if (err) {
           this.log.error(`Error writing to DB file: "${err}"`);
         } else {
@@ -30,8 +30,8 @@ export class DbService {
   public load(): Booking[] {
     let result: Booking[] = [];
     try {
-      if (fs.existsSync(FILE_NAME)) {
-        const data = fs.readFileSync(FILE_NAME, 'utf8');
+      if (fs.existsSync(DB_FILE)) {
+        const data = fs.readFileSync(DB_FILE, 'utf8');
         const jsonData = JSON.parse(data);
 
         if (Array.isArray(jsonData)) {
@@ -50,11 +50,25 @@ export class DbService {
 
   private backup(): Promise<void> {
     return new Promise<void>((resolve) => {
-      fs.copyFile(FILE_NAME, path.join(BACKUPS_DIR, `${Date.now()}.json`), (err: any) => {
+      fs.copyFile(DB_FILE, path.join(BACKUPS_DIR, `${Date.now()}.json`), (err: any) => {
         if (err) {
           this.log.error(`Error creating backup of DB file: "${err}"`);
+          if (!fs.existsSync(BACKUPS_DIR)) {
+            fs.mkdir(BACKUPS_DIR, async (err) => {
+              if (err) {
+                this.log.error(`Error creating folder: "${err.message}"`);
+              } else {
+                this.log.info('Backups folder created successfully');
+                await this.backup();
+              }
+              resolve();
+            });
+          } else {
+            resolve();
+          }
+        } else {
+          resolve();
         }
-        resolve();
       });
     });
   }

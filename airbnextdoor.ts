@@ -11,7 +11,6 @@ import {
   AirbnbApiRequest,
 } from './types';
 import {
-  INTERVAL,
   isCloseToHour,
   countDaysBetween,
   offsetDay,
@@ -21,16 +20,9 @@ import {
   isBookingInCalendarRange,
 } from './helpers/date.helper';
 import { DbService } from './services/db.service';
-import { EMAIL_TIMEOUT, EmailService } from './services/email.service';
+import { EmailService } from './services/email.service';
 import { Logger } from './services/logger.service';
-require('dotenv').config();
-
-const { AIRBNB_URL } = process.env;
-const SEND_DEBOUNCE_TIME: number = 1000;
-const SUCCESS_TIMEOUT: number = Math.max(INTERVAL * 3 + EMAIL_TIMEOUT, 600000);
-
-const operationName = 'PdpAvailabilityCalendar';
-const sha256Hash = '8f08e03c7bd16fcad3c92a3592c19a8b559a0d0855a84028d1163d4733ed9ade';
+import { API_CONFIG, INTERVAL, SEND_DEBOUNCE_TIME, SUCCESS_TIMEOUT } from './constants';
 
 class App {
   private readonly today: Today = new Today();
@@ -51,28 +43,12 @@ class App {
   private successTimer?: NodeJS.Timeout;
 
   private airbnbRequest: AirbnbApiRequest = {
-    apiConfig: {
-      method: 'get',
-      url: `https://www.airbnb.com/api/v3/${operationName}/${sha256Hash}`,
-      headers: {
-        'X-Airbnb-Api-Key': 'd306zoyjsyarp7ifhu67rjxn52tv0t20',
-      },
-      params: {
-        operationName,
-        locale: 'en',
-        currency: 'USD',
-        extensions: JSON.stringify({
-          persistedQuery: {
-            version: 1,
-            sha256Hash,
-          },
-        }),
-      },
-    },
+    apiConfig: API_CONFIG,
     listingId: '',
   };
 
   constructor() {
+    require('dotenv').config();
     this.log.start();
 
     const listingId = this.getListingId();
@@ -94,6 +70,7 @@ class App {
 
   /** Validates AIRBNB_URL value, returns ID from URL if value is URL, trimmed ID if value is ID, otherwise undefined */
   private getListingId(): string | void {
+    const { AIRBNB_URL } = process.env;
     if (AIRBNB_URL) {
       const trimmed = AIRBNB_URL.trim();
       const isId = Array.from(trimmed).every((c) => Number.isInteger(Number.parseInt(c)));
