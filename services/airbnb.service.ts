@@ -10,12 +10,16 @@ import {
 import { LogService } from './logger.service';
 import { EmailService } from './email.service';
 import { DateService } from './date.service';
-import { API_BASE_URL, API_OPERATION, API_HASH, LOCALE, API_KEY } from '../constants';
+import { LOCALE } from '../constants';
+
+const API_OPERATION = 'PdpAvailabilityCalendar';
+const API_HASH = '8f08e03c7bd16fcad3c92a3592c19a8b559a0d0855a84028d1163d4733ed9ade';
+const API_KEY = 'd306zoyjsyarp7ifhu67rjxn52tv0t20';
 
 export class AirbnbService {
   private readonly apiConfig: AirbnbApiConfig = {
     method: 'get',
-    url: `${API_BASE_URL}/${API_OPERATION}/${API_HASH}`,
+    url: `https://www.airbnb.com/api/v3/${API_OPERATION}/${API_HASH}`,
     headers: {
       'X-Airbnb-Api-Key': API_KEY,
     },
