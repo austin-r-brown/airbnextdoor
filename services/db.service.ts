@@ -40,6 +40,8 @@ export class DbService {
       }
     } catch (err) {
       this.log.error(`Error reading DB file: "${err}"`);
+    }
+    if (!result.length) {
       const backup = this.restoreBackup();
       if (backup) {
         result = backup;
