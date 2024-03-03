@@ -1,4 +1,5 @@
-import { offsetDay, Today } from '../helpers/date.helper';
+import { Today } from '../helpers/date.helper';
+import { formatBooking, removeHtmlTags } from '../helpers/email.helper';
 import { Booking, EmailConfig } from '../types';
 import { Logger } from './logger.service';
 import { EMAIL_TIMEOUT, MS_IN_MINUTE } from '../constants';
@@ -20,21 +21,6 @@ export class EmailService {
 
   private readonly errorsSent = new Map<string, boolean>();
 
-  private readonly removeHtmlTags = (str: string) =>
-    str.replace(/<br>|<\/h[1-4]>|<\/p>/g, '\n').replace(/<[^>]*>/g, '');
-
-  public readonly formatDate = (date: string): string => {
-    const [y, m, d] = date.split('-');
-    return `${Number(m)}/${Number(d)}/${y.slice(2)}`;
-  };
-
-  public readonly formatBooking = ({ firstNight, lastNight, isBlockedOff }: Booking): string => {
-    const [startDate, endDate] = [firstNight, isBlockedOff ? lastNight : offsetDay(lastNight, 1)].map(
-      this.formatDate
-    );
-    return `[Start Date: ${startDate}, End Date: ${endDate}]`;
-  };
-
   constructor(private readonly today: Today, private readonly log: Logger) {
     SibApiV3Sdk.ApiClient.instance.authentications['api-key'].apiKey = SIB_API_KEY?.trim();
   }
@@ -45,14 +31,14 @@ export class EmailService {
       bookings
         .map((b) => {
           const isActive = b.firstNight <= this.today.iso && b.lastNight >= this.today.dayBefore;
-          return isActive ? `<b>${this.formatBooking(b)}</b>` : this.formatBooking(b);
+          return isActive ? `<b>${formatBooking(b)}</b>` : formatBooking(b);
         })
         .join('<br>')
     );
   }
 
   public createEmail(title: string, booking: Booking, details?: string) {
-    const body = this.formatBooking(booking);
+    const body = formatBooking(booking);
     const additional = details ? [details] : [];
     const email = [`<b>${title}:</b>`, body, ...additional];
 
@@ -60,7 +46,7 @@ export class EmailService {
       return email.join('<br>');
     } else {
       email[0] = title.replace('ooking', 'locked Off Period');
-      this.log.info(...email.map(this.removeHtmlTags));
+      this.log.info(...email.map(removeHtmlTags));
     }
   }
 
@@ -69,7 +55,7 @@ export class EmailService {
 
     this.log.info(
       '*********************** Sending Email: ***********************',
-      this.removeHtmlTags(joinedMessages),
+      removeHtmlTags(joinedMessages),
       '**************************************************************'
     );
 

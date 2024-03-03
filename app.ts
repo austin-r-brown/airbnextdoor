@@ -8,6 +8,7 @@ import {
   Calendar,
   isBookingInCalendarRange,
 } from './helpers/date.helper';
+import { formatDate } from './helpers/email.helper';
 import { DbService } from './services/db.service';
 import { EmailService } from './services/email.service';
 import { Logger } from './services/logger.service';
@@ -119,7 +120,7 @@ class App {
           ? offsetDay(change.lastNight!, 1)
           : change.lastNight!
         : change.firstNight!;
-      const formattedDate = this.email.formatDate(date);
+      const formattedDate = formatDate(date);
       const dateType = lastNightChanged ? 'End' : 'Start';
 
       const email = this.email.createEmail(

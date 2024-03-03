@@ -1,9 +1,9 @@
 {
   "name": "airbnextdoor",
   "version": "1.0.0",
-  "main": "airbnextdoor.ts",
+  "main": "app.ts",
   "scripts": {
-    "start": "npx ts-node airbnextdoor.ts",
+    "start": "npx ts-node app.ts",
     "postinstall": "node postinstall.js"
   },
   "dependencies": {

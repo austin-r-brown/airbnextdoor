@@ -97,16 +97,6 @@ export const offsetDay = (date: Date | ISODate, days: number): ISODate => {
   return getIsoDate(new Date(dateObject.valueOf() + ms));
 };
 
-/** Adds specified number of months to provided date, returns ISO date */
-export const offsetMonth = (date: Date | ISODate, months: number): ISODate => {
-  const isoDate = getIsoDate(new Date(date));
-  const [y, m, d] = isoDate.split('-');
-  const addedMonths = Number(m) + months;
-  const newYear = Number(y) + Math.floor(addedMonths / 12);
-  const newMonth = addedMonths % 12;
-  return getIsoDate(new Date(`${newYear}-${newMonth}-${d}`));
-};
-
 /** Returns array of ISO dates which includes all nights occupied in specified booking */
 export const getBookingDateRange = (booking: Booking): ISODate[] => {
   const dateArray: ISODate[] = [];
