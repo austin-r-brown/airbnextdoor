@@ -1,6 +1,6 @@
 import { ConsoleType, LogItem } from '../types';
 
-export class Logger {
+export class LogService {
   private logged: LogItem[] = [];
 
   private readonly timestamp = () => `(${new Date().toLocaleString()})`;

@@ -1,34 +1,6 @@
 import { Booking, CalendarDay, ISODate } from '../types';
 import { INTERVAL, MS_IN_DAY } from '../constants';
 
-export class Today {
-  public date!: Date;
-  public iso!: ISODate;
-  public dayBefore!: ISODate;
-  public dayAfter!: ISODate;
-  public month!: number;
-  public year!: number;
-
-  public set(): boolean {
-    const [m, d, y] = new Date()
-      .toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' })
-      .split('/');
-    const todayIso: ISODate = `${y}-${m}-${d}`;
-    const dateChanged = todayIso !== this.iso;
-    this.date = new Date(todayIso);
-    this.iso = todayIso;
-    this.dayBefore = offsetDay(todayIso, -1);
-    this.dayAfter = offsetDay(todayIso, 1);
-    this.month = Number(m);
-    this.year = Number(y);
-    return dateChanged;
-  }
-
-  constructor() {
-    this.set();
-  }
-}
-
 export class Calendar extends Map<ISODate, CalendarDay> {
   private keyOrder: ISODate[] = [];
 

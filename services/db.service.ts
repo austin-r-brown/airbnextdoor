@@ -1,5 +1,5 @@
 import { Booking } from '../types';
-import { Logger } from './logger.service';
+import { LogService } from './logger.service';
 import fs from 'fs';
 import path from 'path';
 
@@ -7,7 +7,7 @@ const DB_FILE: string = 'bookings.json';
 const BACKUPS_DIR: string = 'backups';
 
 export class DbService {
-  constructor(private readonly log: Logger) {}
+  constructor(private readonly log: LogService) {}
 
   public async save(bookings: Booking[]) {
     if (bookings.length) {

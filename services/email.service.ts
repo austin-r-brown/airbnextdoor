@@ -1,7 +1,7 @@
-import { Today } from '../helpers/date.helper';
 import { formatBooking, removeHtmlTags } from '../helpers/email.helper';
 import { Booking, EmailConfig } from '../types';
-import { Logger } from './logger.service';
+import { LogService } from './logger.service';
+import { DateService } from './date.service';
 import { EMAIL_TIMEOUT, MS_IN_MINUTE } from '../constants';
 
 const SibApiV3Sdk = require('sib-api-v3-sdk');
@@ -21,7 +21,7 @@ export class EmailService {
 
   private readonly errorsSent = new Map<string, boolean>();
 
-  constructor(private readonly today: Today, private readonly log: Logger) {
+  constructor(private readonly date: DateService, private readonly log: LogService) {
     SibApiV3Sdk.ApiClient.instance.authentications['api-key'].apiKey = SIB_API_KEY?.trim();
   }
 
@@ -30,7 +30,7 @@ export class EmailService {
       '<h3>Current Bookings:</h3>' +
       bookings
         .map((b) => {
-          const isActive = b.firstNight <= this.today.iso && b.lastNight >= this.today.dayBefore;
+          const isActive = b.firstNight <= this.date.today && b.lastNight >= this.date.yesterday;
           return isActive ? `<b>${formatBooking(b)}</b>` : formatBooking(b);
         })
         .join('<br>')

@@ -3,7 +3,6 @@ import {
   isCloseToHour,
   countDaysBetween,
   offsetDay,
-  Today,
   getBookingDateRange,
   Calendar,
   isBookingInCalendarRange,
@@ -11,16 +10,17 @@ import {
 import { formatDate } from './helpers/email.helper';
 import { DbService } from './services/db.service';
 import { EmailService } from './services/email.service';
-import { Logger } from './services/logger.service';
+import { LogService } from './services/logger.service';
 import { AirbnbService } from './services/airbnb.service';
+import { DateService } from './services/date.service';
 import { INTERVAL, SEND_DEBOUNCE_TIME, SUCCESS_TIMEOUT } from './constants';
 
 class App {
-  private readonly today: Today = new Today();
-  private readonly log: Logger = new Logger();
+  private readonly date: DateService = new DateService();
+  private readonly log: LogService = new LogService();
   private readonly db: DbService = new DbService(this.log);
-  private readonly email: EmailService = new EmailService(this.today, this.log);
-  private readonly airbnb: AirbnbService = new AirbnbService(this.today, this.log, this.email);
+  private readonly email: EmailService = new EmailService(this.date, this.log);
+  private readonly airbnb: AirbnbService = new AirbnbService(this.date, this.log, this.email);
 
   /** Array of all known bookings and blocked off periods */
   private bookings: Booking[] = [];
@@ -59,9 +59,7 @@ class App {
       this.db.save(bookings);
 
       if (this.notificationBuffer.length) {
-        const currentBookings = bookings.filter(
-          (b) => !b.isBlockedOff && b.lastNight >= this.today.dayBefore
-        );
+        const currentBookings = bookings.filter((b) => !b.isBlockedOff && b.lastNight >= this.date.yesterday);
         if (currentBookings.length) {
           this.notificationBuffer.push(this.email.formatCurrentBookings(currentBookings));
         }
@@ -192,9 +190,9 @@ class App {
     let endingToday;
 
     for (const b of this.bookings) {
-      if (b.firstNight === this.today.iso) {
+      if (b.firstNight === this.date.today) {
         startingToday = b;
-      } else if (b.lastNight === this.today.dayBefore) {
+      } else if (b.lastNight === this.date.yesterday) {
         endingToday = b;
       }
     }
@@ -311,7 +309,7 @@ class App {
       this.successTimer = setTimeout(() => this.email.sendTimeoutError(SUCCESS_TIMEOUT), SUCCESS_TIMEOUT);
     }
 
-    this.today.set();
+    this.date.set();
 
     if (isCloseToHour(9)) {
       this.guestChangeNotification();

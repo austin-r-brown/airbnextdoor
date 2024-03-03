@@ -1,5 +1,5 @@
 import axios, { AxiosResponse } from 'axios';
-import { Calendar, Today } from '../helpers/date.helper';
+import { Calendar } from '../helpers/date.helper';
 import {
   AirbnbApiConfig,
   AirbnbRequestVariables,
@@ -7,8 +7,9 @@ import {
   MerlinCalendarDay,
   MerlinCalendarMonth,
 } from '../types';
-import { Logger } from './logger.service';
+import { LogService } from './logger.service';
 import { EmailService } from './email.service';
+import { DateService } from './date.service';
 import { API_BASE_URL, API_OPERATION, API_HASH, LOCALE, API_KEY } from '../constants';
 
 export class AirbnbService {
@@ -38,8 +39,8 @@ export class AirbnbService {
   private calendarRange?: ISODate;
 
   constructor(
-    private readonly today: Today,
-    private readonly log: Logger,
+    private readonly date: DateService,
+    private readonly log: LogService,
     private readonly email: EmailService
   ) {
     const listingId = this.getListingId();
@@ -58,8 +59,8 @@ export class AirbnbService {
       request: {
         count: 13,
         listingId: this.listingId,
-        month: this.today.month,
-        year: this.today.year,
+        month: this.date.month,
+        year: this.date.year,
       },
     };
     this.apiConfig.params.variables = JSON.stringify(requestVariables);
@@ -79,7 +80,7 @@ export class AirbnbService {
             apiResponse
               .reverse()
               .forEach(({ calendarDate, availableForCheckin, availableForCheckout, minNights }) => {
-                if (calendarDate >= this.today.iso) {
+                if (calendarDate >= this.date.today) {
                   const available = availableForCheckin || availableForCheckout;
 
                   if (available && (!this.calendarRange || calendarDate > this.calendarRange)) {
