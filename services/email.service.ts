@@ -36,7 +36,6 @@ export class EmailService {
   };
 
   constructor(private readonly today: Today, private readonly log: Logger) {
-    require('dotenv').config();
     SibApiV3Sdk.ApiClient.instance.authentications['api-key'].apiKey = SIB_API_KEY?.trim();
   }
 

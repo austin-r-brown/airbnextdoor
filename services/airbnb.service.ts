@@ -42,8 +42,6 @@ export class AirbnbService {
     private readonly log: Logger,
     private readonly email: EmailService
   ) {
-    require('dotenv').config();
-
     const listingId = this.getListingId();
     if (!listingId) {
       throw new Error('Valid Airbnb URL or Listing ID must be provided in .env file.');
