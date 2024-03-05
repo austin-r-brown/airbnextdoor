@@ -1,6 +1,6 @@
 import { Booking, BookingChange, ISODate, CalendarDay, BookingsMap } from './types';
 import {
-  isCloseToHour,
+  timeIsAlmost,
   countDaysBetween,
   offsetDay,
   getBookingDateRange,
@@ -306,25 +306,29 @@ class App {
 
   private run = async () => {
     if (!this.successTimer) {
+      // Send notification if this process doesn't complete in time
       this.successTimer = setTimeout(() => this.email.sendTimeoutError(SUCCESS_TIMEOUT), SUCCESS_TIMEOUT);
     }
 
-    this.date.set();
+    this.date.set(); // Set today's date
 
-    if (isCloseToHour(9)) {
+    if (timeIsAlmost(9)) {
+      // Send morning summary notifications
       this.guestChangeNotification();
     }
 
-    const calendar = await this.airbnb.fetch();
+    const calendar = await this.airbnb.fetch(); // Fetch latest data from Airbnb
 
     if (calendar) {
       if (calendar.size) {
+        // Check for new or altered bookings
         const existingBookings = this.checkExistingBookings(calendar);
         const [newBookings, gaps] = this.checkForNewBookings(calendar, existingBookings);
         this.addBookings(newBookings);
         this.checkAdjacentBookings(gaps, existingBookings);
       }
 
+      // Indicate process has successfully completed
       clearTimeout(this.successTimer);
       this.email.clearErrors();
       this.log.success();

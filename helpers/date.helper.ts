@@ -5,7 +5,7 @@ import { INTERVAL, MS_IN_DAY } from '../constants';
 export const getIsoDate = (date: Date): ISODate => date.toISOString().split('T')[0] as ISODate;
 
 /** Retuns true if specified hour (24 hr time) will pass before next run, otherwise false */
-export const isCloseToHour = (hour: number): boolean => {
+export const timeIsAlmost = (hour: number): boolean => {
   const d = new Date();
   d.setHours(hour);
   d.setMinutes(0);
