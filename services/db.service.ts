@@ -1,11 +1,12 @@
 import { Booking } from '../types';
-import { LogService } from './logger.service';
+import { LogService } from './log.service';
 import fs from 'fs';
 import path from 'path';
 
 const DB_FILE: string = 'bookings.json';
 const BACKUPS_DIR: string = 'backups';
 
+/** Service for saving and restoring persisted data */
 export class DbService {
   constructor(private readonly log: LogService) {}
 

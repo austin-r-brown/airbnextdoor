@@ -10,7 +10,7 @@ import {
 import { formatDate } from './helpers/email.helper';
 import { DbService } from './services/db.service';
 import { EmailService } from './services/email.service';
-import { LogService } from './services/logger.service';
+import { LogService } from './services/log.service';
 import { AirbnbService } from './services/airbnb.service';
 import { DateService } from './services/date.service';
 import { INTERVAL, SEND_DEBOUNCE_TIME, SUCCESS_TIMEOUT } from './constants';

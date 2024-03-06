@@ -1,5 +1,6 @@
 import { ConsoleType, LogItem } from '../types';
 
+/** Service for handling console log messages */
 export class LogService {
   private logged: LogItem[] = [];
 
@@ -36,6 +37,7 @@ export class LogService {
 
   public success() {
     console.clear();
+    // Only display one success message at a time
     const successItem: LogItem = [[`Airbnb API Request Successful ${this.timestamp()}`], ConsoleType.Info];
     [...this.logged, successItem].forEach((item) => this.display(...item));
   }

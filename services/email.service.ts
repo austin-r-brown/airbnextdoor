@@ -1,12 +1,13 @@
 import { formatBooking, removeHtmlTags } from '../helpers/email.helper';
 import { Booking, EmailConfig } from '../types';
-import { LogService } from './logger.service';
+import { LogService } from './log.service';
 import { DateService } from './date.service';
 import { EMAIL_TIMEOUT, MS_IN_MINUTE } from '../constants';
 
 const SibApiV3Sdk = require('sib-api-v3-sdk');
 const { SIB_API_KEY, SEND_FROM_EMAIL, SEND_TO_EMAILS } = process.env;
 
+/** Service for handling user notifications */
 export class EmailService {
   private readonly api = new SibApiV3Sdk.TransactionalEmailsApi();
 

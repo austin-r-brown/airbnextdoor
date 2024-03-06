@@ -7,7 +7,7 @@ import {
   MerlinCalendarDay,
   MerlinCalendarMonth,
 } from '../types';
-import { LogService } from './logger.service';
+import { LogService } from './log.service';
 import { EmailService } from './email.service';
 import { DateService } from './date.service';
 import { LOCALE } from '../constants';
@@ -16,6 +16,7 @@ const API_OPERATION = 'PdpAvailabilityCalendar';
 const API_HASH = '8f08e03c7bd16fcad3c92a3592c19a8b559a0d0855a84028d1163d4733ed9ade';
 const API_KEY = 'd306zoyjsyarp7ifhu67rjxn52tv0t20';
 
+/** Service for interacting with Airbnb */
 export class AirbnbService {
   private readonly apiConfig: AirbnbApiConfig = {
     method: 'get',

@@ -1,6 +1,7 @@
 import { offsetDay } from '../helpers/date.helper';
 import { ISODate } from '../types';
 
+/** Service for keeping track of today's date */
 export class DateService {
   public date!: Date;
   public today!: ISODate;
