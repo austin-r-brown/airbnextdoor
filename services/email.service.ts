@@ -22,11 +22,11 @@ export class EmailService {
 
   private readonly errorsSent = new Map<string, boolean>();
 
-  constructor(private readonly date: DateService, private readonly log: LogService) {
+  constructor(private readonly log: LogService, private readonly date: DateService) {
     SibApiV3Sdk.ApiClient.instance.authentications['api-key'].apiKey = SIB_API_KEY?.trim();
   }
 
-  public formatCurrentBookings(bookings: Booking[]) {
+  public formatCurrentBookings(bookings: Booking[]): string {
     return (
       '<h3>Current Bookings:</h3>' +
       bookings
@@ -38,7 +38,7 @@ export class EmailService {
     );
   }
 
-  public createEmail(title: string, booking: Booking, details?: string) {
+  public createEmail(title: string, booking: Booking, details?: string): string | undefined {
     const body = formatBooking(booking);
     const additional = details ? [details] : [];
     const email = [`<b>${title}:</b>`, body, ...additional];
@@ -46,6 +46,7 @@ export class EmailService {
     if (!booking.isBlockedOff) {
       return email.join('<br>');
     } else {
+      // Omit email and display similar message on console
       email[0] = title.replace('ooking', 'locked Off Period');
       this.log.info(...email.map(removeHtmlTags));
     }
@@ -60,9 +61,7 @@ export class EmailService {
       '**************************************************************'
     );
 
-    if (!SIB_API_KEY || !SEND_FROM_EMAIL || !SEND_TO_EMAILS) {
-      this.log.error('SIB API Key and Email Addresses must be provided in .env file to send emails.');
-    } else {
+    if (SIB_API_KEY && SEND_FROM_EMAIL && SEND_TO_EMAILS) {
       this.smtpConfig.htmlContent = joinedMessages;
 
       this.api.sendTransacEmail(this.smtpConfig).then(
@@ -79,6 +78,8 @@ export class EmailService {
           this.log.error(`Error occurred sending email: ${message ? `"${message}"` : err}`);
         }
       );
+    } else {
+      this.log.error('SIB API Key and Email Addresses must be provided in .env file to send emails.');
     }
   }
 

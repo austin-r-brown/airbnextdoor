@@ -19,8 +19,8 @@ class App {
   private readonly date: DateService = new DateService();
   private readonly log: LogService = new LogService();
   private readonly db: DbService = new DbService(this.log);
-  private readonly email: EmailService = new EmailService(this.date, this.log);
-  private readonly airbnb: AirbnbService = new AirbnbService(this.date, this.log, this.email);
+  private readonly email: EmailService = new EmailService(this.log, this.date);
+  private readonly airbnb: AirbnbService = new AirbnbService(this.log, this.date, this.email);
 
   /** Array of all known bookings and blocked off periods */
   private bookings: Booking[] = [];

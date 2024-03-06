@@ -44,8 +44,8 @@ export class AirbnbService {
   private calendarRange?: ISODate;
 
   constructor(
-    private readonly date: DateService,
     private readonly log: LogService,
+    private readonly date: DateService,
     private readonly email: EmailService
   ) {
     const listingId = this.getListingId();
