@@ -38,20 +38,6 @@ export class EmailService {
     );
   }
 
-  public createEmail(title: string, booking: Booking, details?: string): string | undefined {
-    const body = formatBooking(booking);
-    const additional = details ? [details] : [];
-    const email = [`<b>${title}:</b>`, body, ...additional];
-
-    if (!booking.isBlockedOff) {
-      return email.join('<br>');
-    } else {
-      // Omit email and display similar message on console
-      email[0] = title.replace('ooking', 'locked Off Period');
-      this.log.info(...email.map(removeHtmlTags));
-    }
-  }
-
   public send(messages: string[], isError: boolean = false) {
     const joinedMessages = messages.join('<br><br>');
 

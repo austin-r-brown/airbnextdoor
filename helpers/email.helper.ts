@@ -15,3 +15,11 @@ export const formatBooking = ({ firstNight, lastNight, isBlockedOff }: Booking):
   );
   return `[Start Date: ${startDate}, End Date: ${endDate}]`;
 };
+
+export const createEmail = (title: string, booking: Booking, details?: string): string => {
+  const body = formatBooking(booking);
+  const additional = details ? [details] : [];
+  const email = [`<b>${title}:</b>`, body, ...additional];
+
+  return email.join('<br>');
+};

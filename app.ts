@@ -7,7 +7,7 @@ import {
   Calendar,
   isBookingInCalendarRange,
 } from './helpers/date.helper';
-import { formatDate } from './helpers/email.helper';
+import { createEmail, formatDate, removeHtmlTags } from './helpers/email.helper';
 import { DbService } from './services/db.service';
 import { EmailService } from './services/email.service';
 import { LogService } from './services/log.service';
@@ -46,10 +46,16 @@ class App {
   }
 
   /** Sends all notifications that have been attempted within past second, sorts bookings and saves to DB */
-  private send(message?: string) {
+  private notify(title: string, booking: Booking, details?: string) {
     clearTimeout(this.sendDebounceTimer);
-    if (message) {
-      this.notificationBuffer.push(message);
+
+    const email = createEmail(title, booking, details);
+    if (booking.isBlockedOff) {
+      // Omit notification and display similar message on console
+      const consoleMsg = removeHtmlTags(email.replace('ooking', 'locked Off Period'));
+      this.log.info(...consoleMsg.split('\n'));
+    } else {
+      this.notificationBuffer.push(email);
     }
 
     this.sendDebounceTimer = setTimeout(() => {
@@ -72,7 +78,7 @@ class App {
 
   /** Sets isBlockedOff property on booking to true and sends cancelled notification */
   private changeToBlockedOff(booking: Booking) {
-    this.send(this.email.createEmail(BookingChange.Cancelled, booking));
+    this.notify(BookingChange.Cancelled, booking);
     booking.isBlockedOff = true;
   }
 
@@ -80,14 +86,14 @@ class App {
   private addBlockedOff(booking: Booking) {
     booking.isBlockedOff = true;
     this.bookings.push(booking);
-    this.send(this.email.createEmail(BookingChange.New, booking));
+    this.notify(BookingChange.New, booking);
   }
 
   /** Adds new booking and sends notification */
   private addBookings(bookings: Booking[]) {
     bookings.forEach((b) => {
       this.bookings.push(b);
-      this.send(this.email.createEmail(BookingChange.New, b));
+      this.notify(BookingChange.New, b);
     });
   }
 
@@ -121,12 +127,8 @@ class App {
       const formattedDate = formatDate(date);
       const dateType = lastNightChanged ? 'End' : 'Start';
 
-      const email = this.email.createEmail(
-        changeType,
-        booking,
-        `New ${dateType} Date: <b>${formattedDate}</b>`
-      );
-      this.send(email);
+      this.notify(changeType, booking, `New ${dateType} Date: <b>${formattedDate}</b>`);
+
       Object.assign(booking, change);
     }
   }
@@ -136,7 +138,7 @@ class App {
     indexes.forEach((index, i) => {
       const currentIndex = index - i;
       const booking: Booking = this.bookings[currentIndex];
-      this.send(this.email.createEmail(BookingChange.Cancelled, booking));
+      this.notify(BookingChange.Cancelled, booking);
       this.bookings.splice(currentIndex, 1);
     });
   }
@@ -146,7 +148,7 @@ class App {
     const bookings: Booking[] = [];
     const gaps: Booking[] = [];
 
-    const save = (b: Booking, minNights?: number) => {
+    const push = (b: Booking, minNights?: number) => {
       const min = minNights ?? calendar.get(b.firstNight)?.minNights ?? 1;
       const totalNights = countDaysBetween(b.firstNight, b.lastNight) + 1;
       if (totalNights >= min) {
@@ -171,7 +173,7 @@ class App {
         }
       } else if (firstNight && lastNight) {
         // If a booking was in progress and now it's not, save it
-        save({ firstNight, lastNight }, day.minNights);
+        push({ firstNight, lastNight }, day.minNights);
         firstNight = null;
         lastNight = null;
       }
@@ -179,7 +181,7 @@ class App {
 
     // Add a booking if a booking was in progress at the end of the loop
     if (firstNight && lastNight) {
-      save({ firstNight, lastNight });
+      push({ firstNight, lastNight });
     }
     return [bookings, gaps];
   }
@@ -198,10 +200,10 @@ class App {
     }
 
     if (endingToday) {
-      this.send(this.email.createEmail('Bookings Ending Today', endingToday));
+      this.notify('Bookings Ending Today', endingToday);
     }
     if (startingToday) {
-      this.send(this.email.createEmail('Bookings Starting Today', startingToday));
+      this.notify('Bookings Starting Today', startingToday);
     }
   }
 
