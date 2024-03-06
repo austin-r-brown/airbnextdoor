@@ -7,7 +7,7 @@ import {
   Calendar,
   isBookingInCalendarRange,
 } from './helpers/date.helper';
-import { createEmail, formatDate, removeHtmlTags } from './helpers/email.helper';
+import { createEmail, formatCurrentBookings, formatDate, removeHtmlTags } from './helpers/email.helper';
 import { DbService } from './services/db.service';
 import { EmailService } from './services/email.service';
 import { LogService } from './services/log.service';
@@ -67,7 +67,7 @@ class App {
       if (this.notificationBuffer.length) {
         const currentBookings = bookings.filter((b) => !b.isBlockedOff && b.lastNight >= this.date.yesterday);
         if (currentBookings.length) {
-          this.notificationBuffer.push(this.email.formatCurrentBookings(currentBookings));
+          this.notificationBuffer.push(formatCurrentBookings(currentBookings, this.date));
         }
         this.email.send(this.notificationBuffer);
 

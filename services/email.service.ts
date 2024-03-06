@@ -1,5 +1,5 @@
-import { formatBooking, removeHtmlTags } from '../helpers/email.helper';
-import { Booking, EmailConfig } from '../types';
+import { removeHtmlTags } from '../helpers/email.helper';
+import { EmailConfig } from '../types';
 import { LogService } from './log.service';
 import { DateService } from './date.service';
 import { EMAIL_TIMEOUT, MS_IN_MINUTE } from '../constants';
@@ -24,18 +24,6 @@ export class EmailService {
 
   constructor(private readonly log: LogService, private readonly date: DateService) {
     SibApiV3Sdk.ApiClient.instance.authentications['api-key'].apiKey = SIB_API_KEY?.trim();
-  }
-
-  public formatCurrentBookings(bookings: Booking[]): string {
-    return (
-      '<h3>Current Bookings:</h3>' +
-      bookings
-        .map((b) => {
-          const isActive = b.firstNight <= this.date.today && b.lastNight >= this.date.yesterday;
-          return isActive ? `<b>${formatBooking(b)}</b>` : formatBooking(b);
-        })
-        .join('<br>')
-    );
   }
 
   public send(messages: string[], isError: boolean = false) {
