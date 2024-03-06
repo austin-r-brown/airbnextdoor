@@ -38,8 +38,8 @@ export class AirbnbService {
   };
 
   private listingId: string;
-  /** Used to check for changes in each subsequent API response */
   private previousResponse?: string;
+
   /** Furthest date in the future known as having been available to book */
   private calendarRange?: ISODate;
 
