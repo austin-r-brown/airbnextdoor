@@ -1,7 +1,6 @@
-import { removeHtmlTags } from '../helpers/email.helper';
+import { Html } from '../helpers/email.helper';
 import { EmailConfig } from '../types';
 import { LogService } from './log.service';
-import { DateService } from './date.service';
 import { EMAIL_TIMEOUT, MS_IN_MINUTE } from '../constants';
 
 const SibApiV3Sdk = require('sib-api-v3-sdk');
@@ -22,16 +21,16 @@ export class EmailService {
 
   private readonly errorsSent = new Map<string, boolean>();
 
-  constructor(private readonly log: LogService, private readonly date: DateService) {
+  constructor(private readonly log: LogService) {
     SibApiV3Sdk.ApiClient.instance.authentications['api-key'].apiKey = SIB_API_KEY?.trim();
   }
 
   public send(messages: string[], isError: boolean = false) {
-    const joinedMessages = messages.join('<br><br>');
+    const joinedMessages = messages.join(Html.blankline);
 
     this.log.info(
       '*********************** Sending Email: ***********************',
-      removeHtmlTags(joinedMessages),
+      Html.remove(joinedMessages),
       '**************************************************************'
     );
 
@@ -70,11 +69,7 @@ export class EmailService {
   public sendTimeoutError(timeout: number) {
     const minutes = timeout / MS_IN_MINUTE;
     const recentErrors = this.errorsSent.size
-      ? '<h4>Recent Errors:</h4> <ul>' +
-        Array.from(this.errorsSent.keys())
-          .map((e) => `<li>${e}</li>`)
-          .join('<br>') +
-        '</ul>'
+      ? Html.h4('Recent Errors:') + Html.list(Array.from(this.errorsSent.keys()))
       : '';
 
     this.send([

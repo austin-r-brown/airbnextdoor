@@ -2,9 +2,6 @@ import { DateService } from '../services/date.service';
 import { Booking } from '../types';
 import { offsetDay } from './date.helper';
 
-export const removeHtmlTags = (str: string) =>
-  str.replace(/<br>|<\/h[1-4]>|<\/p>/g, '\n').replace(/<[^>]*>/g, '');
-
 export const formatDate = (date: string): string => {
   const [y, m, d] = date.split('-');
   return `${Number(m)}/${Number(d)}/${y.slice(2)}`;
@@ -19,20 +16,35 @@ export const formatBooking = ({ firstNight, lastNight, isBlockedOff }: Booking):
 
 export const formatCurrentBookings = (bookings: Booking[], date: DateService): string => {
   return (
-    '<h3>Current Bookings:</h3>' +
+    Html.h3('Current Bookings:') +
     bookings
       .map((b) => {
         const isActive = b.firstNight <= date.today && b.lastNight >= date.yesterday;
-        return isActive ? `<b>${formatBooking(b)}</b>` : formatBooking(b);
+        return isActive ? Html.bold(formatBooking(b)) : formatBooking(b);
       })
-      .join('<br>')
+      .join(Html.newline)
   );
 };
 
 export const createEmail = (title: string, booking: Booking, details?: string): string => {
   const body = formatBooking(booking);
   const additional = details ? [details] : [];
-  const email = [`<b>${title}:</b>`, body, ...additional];
+  const email = [Html.bold(`${title}:`), body, ...additional];
 
-  return email.join('<br>');
+  return email.join(Html.newline);
 };
+
+export class Html {
+  public static readonly newline: string = '<br>';
+  public static readonly blankline: string = '<br><br>';
+
+  public static bold = (str: string) => `<b>${str}</b>`;
+  public static italic = (str: string) => `<i>${str}</i>`;
+  public static h3 = (str: string) => `<h3>${str}</h3>`;
+  public static h4 = (str: string) => `<h4>${str}</h4>`;
+  public static list = (items: string[]) =>
+    '<ul>' + items.map((li) => `<li>${li}</li>`).join(this.newline) + '</ul>';
+
+  /** Remove html tags from string and replace with newlines where applicable */
+  public static remove = (str: string) => str.replace(/<br>|<\/h[1-4]>|<\/p>/g, '\n').replace(/<[^>]*>/g, '');
+}

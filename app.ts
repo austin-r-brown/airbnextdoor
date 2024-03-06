@@ -7,7 +7,7 @@ import {
   Calendar,
   isBookingInCalendarRange,
 } from './helpers/date.helper';
-import { createEmail, formatCurrentBookings, formatDate, removeHtmlTags } from './helpers/email.helper';
+import { Html, createEmail, formatCurrentBookings, formatDate } from './helpers/email.helper';
 import { DbService } from './services/db.service';
 import { EmailService } from './services/email.service';
 import { LogService } from './services/log.service';
@@ -19,7 +19,7 @@ class App {
   private readonly date: DateService = new DateService();
   private readonly log: LogService = new LogService();
   private readonly db: DbService = new DbService(this.log);
-  private readonly email: EmailService = new EmailService(this.log, this.date);
+  private readonly email: EmailService = new EmailService(this.log);
   private readonly airbnb: AirbnbService = new AirbnbService(this.log, this.date, this.email);
 
   /** Array of all known bookings and blocked off periods */
@@ -52,7 +52,7 @@ class App {
     const email = createEmail(title, booking, details);
     if (booking.isBlockedOff) {
       // Omit notification and display similar message on console
-      const consoleMsg = removeHtmlTags(email.replace('ooking', 'locked Off Period'));
+      const consoleMsg = Html.remove(email.replace('ooking', 'locked Off Period'));
       this.log.info(...consoleMsg.split('\n'));
     } else {
       this.notificationBuffer.push(email);
@@ -124,10 +124,10 @@ class App {
           ? offsetDay(change.lastNight!, 1)
           : change.lastNight!
         : change.firstNight!;
-      const formattedDate = formatDate(date);
+      const formattedDate = Html.bold(formatDate(date));
       const dateType = lastNightChanged ? 'End' : 'Start';
 
-      this.notify(changeType, booking, `New ${dateType} Date: <b>${formattedDate}</b>`);
+      this.notify(changeType, booking, `New ${dateType} Date: ${formattedDate}`);
 
       Object.assign(booking, change);
     }
