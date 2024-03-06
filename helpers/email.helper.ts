@@ -38,13 +38,14 @@ export class Html {
   public static readonly newline: string = '<br>';
   public static readonly blankline: string = '<br><br>';
 
-  public static bold = (str: string) => `<b>${str}</b>`;
-  public static italic = (str: string) => `<i>${str}</i>`;
-  public static h3 = (str: string) => `<h3>${str}</h3>`;
-  public static h4 = (str: string) => `<h4>${str}</h4>`;
-  public static list = (items: string[]) =>
+  public static bold = (str: string): string => `<b>${str}</b>`;
+  public static italic = (str: string): string => `<i>${str}</i>`;
+  public static h3 = (str: string): string => `<h3>${str}</h3>`;
+  public static h4 = (str: string): string => `<h4>${str}</h4>`;
+  public static list = (items: string[]): string =>
     '<ul>' + items.map((li) => `<li>${li}</li>`).join(this.newline) + '</ul>';
 
   /** Remove html tags from string and replace with newlines where applicable */
-  public static remove = (str: string) => str.replace(/<br>|<\/h[1-4]>|<\/p>/g, '\n').replace(/<[^>]*>/g, '');
+  public static remove = (str: string): string =>
+    str.replace(/<br>|<\/h[1-4]>|<\/p>/g, '\n').replace(/<[^>]*>/g, '');
 }
