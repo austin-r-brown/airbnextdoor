@@ -133,7 +133,7 @@ class App {
     }
   }
 
-  /** Removes bookings from this.bookings array and sends cancelled notifications */
+  /** Removes bookings by index and sends notification */
   private cancelBookings(indexes: number[]) {
     indexes.forEach((index, i) => {
       const currentIndex = index - i;
