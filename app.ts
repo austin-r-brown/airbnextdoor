@@ -89,7 +89,7 @@ class App {
     this.notify(BookingChange.New, booking);
   }
 
-  /** Adds new booking and sends notification */
+  /** Adds new bookings and sends notification */
   private addBookings(bookings: Booking[]) {
     bookings.forEach((b) => {
       this.bookings.push(b);
