@@ -11,18 +11,31 @@ export class EmailService {
   private readonly api = new SibApiV3Sdk.TransactionalEmailsApi();
 
   private readonly smtpConfig: EmailConfig = {
-    sender: { email: SEND_FROM_EMAIL?.trim() ?? '' },
-    to:
-      SEND_TO_EMAILS?.trim()
-        .split(',')
-        .map((e) => ({ email: e.trim() })) ?? [],
+    sender: { email: (SEND_FROM_EMAIL ?? '').trim() },
+    to: (SEND_TO_EMAILS ?? '')
+      .trim()
+      .split(',')
+      .map((e) => ({ email: e.trim() })),
     subject: 'Nextdoor Airbnb Updates',
   };
 
   private readonly errorsSent = new Map<string, boolean>();
 
+  private isUserInputValid: boolean = false;
+
   constructor(private readonly log: LogService) {
-    SibApiV3Sdk.ApiClient.instance.authentications['api-key'].apiKey = SIB_API_KEY?.trim();
+    const apiKey = SIB_API_KEY?.trim();
+    const { sender, to } = this.smtpConfig;
+    const inputValues = [apiKey, sender.email, ...to.map((t) => t.email)];
+
+    if (inputValues.every((v) => typeof v === 'string' && v.length)) {
+      this.isUserInputValid = true;
+      SibApiV3Sdk.ApiClient.instance.authentications['api-key'].apiKey = apiKey;
+    } else {
+      this.log.error(
+        'SIB API Key and Email Addresses must be provided in .env file for emails to be sent. See README.md for more info.'
+      );
+    }
   }
 
   public send(messages: string[], isError: boolean = false) {
@@ -34,7 +47,7 @@ export class EmailService {
       '**************************************************************'
     );
 
-    if (SIB_API_KEY && SEND_FROM_EMAIL && SEND_TO_EMAILS) {
+    if (this.isUserInputValid) {
       this.smtpConfig.htmlContent = joinedMessages;
 
       this.api.sendTransacEmail(this.smtpConfig).then(
@@ -51,8 +64,6 @@ export class EmailService {
           this.log.error(`Error occurred sending email: ${message ? `"${message}"` : err}`);
         }
       );
-    } else {
-      this.log.error('SIB API Key and Email Addresses must be provided in .env file to send emails.');
     }
   }
 
