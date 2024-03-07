@@ -30,7 +30,7 @@ export class EmailService {
       this.isUserInputValid = true;
     } else {
       this.log.error(
-        'SIB API Key and Email Addresses must be provided in .env file for emails to be sent. See README.md for more info.'
+        'Valid Email Addresses and API Key must be provided in .env file for emails to be sent. See README.md for more info.'
       );
     }
   }

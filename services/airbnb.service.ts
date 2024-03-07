@@ -51,7 +51,9 @@ export class AirbnbService {
   ) {
     const listingId = this.validateListingId();
     if (!listingId) {
-      throw new Error('Valid Airbnb URL or Listing ID must be provided in .env file.');
+      throw new Error(
+        'Valid Airbnb URL or Listing ID must be provided in .env file. See README.md for more info.'
+      );
     }
     this.listingId = listingId;
   }
