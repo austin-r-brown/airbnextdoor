@@ -49,7 +49,7 @@ export class AirbnbService {
     private readonly date: DateService,
     private readonly email: EmailService
   ) {
-    const listingId = this.getListingId();
+    const listingId = this.validateListingId();
     if (!listingId) {
       throw new Error('Valid Airbnb URL or Listing ID must be provided in .env file.');
     }
@@ -123,8 +123,8 @@ export class AirbnbService {
     return result;
   }
 
-  /** Validates AIRBNB_URL value, returns ID from URL if value is URL, trimmed ID if value is ID, otherwise undefined */
-  private getListingId(): string | void {
+  /** Validates user input for Airbnb URL. Returns ID from URL if value is URL, trimmed ID if value is ID, otherwise undefined */
+  private validateListingId(): string | void {
     const { AIRBNB_URL } = process.env;
     if (AIRBNB_URL) {
       const trimmed = AIRBNB_URL.trim();

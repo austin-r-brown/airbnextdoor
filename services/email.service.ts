@@ -24,13 +24,10 @@ export class EmailService {
   private isUserInputValid: boolean = false;
 
   constructor(private readonly log: LogService) {
-    const apiKey = SIB_API_KEY?.trim();
-    const { sender, to } = this.smtpConfig;
-    const inputValues = [apiKey, sender.email, ...to.map((t) => t.email)];
+    SibApiV3Sdk.ApiClient.instance.authentications['api-key'].apiKey = SIB_API_KEY?.trim();
 
-    if (inputValues.every((v) => typeof v === 'string' && v.length)) {
+    if (this.validateUserInput()) {
       this.isUserInputValid = true;
-      SibApiV3Sdk.ApiClient.instance.authentications['api-key'].apiKey = apiKey;
     } else {
       this.log.error(
         'SIB API Key and Email Addresses must be provided in .env file for emails to be sent. See README.md for more info.'
@@ -91,5 +88,13 @@ export class EmailService {
 
   public clearErrors() {
     this.errorsSent.clear();
+  }
+
+  private validateUserInput(): boolean {
+    const { apiKey } = SibApiV3Sdk.ApiClient.instance.authentications['api-key'];
+    const { sender, to } = this.smtpConfig;
+    const inputValues = [apiKey, sender.email, ...to.map((t) => t.email)];
+
+    return inputValues.every((v) => typeof v === 'string' && v.length);
   }
 }
