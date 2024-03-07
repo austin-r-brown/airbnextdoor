@@ -93,8 +93,11 @@ export class EmailService {
   private validateUserInput(): boolean {
     const { apiKey } = SibApiV3Sdk.ApiClient.instance.authentications['api-key'];
     const { sender, to } = this.smtpConfig;
-    const inputValues = [apiKey, sender.email, ...to.map((t) => t.email)];
+    const emails = [sender.email, ...to.map((t) => t.email)];
 
-    return inputValues.every((v) => typeof v === 'string' && v.length);
+    const apiKeyValid = apiKey?.length >= 32;
+    const emailsValid = emails.every((e) => /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g.test(e));
+
+    return apiKeyValid && emailsValid;
   }
 }
