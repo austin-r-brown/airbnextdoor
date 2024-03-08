@@ -35,6 +35,10 @@ export class LogService {
     this.log(args, ConsoleType.Error);
   }
 
+  public warn(...args: any) {
+    this.log(args, ConsoleType.Warn);
+  }
+
   public success() {
     console.clear();
     // Only display one success message at a time

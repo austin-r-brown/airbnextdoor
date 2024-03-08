@@ -47,8 +47,5 @@ export class Html {
 
   /** Remove html tags from string and replace with newlines where applicable */
   public static remove = (str: string): string =>
-    str
-      .replace(/(?:^|<\/?h[1-4]>|<\/?p>|<ul>)(?!$)/gi, '\n\n')
-      .replace(/<br>|<\/li>|<\/ul>/gi, '\n')
-      .replace(/<[^>]*>/g, '');
+    str.replace(/<br>|<\/h[1-4]>|<\/p>|<li>/gi, '\n').replace(/<[^>]*>/g, '');
 }

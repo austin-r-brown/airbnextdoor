@@ -70,6 +70,7 @@ export type LogItem = [any[], ConsoleType];
 export enum ConsoleType {
   Info = 'info',
   Error = 'error',
+  Warn = 'warn',
 }
 
 export enum BookingChange {
