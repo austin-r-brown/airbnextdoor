@@ -99,34 +99,21 @@ class App {
 
   /** Validates changes in booking length, updates booking accordingly and sends notification */
   private changeBookingLength(booking: Booking, change: Partial<Booking>) {
-    let changeType: BookingChange | undefined;
+    let changeType: BookingChange | undefined, newDate: ISODate | undefined, dateType: string | undefined;
+    const { firstNight, lastNight } = change;
 
-    if (change.lastNight) {
-      if (change.lastNight > booking.lastNight) {
-        changeType = BookingChange.Extended;
-      } else if (change.lastNight < booking.lastNight) {
-        changeType = BookingChange.Shortened;
-      }
-    } else if (change.firstNight) {
-      if (change.firstNight < booking.firstNight) {
-        changeType = BookingChange.Extended;
-      } else if (change.firstNight > booking.firstNight) {
-        changeType = BookingChange.Shortened;
-      }
+    if (firstNight && firstNight !== booking.firstNight) {
+      newDate = firstNight;
+      dateType = 'Start';
+      changeType = firstNight < booking.firstNight ? BookingChange.Extended : BookingChange.Shortened;
+    } else if (lastNight && lastNight !== booking.lastNight) {
+      newDate = offsetDay(lastNight, 1);
+      dateType = 'End';
+      changeType = lastNight > booking.lastNight ? BookingChange.Extended : BookingChange.Shortened;
     }
 
-    const lastNightChanged = change.lastNight && change.lastNight !== booking.lastNight;
-    const firstNightChanged = change.firstNight && change.firstNight !== booking.firstNight;
-
-    if (changeType && (lastNightChanged || firstNightChanged)) {
-      const date = lastNightChanged
-        ? !booking.isBlockedOff
-          ? offsetDay(change.lastNight!, 1)
-          : change.lastNight!
-        : change.firstNight!;
-      const formattedDate = Html.bold(formatDate(date));
-      const dateType = lastNightChanged ? 'End' : 'Start';
-
+    if (changeType && newDate) {
+      const formattedDate = Html.bold(formatDate(newDate));
       this.notify(changeType, booking, `New ${dateType} Date: ${formattedDate}`);
 
       Object.assign(booking, change);
