@@ -11,18 +11,19 @@ export class DbService {
   private fileCreated: boolean = false;
 
   constructor(private readonly log: LogService, private readonly airbnb: AirbnbService) {
+    const backupsRootDir = 'backups';
     this.filename = `${this.airbnb.listingId}.json`;
-    this.backupsDir = path.join('backups', this.airbnb.listingId);
+    this.backupsDir = path.join(backupsRootDir, this.airbnb.listingId);
 
-    if (!fs.existsSync(this.backupsDir)) {
-      fs.mkdir(this.backupsDir, (err) => {
-        if (err) {
+    [backupsRootDir, this.backupsDir].forEach((dir) => {
+      if (!fs.existsSync(dir)) {
+        try {
+          fs.mkdirSync(dir);
+        } catch (err: any) {
           this.log.error(`Error creating folder: "${err.message}"`);
-        } else {
-          this.log.info('Backups folder created successfully');
         }
-      });
-    }
+      }
+    });
   }
 
   public async save(bookings: Booking[]) {

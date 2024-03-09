@@ -38,7 +38,7 @@ class App {
     const previousBookings = this.db.load();
     if (previousBookings.length) {
       this.bookings = previousBookings;
-      this.log.info(`Loaded ${this.bookings.length} bookings from DB`);
+      this.log.info(`Loaded ${this.bookings.length} booking(s) from DB for listing ${this.airbnb.listingId}`);
     }
 
     this.run();
