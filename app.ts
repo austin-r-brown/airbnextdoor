@@ -18,9 +18,9 @@ import { INTERVAL, SEND_DEBOUNCE_TIME, SUCCESS_TIMEOUT } from './constants';
 class App {
   private readonly date: DateService = new DateService();
   private readonly log: LogService = new LogService();
-  private readonly db: DbService = new DbService(this.log);
   private readonly email: EmailService = new EmailService(this.log);
   private readonly airbnb: AirbnbService = new AirbnbService(this.log, this.date, this.email);
+  private readonly db: DbService = new DbService(this.log, this.airbnb);
 
   /** Array of all known bookings and blocked off periods */
   private bookings: Booking[] = [];

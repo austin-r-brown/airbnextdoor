@@ -2,7 +2,7 @@
 Thumbs.db
 
 .env
-bookings.json
-backups/*.json
+*.json
+backups
 
 node_modules

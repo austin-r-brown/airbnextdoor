@@ -19,7 +19,7 @@ const API_KEY = 'd306zoyjsyarp7ifhu67rjxn52tv0t20';
 
 /** Service for interacting with Airbnb */
 export class AirbnbService {
-  private listingId: string;
+  public listingId: string;
   private previousResponse?: string;
 
   /** Furthest date in the future known as having been available to book */
