@@ -19,6 +19,12 @@ const API_KEY = 'd306zoyjsyarp7ifhu67rjxn52tv0t20';
 
 /** Service for interacting with Airbnb */
 export class AirbnbService {
+  private listingId: string;
+  private previousResponse?: string;
+
+  /** Furthest date in the future known as having been available to book */
+  private calendarRange?: ISODate;
+
   private readonly apiConfig: AirbnbApiConfig = {
     method: 'get',
     url: `https://www.airbnb.com/api/v3/${API_OPERATION}/${API_HASH}`,
@@ -37,12 +43,6 @@ export class AirbnbService {
       }),
     },
   };
-
-  private listingId: string;
-  private previousResponse?: string;
-
-  /** Furthest date in the future known as having been available to book */
-  private calendarRange?: ISODate;
 
   constructor(
     private readonly log: LogService,

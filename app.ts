@@ -52,7 +52,7 @@ class App {
     const email = createEmail(title, booking, details);
     if (booking.isBlockedOff) {
       // Omit notification and display similar message on console
-      const consoleMsg = Html.remove(email.replace('ooking', 'locked Off Period'));
+      const consoleMsg = Html.remove(email.replace('Booking', 'Blocked Off Period'));
       this.log.info(...consoleMsg.split('\n'));
     } else {
       this.notificationBuffer.push(email);
@@ -179,10 +179,15 @@ class App {
     let endingToday;
 
     for (const b of this.bookings) {
-      if (b.firstNight === this.date.today) {
-        startingToday = b;
-      } else if (b.lastNight === this.date.yesterday) {
-        endingToday = b;
+      if (!b.isBlockedOff) {
+        if (b.firstNight === this.date.today) {
+          startingToday = b;
+        } else if (b.lastNight === this.date.yesterday) {
+          endingToday = b;
+        }
+      }
+      if (startingToday && endingToday) {
+        break;
       }
     }
 
@@ -298,29 +303,27 @@ class App {
       // Send notification if this process doesn't complete in time
       this.successTimer = setTimeout(() => this.email.sendTimeoutError(SUCCESS_TIMEOUT), SUCCESS_TIMEOUT);
     }
-
     this.date.set(); // Set today's date
+    const calendar = await this.airbnb.fetch(); // Fetch latest data from Airbnb
+
+    if (calendar?.size) {
+      // Check for new or altered bookings
+      const existingBookings = this.checkExistingBookings(calendar);
+      const [newBookings, gaps] = this.checkForNewBookings(calendar, existingBookings);
+      this.addBookings(newBookings);
+      this.checkAdjacentBookings(gaps, existingBookings);
+    }
 
     if (timeIsAlmost(9)) {
       // Send morning summary notifications
       this.guestChangeNotification();
     }
 
-    const calendar = await this.airbnb.fetch(); // Fetch latest data from Airbnb
-
     if (calendar) {
-      if (calendar.size) {
-        // Check for new or altered bookings
-        const existingBookings = this.checkExistingBookings(calendar);
-        const [newBookings, gaps] = this.checkForNewBookings(calendar, existingBookings);
-        this.addBookings(newBookings);
-        this.checkAdjacentBookings(gaps, existingBookings);
-      }
-
       // Indicate process has successfully completed
-      clearTimeout(this.successTimer);
-      this.email.clearErrors();
       this.log.success();
+      this.email.clearErrors();
+      clearTimeout(this.successTimer);
     }
   };
 }
