@@ -3,6 +3,6 @@ Thumbs.db
 
 .env
 *.json
-backups
+db
 
 node_modules

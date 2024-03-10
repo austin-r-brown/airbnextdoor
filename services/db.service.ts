@@ -4,26 +4,19 @@ import { LogService } from './log.service';
 import fs from 'fs';
 import path from 'path';
 
+const DB_ROOT_DIR = 'db';
+const BACKUPS_ROOT_DIR = 'backups';
+
 /** Service for saving and restoring persisted data */
 export class DbService {
-  private filename: string;
+  private filepath: string;
   private backupsDir: string;
-  private fileCreated: boolean = false;
+  private lastSavedFile?: string;
 
   constructor(private readonly log: LogService, private readonly airbnb: AirbnbService) {
-    const backupsRootDir = 'backups';
-    this.filename = `${this.airbnb.listingId}.json`;
-    this.backupsDir = path.join(backupsRootDir, this.airbnb.listingId);
-
-    [backupsRootDir, this.backupsDir].forEach((dir) => {
-      if (!fs.existsSync(dir)) {
-        try {
-          fs.mkdirSync(dir);
-        } catch (err: any) {
-          this.log.error(`Error creating folder: "${err.message}"`);
-        }
-      }
-    });
+    this.filepath = path.join(DB_ROOT_DIR, `${this.airbnb.listingId}.json`);
+    this.backupsDir = path.join(DB_ROOT_DIR, BACKUPS_ROOT_DIR, this.airbnb.listingId);
+    this.createFolders(this.backupsDir);
   }
 
   public async save(bookings: Booking[]) {
@@ -31,12 +24,12 @@ export class DbService {
       await this.backup();
       const jsonString = JSON.stringify(bookings, null, 2);
 
-      fs.writeFile(this.filename, jsonString, 'utf8', (err: any) => {
+      fs.writeFile(this.filepath, jsonString, 'utf8', (err: any) => {
         if (err) {
           this.log.error(`Error writing to DB file: "${err}"`);
         } else {
           this.log.info('Data saved to DB successfully');
-          this.fileCreated = true;
+          this.lastSavedFile = jsonString;
           this.backup();
         }
       });
@@ -46,8 +39,8 @@ export class DbService {
   public load(): Booking[] {
     let result: Booking[] = [];
     try {
-      if (fs.existsSync(this.filename)) {
-        const data = fs.readFileSync(this.filename, 'utf8');
+      if (fs.existsSync(this.filepath)) {
+        const data = fs.readFileSync(this.filepath, 'utf8');
         const jsonData = JSON.parse(data);
 
         if (Array.isArray(jsonData)) {
@@ -61,7 +54,6 @@ export class DbService {
       const backup = this.restoreBackup();
       if (backup) {
         result = backup;
-        this.save(backup);
       }
     }
     return result;
@@ -69,8 +61,8 @@ export class DbService {
 
   private backup(): Promise<void> {
     return new Promise<void>((resolve) => {
-      if (this.fileCreated) {
-        fs.copyFile(this.filename, path.join(this.backupsDir, `${Date.now()}.json`), (err: any) => {
+      if (this.lastSavedFile) {
+        fs.copyFile(this.filepath, path.join(this.backupsDir, `${Date.now()}.json`), (err: any) => {
           if (err) {
             this.log.error(`Error creating backup of DB file: "${err}"`);
           }
@@ -113,6 +105,21 @@ export class DbService {
       return dateFromName;
     } else {
       return new Date(fs.statSync(path.join(this.backupsDir, filename)).mtime.getTime());
+    }
+  }
+
+  private createFolders(folderPath: string) {
+    const parts = folderPath.split(path.sep);
+    try {
+      for (let i = 1; i <= parts.length; i++) {
+        const dir = path.join(...parts.slice(0, i));
+
+        if (!fs.existsSync(dir)) {
+          fs.mkdirSync(dir);
+        }
+      }
+    } catch (err: any) {
+      this.log.error(`Error creating folder: "${err.message}"`);
     }
   }
 }
