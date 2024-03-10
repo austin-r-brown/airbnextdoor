@@ -61,6 +61,7 @@ export class DbService {
       const backup = this.restoreBackup();
       if (backup) {
         result = backup;
+        this.save(backup);
       }
     }
     return result;
