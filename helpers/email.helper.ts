@@ -8,10 +8,10 @@ export const formatDate = (date: string): string => {
 };
 
 export const formatBooking = ({ firstNight, lastNight, isBlockedOff }: Booking): string => {
-  const [startDate, endDate] = [firstNight, isBlockedOff ? lastNight : offsetDay(lastNight, 1)].map(
+  const [checkIn, checkOut] = [firstNight, isBlockedOff ? lastNight : offsetDay(lastNight, 1)].map(
     formatDate
   );
-  return `[Start Date: ${startDate}, End Date: ${endDate}]`;
+  return `[Check In: ${checkIn}, Check Out: ${checkOut}]`;
 };
 
 export const formatCurrentBookings = (bookings: Booking[], date: DateService): string => {

@@ -1,5 +1,8 @@
 import { ConsoleType, LogItem } from '../types';
 
+const START_MSG = 'Starting application...';
+const SUCCESS_MSG = 'Airbnb API request successful';
+
 /** Service for handling console log messages */
 export class LogService {
   private logged: LogItem[] = [];
@@ -9,6 +12,11 @@ export class LogService {
   private display(values: any[], type: ConsoleType) {
     values.forEach((val: any) => console[type]?.(val));
     console[type]?.('');
+  }
+
+  private resetConsole() {
+    console.clear();
+    this.logged.forEach((item) => this.display(...item));
   }
 
   private log(values: any[], type: ConsoleType) {
@@ -40,14 +48,18 @@ export class LogService {
   }
 
   public success() {
-    console.clear();
-    // Only display one success message at a time
-    const successItem: LogItem = [[`Airbnb API request successful ${this.timestamp()}`], ConsoleType.Info];
-    [...this.logged, successItem].forEach((item) => this.display(...item));
+    const [lastItem] = this.logged[this.logged.length - 1];
+    if (lastItem[0].startsWith(SUCCESS_MSG)) {
+      // Only display one success message at a time
+      lastItem[0] = `${SUCCESS_MSG} ${this.timestamp()}`;
+      this.resetConsole();
+    } else {
+      this.info(SUCCESS_MSG);
+    }
   }
 
   public start() {
-    console.clear();
-    this.info('Starting application...');
+    this.logged.unshift([[START_MSG], ConsoleType.Info]);
+    this.resetConsole();
   }
 }
