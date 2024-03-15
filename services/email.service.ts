@@ -51,7 +51,7 @@ export class EmailService {
         (data: any) => {
           if (isError) {
             // If successfully sent email was an error message, mark it as sent in the errorsSent map
-            this.errorsSent.set(messages.toString(), true);
+            this.errorsSent.set(messages[0], true);
           }
           this.log.info(`Email sent successfully. Returned data: ${JSON.stringify(data)}`);
         },
@@ -77,13 +77,13 @@ export class EmailService {
   public sendTimeoutError(timeout: number) {
     const minutes = timeout / MS_IN_MINUTE;
     const recentErrors = this.errorsSent.size
-      ? Html.h4('Recent Errors:') + Html.list(Array.from(this.errorsSent.keys()))
-      : '';
+      ? [Html.h4('Recent Errors:') + Html.list(Array.from(this.errorsSent.keys()))]
+      : [];
+    const message = `Application has not successfully run within past ${Math.round(minutes)} minutes.`;
 
-    this.send([
-      `Application has not successfully run within past ${Math.round(minutes)} minutes.`,
-      recentErrors,
-    ]);
+    if (!this.errorsSent.has(message)) {
+      this.send([message, ...recentErrors], true);
+    }
   }
 
   public clearErrors() {

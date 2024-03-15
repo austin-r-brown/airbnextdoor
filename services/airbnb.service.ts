@@ -142,7 +142,7 @@ export class AirbnbService {
       details = response.data;
       this.log.error(`${description}:`, details);
     } else {
-      description = 'Airbnb API responded with an error';
+      description = 'Airbnb API encountered an error';
       details = err?.message || err;
       this.log.error(`${description}: "${details}"`);
     }

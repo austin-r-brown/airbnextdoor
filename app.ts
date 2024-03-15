@@ -1,6 +1,6 @@
 import { Booking, BookingChange, ISODate, CalendarDay, BookingsMap } from './types';
 import {
-  timeIsAlmost,
+  msUntilHour,
   countDaysBetween,
   offsetDay,
   getBookingDateRange,
@@ -13,12 +13,14 @@ import { EmailService } from './services/email.service';
 import { LogService } from './services/log.service';
 import { AirbnbService } from './services/airbnb.service';
 import { DateService } from './services/date.service';
-import { INTERVAL, SEND_DEBOUNCE_TIME, SUCCESS_TIMEOUT } from './constants';
+import { INTERVAL, SEND_DEBOUNCE_TIME } from './constants';
+import { WatchdogService } from './services/watchdog.service';
 
 class App {
   private readonly date: DateService = new DateService();
   private readonly log: LogService = new LogService();
   private readonly email: EmailService = new EmailService(this.log);
+  private readonly watchdog: WatchdogService = new WatchdogService(this.log, this.email);
   private readonly airbnb: AirbnbService = new AirbnbService(this.log, this.date, this.email);
   private readonly db: DbService = new DbService(this.log, this.airbnb);
 
@@ -28,9 +30,6 @@ class App {
   /** Used for debouncing notifications sent and JSON backups saved */
   private sendDebounceTimer?: NodeJS.Timeout;
   private notificationBuffer: string[] = [];
-
-  /** Used for sending notification if app appears to have stalled */
-  private successTimer?: NodeJS.Timeout;
 
   constructor() {
     this.log.start();
@@ -42,7 +41,6 @@ class App {
     }
 
     this.run();
-    setInterval(this.run, INTERVAL);
   }
 
   /** Sends all notifications that have been attempted within past second, sorts bookings and saves to DB */
@@ -298,11 +296,21 @@ class App {
     return existingBookings;
   }
 
-  private run = async () => {
-    if (!this.successTimer) {
-      // Send notification if this process doesn't complete in time
-      this.successTimer = setTimeout(() => this.email.sendTimeoutError(SUCCESS_TIMEOUT), SUCCESS_TIMEOUT);
+  /** Determines when app will run next and schedules it */
+  private scheduleNextRun() {
+    const msUntilMidnight = msUntilHour(0);
+    // Do a check 10 seconds before and after midnight
+    if (msUntilMidnight < INTERVAL) {
+      const tenSeconds = 10000;
+      const nextRunIsPostMidnight = msUntilMidnight <= tenSeconds;
+      const timeout = nextRunIsPostMidnight ? msUntilMidnight + tenSeconds : msUntilMidnight - tenSeconds;
+      setTimeout(() => this.run(nextRunIsPostMidnight), timeout);
+    } else {
+      setTimeout(this.run, INTERVAL);
     }
+  }
+
+  private run = async (isPostMidnight: boolean = false) => {
     this.date.set(); // Set today's date
     const calendar = await this.airbnb.fetch(); // Fetch latest data from Airbnb
 
@@ -310,20 +318,26 @@ class App {
       // Check for new or altered bookings
       const existingBookings = this.checkExistingBookings(calendar);
       const [newBookings, gaps] = this.checkForNewBookings(calendar, existingBookings);
-      this.addBookings(newBookings);
-      this.checkAdjacentBookings(gaps, existingBookings);
+
+      if (isPostMidnight && newBookings) {
+        // If new booking appears right after midnight it is most likely a gap
+        gaps.concat(newBookings).forEach((gap) => this.addBlockedOff(gap));
+      } else {
+        this.addBookings(newBookings);
+        this.checkAdjacentBookings(gaps, existingBookings);
+      }
     }
 
-    if (timeIsAlmost(9)) {
+    if (msUntilHour(9) < INTERVAL) {
       // Send morning summary notifications
       this.guestChangeNotification();
     }
 
+    this.scheduleNextRun();
+
     if (calendar) {
       // Indicate process has successfully completed
-      this.log.success();
-      this.email.clearErrors();
-      clearTimeout(this.successTimer);
+      this.watchdog.success();
     }
   };
 }
