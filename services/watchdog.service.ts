@@ -4,7 +4,7 @@ import { LogService } from './log.service';
 
 /** Service for monitoring app for consistent successful completion */
 export class WatchdogService {
-  private lastRunSuccessful: boolean = true;
+  private lastRunSuccessful: boolean = false;
 
   constructor(private readonly log: LogService, private readonly email: EmailService) {
     this.monitor();

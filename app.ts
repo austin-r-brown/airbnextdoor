@@ -293,8 +293,8 @@ class App {
 
   /** Determines when app will run next and schedules it */
   private scheduleNextRun() {
-    const msUntilMidnight = msUntilHour(0);
-    // Do a check 10 seconds before and after midnight
+    const msUntilMidnight = msUntilHour(24);
+    // Do a check just before and after midnight
     if (msUntilMidnight < INTERVAL) {
       const tenSeconds = 10000;
       const nextRunIsPostMidnight = msUntilMidnight <= tenSeconds;
