@@ -1,4 +1,4 @@
-import { ConsoleType, LogItem } from '../types';
+import { Booking, ConsoleType, LogItem } from '../types';
 
 const START_MSG = 'Starting application...';
 const SUCCESS_MSG = 'Airbnb API request successful';
@@ -59,7 +59,17 @@ export class LogService {
   }
 
   public start() {
-    this.logged.unshift([[START_MSG], ConsoleType.Info]);
+    this.logged.unshift([[`${START_MSG} ${this.timestamp()}`], ConsoleType.Info]);
     this.resetConsole();
+  }
+
+  public notification(title: string, booking: Booking, change?: Partial<Booking>) {
+    const titleMsg = booking.isBlockedOff ? title.replace('Booking', 'Blocked Off Period') : title;
+    const bookingMsg = `[First Night: ${booking.firstNight}, Last Night: ${booking.lastNight}]`;
+    const changeMsg = change
+      ? [change.firstNight ? `New First Night: ${change.firstNight}` : `New Last Night: ${change.lastNight}`]
+      : [];
+
+    this.info(...[titleMsg, bookingMsg, ...changeMsg]);
   }
 }

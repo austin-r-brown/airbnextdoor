@@ -11,7 +11,6 @@ import { LogService } from './log.service';
 import { EmailService } from './email.service';
 import { DateService } from './date.service';
 import { LOCALE } from '../constants';
-import { Html } from '../helpers/email.helper';
 
 const API_OPERATION = 'PdpAvailabilityCalendar';
 const API_HASH = '8f08e03c7bd16fcad3c92a3592c19a8b559a0d0855a84028d1163d4733ed9ade';
@@ -147,9 +146,6 @@ export class AirbnbService {
       this.log.error(`${description}: "${details}"`);
     }
 
-    const errorEmail = [`${Html.bold('Error:')} ${description}.`, Html.italic(JSON.stringify(details))].join(
-      Html.blankline
-    );
-    this.email.sendError(errorEmail);
+    this.email.sendError(description, details);
   };
 }

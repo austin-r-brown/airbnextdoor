@@ -7,7 +7,7 @@ import {
   Calendar,
   isBookingInCalendarRange,
 } from './helpers/date.helper';
-import { Html, createEmail, formatCurrentBookings, formatDate } from './helpers/email.helper';
+import { createNotification, formatCurrentBookings } from './helpers/email.helper';
 import { DbService } from './services/db.service';
 import { EmailService } from './services/email.service';
 import { LogService } from './services/log.service';
@@ -44,15 +44,13 @@ class App {
   }
 
   /** Sends all notifications that have been attempted within past second, sorts bookings and saves to DB */
-  private notify(title: string, booking: Booking, details?: string) {
+  private notify(title: string, booking: Booking, change?: Partial<Booking>) {
+    this.log.notification(title, booking, change);
     clearTimeout(this.sendDebounceTimer);
 
-    const email = createEmail(title, booking, details);
-    if (booking.isBlockedOff) {
-      // Omit notification and display similar message on console
-      const consoleMsg = Html.remove(email.replace('Booking', 'Blocked Off Period'));
-      this.log.info(...consoleMsg.split('\n'));
-    } else {
+    if (!booking.isBlockedOff) {
+      const email = createNotification(title, booking, change);
+      // Only send email if booking is not blocked off period
       this.notificationBuffer.push(email);
     }
 
@@ -97,22 +95,19 @@ class App {
 
   /** Validates changes in booking length, updates booking accordingly and sends notification */
   private changeBookingLength(booking: Booking, change: Partial<Booking>) {
-    let changeType: BookingChange | undefined, newDate: ISODate | undefined, dateType: string | undefined;
+    let changeType: BookingChange | undefined;
     const { firstNight, lastNight } = change;
 
     if (firstNight && firstNight !== booking.firstNight) {
-      newDate = firstNight;
-      dateType = 'Start';
       changeType = firstNight < booking.firstNight ? BookingChange.Extended : BookingChange.Shortened;
+      delete change.lastNight;
     } else if (lastNight && lastNight !== booking.lastNight) {
-      newDate = offsetDay(lastNight, 1);
-      dateType = 'End';
       changeType = lastNight > booking.lastNight ? BookingChange.Extended : BookingChange.Shortened;
+      delete change.firstNight;
     }
 
-    if (changeType && newDate) {
-      const formattedDate = Html.bold(formatDate(newDate));
-      this.notify(changeType, booking, `New ${dateType} Date: ${formattedDate}`);
+    if (changeType) {
+      this.notify(changeType, booking, change);
 
       Object.assign(booking, change);
     }
