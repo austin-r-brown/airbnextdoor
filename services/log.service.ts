@@ -5,19 +5,9 @@ const SUCCESS_MSG = 'Airbnb API request successful';
 
 /** Service for handling console log messages */
 export class LogService {
-  private logged: LogItem[] = [];
+  private readonly logged: LogItem[] = [];
 
   private readonly timestamp = () => `(${new Date().toLocaleString()})`;
-
-  private display(values: any[], type: ConsoleType) {
-    values.forEach((val: any) => console[type]?.(val));
-    console[type]?.('');
-  }
-
-  private resetConsole() {
-    console.clear();
-    this.logged.forEach((item) => this.display(...item));
-  }
 
   private log(values: any[], type: ConsoleType) {
     const [first] = values;
@@ -33,6 +23,16 @@ export class LogService {
     ];
     this.display(...item);
     this.logged.push(item);
+  }
+
+  private display(values: any[], type: ConsoleType) {
+    values.forEach((val: any) => console[type]?.(val));
+    console[type]?.('');
+  }
+
+  private resetConsole() {
+    console.clear();
+    this.logged.forEach((item) => this.display(...item));
   }
 
   public info(...args: any) {
