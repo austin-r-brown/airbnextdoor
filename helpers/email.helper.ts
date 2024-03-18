@@ -2,7 +2,7 @@ import { DateService } from '../services/date.service';
 import { Booking, BookingChange } from '../types';
 import { offsetDay } from './date.helper';
 
-/** Converts 'YYYY-MM-DD' formatted string to 'MM/DD/YY' */
+/** Converts 'YYYY-MM-DD' formatted string to 'MM/DD/YY' for email readability */
 export const formatDate = (date: string): string => {
   const [y, m, d] = date.split('-');
   return `${Number(m)}/${Number(d)}/${y.slice(2)}`;
