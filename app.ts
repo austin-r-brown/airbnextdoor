@@ -314,7 +314,7 @@ class App {
       const existingBookings = this.checkExistingBookings(calendar);
       const [newBookings, gaps] = this.checkForNewBookings(calendar, existingBookings);
 
-      if (isPostMidnight && newBookings) {
+      if (isPostMidnight) {
         // If new booking appears right after midnight it is most likely a gap
         gaps.concat(newBookings).forEach((gap) => this.addBlockedOff(gap));
       } else {
