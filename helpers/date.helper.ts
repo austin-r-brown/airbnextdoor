@@ -5,7 +5,7 @@ import { MS_IN_DAY } from '../constants';
 export const getIsoDate = (date: Date): ISODate => date.toISOString().split('T')[0] as ISODate;
 
 /** Returns number of ms until specified hour (24 hr time) */
-export const msUntilHour = (hour: number): number => {
+export const timeUntilHour = (hour: number): number => {
   const now = new Date();
   const target = new Date(now);
   target.setHours(hour, 0, 0, 0);

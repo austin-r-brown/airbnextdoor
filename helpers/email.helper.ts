@@ -2,11 +2,13 @@ import { DateService } from '../services/date.service';
 import { Booking, BookingChange } from '../types';
 import { offsetDay } from './date.helper';
 
+/** Converts 'YYYY-MM-DD' formatted string to 'MM/DD/YY' */
 export const formatDate = (date: string): string => {
   const [y, m, d] = date.split('-');
   return `${Number(m)}/${Number(d)}/${y.slice(2)}`;
 };
 
+/** Generates HTML for booking, with optional CSS class or partial booking to indicate a change to a booking */
 export const formatBooking = (
   { firstNight, lastNight }: Booking,
   cssClass?: string,
@@ -14,9 +16,7 @@ export const formatBooking = (
 ): string => {
   const [checkIn, checkOut] = [firstNight, offsetDay(lastNight, 1)].map(formatDate);
 
-  const bookingClass = (change ? '' : cssClass)?.toLowerCase();
-
-  const bookingHtml = `<div class="booking ${bookingClass ?? ''}">
+  const bookingHtml = `<div class="booking ${change ? '' : cssClass}">
       <div class="left half">
         <span class="text">Check In:</span>
         <span class="text date">${checkIn}</span>
@@ -28,6 +28,7 @@ export const formatBooking = (
     </div>`;
 
   if (change) {
+    // If booking dates change, add a second half-booking beneath it to show the new dates
     const changeHtml = `
         <div class="booking change ${change.firstNight ? 'check-in' : 'check-out'}">
         ${change.firstNight ? '<div class="v-line"></div>' : ''}
@@ -55,6 +56,7 @@ export const formatBooking = (
   }
 };
 
+/** Generates HTML for Current Bookings summary that is appended to each email */
 export const formatCurrentBookings = (bookings: Booking[], date: DateService): string => {
   const formattedBookings = bookings
     .map((b) => {
@@ -69,9 +71,11 @@ export const formatCurrentBookings = (bookings: Booking[], date: DateService): s
     </div>`;
 };
 
+/** Generates HTML for a notification to be sent via email */
 export const createNotification = (title: string, booking: Booking, change?: Partial<Booking>): string => {
   const [changeType] = Object.entries(BookingChange).find(([, c]) => c === title) ?? [];
-  const body = formatBooking(booking, changeType, change);
+  // Use BookingChange enum keys as CSS class names
+  const body = formatBooking(booking, changeType?.toLowerCase(), change);
 
   return `<div class="notification">
     <h4>${title}:</h4>
@@ -79,6 +83,7 @@ export const createNotification = (title: string, booking: Booking, change?: Par
     </div>`;
 };
 
+/** Generates HTML for entire email body using previously created notifications */
 export const createEmailBody = (notifications: string[]): string =>
   `<!DOCTYPE html>
   <html lang="en">
@@ -93,10 +98,12 @@ export const createEmailBody = (notifications: string[]): string =>
     </body>
   </html>`;
 
+/** Generates HTML for unordered list using array of strings */
 export const createHtmlList = (items: string[]): string =>
   '<ul>' + items.map((li) => `<li>${li}</li>`).join('<br>') + '</ul>';
 
-export const CSS = `
+/** CSS used for email body */
+const CSS = `
   body {
     font-family: Arial, sans-serif;
     background-color: #f2f2f2;

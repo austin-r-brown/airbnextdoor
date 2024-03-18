@@ -1,6 +1,6 @@
 import { Booking, BookingChange, ISODate, CalendarDay, BookingsMap } from './types';
 import {
-  msUntilHour,
+  timeUntilHour,
   countDaysBetween,
   offsetDay,
   getBookingDateRange,
@@ -293,12 +293,12 @@ class App {
 
   /** Determines when app will run next and schedules it */
   private scheduleNextRun() {
-    const msUntilMidnight = msUntilHour(24);
+    const timeUntilMidnight = timeUntilHour(24);
     // Do a check just before and after midnight
-    if (msUntilMidnight < INTERVAL) {
+    if (timeUntilMidnight < INTERVAL) {
       const tenSeconds = 10000;
-      const nextRunIsPostMidnight = msUntilMidnight <= tenSeconds;
-      const timeout = nextRunIsPostMidnight ? msUntilMidnight + tenSeconds : msUntilMidnight - tenSeconds;
+      const nextRunIsPostMidnight = timeUntilMidnight <= tenSeconds;
+      const timeout = nextRunIsPostMidnight ? timeUntilMidnight + tenSeconds : timeUntilMidnight - tenSeconds;
       setTimeout(() => this.run(nextRunIsPostMidnight), timeout);
     } else {
       setTimeout(this.run, INTERVAL);
@@ -323,7 +323,7 @@ class App {
       }
     }
 
-    if (msUntilHour(9) < INTERVAL) {
+    if (timeUntilHour(9) < INTERVAL) {
       // Send morning summary notifications
       this.guestChangeNotification();
     }
