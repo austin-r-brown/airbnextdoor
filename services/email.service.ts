@@ -60,7 +60,7 @@ export class EmailService {
   public sendError(message: string, details: any) {
     const email = `<b>Error:</b> ${message}.
       <br><br>
-      <i>${JSON.stringify(details)}</i>`;
+      <i>${JSON.stringify(details).slice(0, 1000)}</i>`;
 
     if (this.errorsSent.get(email) === false) {
       // Send email if error has previously been logged but not yet sent
