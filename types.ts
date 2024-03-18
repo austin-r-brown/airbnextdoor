@@ -21,12 +21,6 @@ export type EmailConfig = {
   htmlContent?: string;
 };
 
-export type AirbnbApiRequest = {
-  apiConfig: AirbnbApiConfig;
-  listingId: string;
-  previousResponse?: string;
-};
-
 export type AirbnbApiConfig = {
   method: string;
   maxBodyLength?: number;
