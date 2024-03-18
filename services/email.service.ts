@@ -1,6 +1,6 @@
 import { EmailConfig } from '../types';
 import { LogService } from './log.service';
-import { EMAIL_TIMEOUT, MS_IN_MINUTE } from '../constants';
+import { EMAIL_TIMEOUT } from '../constants';
 import { createEmailBody, createHtmlList } from '../helpers/email.helper';
 
 const SibApiV3Sdk = require('sib-api-v3-sdk');
@@ -57,30 +57,30 @@ export class EmailService {
     }
   }
 
-  public sendError(description: string, details: any) {
-    this.log.error(description, details);
-    const message = `<b>Error:</b> ${description}.
+  public sendError(message: string, details: any) {
+    const email = `<b>Error:</b> ${message}.
       <br><br>
       <i>${JSON.stringify(details)}</i>`;
 
-    if (this.errorsSent.get(message) === false) {
+    if (this.errorsSent.get(email) === false) {
       // Send email if error has previously been logged but not yet sent
-      this.send([message], true);
-    } else if (!this.errorsSent.has(message)) {
+      this.send([email], true);
+    } else if (!this.errorsSent.has(email)) {
       // Otherwise log it if hasn't been logged
-      this.errorsSent.set(message, false);
+      this.errorsSent.set(email, false);
     }
   }
 
-  public sendTimeoutError(timeout: number) {
-    const minutes = timeout / MS_IN_MINUTE;
+  public sendTimeoutError(message: string) {
     const recentErrors = this.errorsSent.size
-      ? ['<h4>Recent Errors:</h4>' + createHtmlList(Array.from(this.errorsSent.keys()))]
+      ? ['<br><br><h4>Recent Errors:</h4>' + createHtmlList(Array.from(this.errorsSent.keys()))]
       : [];
-    const message = `Application has not successfully run within past ${Math.round(minutes)} minutes.`;
-    this.log.error(message);
 
-    if (!this.errorsSent.has(message)) {
+    const timeoutEmailSent = Array.from(this.errorsSent.keys()).some(
+      (error) => error.replace(/[0-9]/g, '') === message.replace(/[0-9]/g, '')
+    );
+
+    if (!timeoutEmailSent) {
       this.send([message, ...recentErrors], true);
     }
   }

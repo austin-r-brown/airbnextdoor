@@ -62,7 +62,7 @@ export class AirbnbService {
   public async fetch(): Promise<Calendar | null> {
     const requestVariables: AirbnbRequestVariables = {
       request: {
-        count: 13,
+        count: 12,
         listingId: this.listingId,
         month: this.date.month,
         year: this.date.year,
