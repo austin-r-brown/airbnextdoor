@@ -295,7 +295,7 @@ class App {
   private scheduleNextRun() {
     const timeUntilMidnight = timeUntilHour(24);
     // Do a check just before and after midnight
-    if (timeUntilMidnight < INTERVAL) {
+    if (timeUntilMidnight <= INTERVAL) {
       const tenSeconds = 10000;
       const nextRunIsPostMidnight = timeUntilMidnight <= tenSeconds;
       const timeout = nextRunIsPostMidnight ? timeUntilMidnight + tenSeconds : timeUntilMidnight - tenSeconds;
@@ -323,7 +323,7 @@ class App {
       }
     }
 
-    if (timeUntilHour(9) < INTERVAL) {
+    if (timeUntilHour(9) <= INTERVAL) {
       // Send morning summary notifications
       this.guestChangeNotification();
     }
