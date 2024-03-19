@@ -16,12 +16,14 @@ export class DateService {
       .split('/');
     const todayIso: ISODate = `${y}-${m}-${d}`;
     const dateChanged = todayIso !== this.today;
-    this.date = new Date(todayIso);
-    this.today = todayIso;
-    this.yesterday = offsetDay(todayIso, -1);
-    this.tomorrow = offsetDay(todayIso, 1);
-    this.month = Number(m);
-    this.year = Number(y);
+    if (dateChanged) {
+      this.date = new Date(todayIso);
+      this.today = todayIso;
+      this.yesterday = offsetDay(todayIso, -1);
+      this.tomorrow = offsetDay(todayIso, 1);
+      this.month = Number(m);
+      this.year = Number(y);
+    }
     return dateChanged;
   }
 

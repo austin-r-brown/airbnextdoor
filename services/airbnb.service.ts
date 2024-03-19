@@ -1,4 +1,4 @@
-import axios, { AxiosResponse } from 'axios';
+import axios, { AxiosError, AxiosResponse } from 'axios';
 import { Calendar } from '../helpers/date.helper';
 import {
   AirbnbApiConfig,
@@ -133,7 +133,7 @@ export class AirbnbService {
     }
   }
 
-  private handleError = (err: Error, response?: AxiosResponse) => {
+  private handleError = (err: AxiosError, response?: AxiosResponse) => {
     let description, details;
 
     if (response) {
@@ -141,7 +141,9 @@ export class AirbnbService {
       details = response.data;
       this.log.error(`${description}:`, details);
     } else {
-      description = 'Airbnb API encountered an error';
+      description = err.isAxiosError
+        ? 'Error occurred during Airbnb API request'
+        : 'Airbnb API responded with an error';
       details = err?.message || err;
       this.log.error(`${description}: "${details}"`);
     }
