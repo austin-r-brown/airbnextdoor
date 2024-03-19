@@ -37,7 +37,7 @@ export class EmailService {
 
   public send(notifications: string[], isError: boolean = false) {
     if (this.isUserInputValid) {
-      this.log.info('***** Sending Email *****');
+      this.log.info('********* Sending Email *********');
       this.smtpConfig.htmlContent = createEmailBody(notifications);
 
       this.api.sendTransacEmail(this.smtpConfig).then(

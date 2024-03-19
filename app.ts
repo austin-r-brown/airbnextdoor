@@ -46,13 +46,13 @@ class App {
   /** Sends all notifications that have been attempted within past second, sorts bookings and saves to DB */
   private notify(title: string, booking: Booking, change?: Partial<Booking>) {
     this.log.notification(title, booking, change);
-    clearTimeout(this.sendDebounceTimer);
 
     if (!booking.isBlockedOff) {
-      const email = createNotification(title, booking, change);
       // Only send email if booking is not blocked off period
-      this.notificationBuffer.push(email);
+      this.notificationBuffer.push(createNotification(title, booking, change));
     }
+
+    clearTimeout(this.sendDebounceTimer);
 
     this.sendDebounceTimer = setTimeout(() => {
       const bookings = this.bookings.sort(

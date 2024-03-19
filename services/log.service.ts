@@ -1,7 +1,9 @@
+import { offsetDay } from '../helpers/date.helper';
+import { formatDate } from '../helpers/email.helper';
 import { Booking, ConsoleType, LogItem } from '../types';
 
 const START_MSG = 'Starting application...';
-const SUCCESS_MSG = 'Airbnb API request successful';
+const SUCCESS_MSG = 'Airbnb dates checked successfully';
 
 /** Service for handling console log messages */
 export class LogService {
@@ -64,11 +66,27 @@ export class LogService {
   }
 
   public notification(title: string, booking: Booking, change?: Partial<Booking>) {
-    const titleMsg = booking.isBlockedOff ? title.replace('Booking', 'Blocked Off Period') : title;
-    const bookingMsg = `[First Night: ${booking.firstNight}, Last Night: ${booking.lastNight}]`;
-    const changeMsg = change
-      ? [change.firstNight ? `New First Night: ${change.firstNight}` : `New Last Night: ${change.lastNight}`]
-      : [];
+    let titleMsg = title,
+      start = 'Check In',
+      end = 'Check Out',
+      endDate = offsetDay(booking.lastNight, 1),
+      changeMsg: string[] = [];
+
+    if (booking.isBlockedOff) {
+      titleMsg = title.replace('Booking', 'Blocked Off Period');
+      start = 'Start Date';
+      end = 'End Date';
+      endDate = booking.lastNight;
+    }
+
+    const bookingMsg = `[${start}: ${formatDate(booking.firstNight)}, ${end}: ${formatDate(endDate)}]`;
+
+    if (change?.firstNight) {
+      changeMsg = [`New ${start}: ${formatDate(change.firstNight)}`];
+    } else if (change?.lastNight) {
+      const changeDate = booking.isBlockedOff ? change.lastNight : offsetDay(change.lastNight, 1);
+      changeMsg = [`New ${end}: ${formatDate(changeDate)}`];
+    }
 
     this.info(...[titleMsg, bookingMsg, ...changeMsg]);
   }
