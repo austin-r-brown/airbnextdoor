@@ -16,7 +16,7 @@ export const formatBooking = (
 ): string => {
   const [checkIn, checkOut] = [firstNight, offsetDay(lastNight, 1)].map(formatDate);
 
-  const bookingHtml = `<div class="booking ${change ? '' : cssClass}">
+  const bookingHtml = `<div class="booking ${change ? '' : cssClass ?? ''}">
       <div class="left half">
         <span class="text">Check In:</span>
         <span class="text date">${checkIn}</span>
@@ -58,12 +58,11 @@ export const formatBooking = (
 
 /** Generates HTML for Current Bookings summary that is appended to each email */
 export const formatCurrentBookings = (bookings: Booking[], date: DateService): string => {
-  const formattedBookings = bookings
-    .map((b) => {
-      const isActive = b.firstNight <= date.today && b.lastNight >= date.yesterday;
-      return isActive ? formatBooking(b, 'today') : formatBooking(b);
-    })
-    .join(' ');
+  const formattedBookings = bookings.map((b) => {
+    const isActive = b.firstNight <= date.today && b.lastNight >= date.yesterday;
+    return formatBooking(b, isActive ? 'today' : '');
+  }).join(`
+    `);
 
   return `<div class="notification">
     <h4>Current Bookings:</h4>
