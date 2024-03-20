@@ -54,7 +54,7 @@ export class EmailService {
   }
 
   public sendError(message: string, details: any) {
-    const email = `<b>Error:</b> ${message}.
+    const email = `<span><b>Error:</b> ${message}</span>
       <br><br>
       <i>${JSON.stringify(details).slice(0, 1000)}</i>`;
 

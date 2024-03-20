@@ -58,28 +58,24 @@ export const formatBooking = (
 
 /** Generates HTML for Current Bookings summary that is appended to each email */
 export const formatCurrentBookings = (bookings: Booking[], date: DateService): string => {
-  const formattedBookings = bookings.map((b) => {
+  const bookingsHtml = bookings.map((b) => {
     const isActive = b.firstNight <= date.today && b.lastNight >= date.yesterday;
     return formatBooking(b, isActive ? 'today' : '');
   }).join(`
     `);
 
-  return `<div class="notification">
-    <h4>Current Bookings:</h4>
-      ${formattedBookings}
-    </div>`;
+  return `<span class="title">Current Bookings</span>
+    ${bookingsHtml}`;
 };
 
 /** Generates HTML for a notification to be sent via email */
 export const createNotification = (title: string, booking: Booking, change?: Partial<Booking>): string => {
   const [changeType] = Object.entries(BookingChange).find(([, c]) => c === title) ?? [];
   // Use BookingChange enum keys as CSS class names
-  const body = formatBooking(booking, changeType?.toLowerCase(), change);
+  const bookingHtml = formatBooking(booking, changeType?.toLowerCase(), change);
 
-  return `<div class="notification">
-    <h4>${title}:</h4>
-      ${body}
-    </div>`;
+  return `<span class="title">${title}</span>
+    ${bookingHtml}`;
 };
 
 /** Generates HTML for entire email body using previously created notifications */
@@ -92,7 +88,7 @@ export const createEmailBody = (notifications: string[]): string =>
       </style>
     </head>
     <body>
-      ${notifications.join(`
+      ${notifications.map((n) => `<div class="notification">${n}</div>`).join(`
       `)}
     </body>
   </html>`;
@@ -110,15 +106,20 @@ const CSS = `
     min-width: 355px;
   }
 
-  h4 {
-    margin-top: 10px;
-    margin-bottom: 15px;
+  .title {
+    margin-bottom: 4px;
     text-align: center;
+    font-weight: bold;
+    font-size: 16.5px;
+  }
+
+  ul {
+    margin-bottom: 0px;
   }
 
   .notification {
     margin: 15px 0px;
-    padding: 4px 10px;
+    padding: 15px 10px;
     background-color: #fff;
     border-radius: 10px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
@@ -128,7 +129,7 @@ const CSS = `
 
   .booking {
     display: flex;
-    margin-bottom: 10px;
+    margin-top: 10px;
     position: relative;
   }
 

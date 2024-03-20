@@ -141,9 +141,7 @@ export class AirbnbService {
       details = response.data;
       this.log.error(`${description}:`, details);
     } else {
-      description = err.isAxiosError
-        ? 'Error occurred during Airbnb API request'
-        : 'Airbnb API responded with an error';
+      description = err.isAxiosError ? 'Unable to reach Airbnb API' : 'Airbnb API responded with an error';
       details = err?.message || err;
       this.log.error(`${description}: "${details}"`);
     }

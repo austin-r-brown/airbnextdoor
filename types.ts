@@ -23,7 +23,6 @@ export type EmailConfig = {
 
 export type AirbnbApiConfig = {
   method: string;
-  maxBodyLength?: number;
   url: string;
   headers: {
     'X-Airbnb-Api-Key': string;

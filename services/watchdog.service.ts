@@ -38,7 +38,7 @@ export class WatchdogService {
   private sendNotification(message: string) {
     const errorsSent = this.email.getRecentErrors();
     const recentErrors = errorsSent.length
-      ? ['<br><br><h4>Recent Errors:</h4>' + createHtmlList(errorsSent)]
+      ? ['<span class="title">Recent Errors:</span>' + createHtmlList(errorsSent)]
       : [];
 
     this.email.send([message, ...recentErrors]);
