@@ -13,7 +13,7 @@ import { EmailService } from './services/email.service';
 import { LogService } from './services/log.service';
 import { AirbnbService } from './services/airbnb.service';
 import { DateService } from './services/date.service';
-import { INTERVAL, SEND_DEBOUNCE_TIME } from './constants';
+import { API_TIMEOUT, INTERVAL, SEND_DEBOUNCE_TIME } from './constants';
 import { WatchdogService } from './services/watchdog.service';
 
 class App {
@@ -296,10 +296,9 @@ class App {
     const timeUntilMidnight = timeUntilHour(24);
     // Do a check just before and after midnight
     if (timeUntilMidnight <= INTERVAL) {
-      const tenSeconds = 10000;
-      const nextRunIsPostMidnight = timeUntilMidnight <= tenSeconds;
-      const timeout = nextRunIsPostMidnight ? timeUntilMidnight + tenSeconds : timeUntilMidnight - tenSeconds;
-      setTimeout(() => this.run(nextRunIsPostMidnight), timeout);
+      const nextIsPostMidnight = timeUntilMidnight <= API_TIMEOUT;
+      const timeout = nextIsPostMidnight ? timeUntilMidnight + API_TIMEOUT : timeUntilMidnight - API_TIMEOUT;
+      setTimeout(() => this.run(nextIsPostMidnight), timeout);
     } else {
       setTimeout(this.run, INTERVAL);
     }

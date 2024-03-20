@@ -1,10 +1,12 @@
 import { MS_IN_MINUTE, WATCHDOG_TIMEOUT } from '../constants';
+import { createHtmlList } from '../helpers/email.helper';
 import { EmailService } from './email.service';
 import { LogService } from './log.service';
 
 /** Service for monitoring app for consistent successful completion */
 export class WatchdogService {
   private lastSuccessfulRun: number = 0;
+  private notificationSent: boolean = false;
 
   constructor(private readonly log: LogService, private readonly email: EmailService) {
     this.monitor();
@@ -14,6 +16,7 @@ export class WatchdogService {
     this.email.clearErrors();
     this.log.success();
     this.lastSuccessfulRun = Date.now();
+    this.notificationSent = false;
   }
 
   private monitor() {
@@ -25,8 +28,21 @@ export class WatchdogService {
         const minutes = Math.round(timeSinceLastRun / MS_IN_MINUTE);
         const message = (this.lastSuccessfulRun ? `${error} within past ${minutes} minutes` : error) + '.';
         this.log.error(message);
-        this.email.sendTimeoutError(message);
+        if (!this.notificationSent) {
+          this.sendNotification(message);
+        }
       }
     }, WATCHDOG_TIMEOUT);
+  }
+
+  private sendNotification(message: string) {
+    const errorsSent = this.email.getRecentErrors();
+    const recentErrors = errorsSent.length
+      ? ['<br><br><h4>Recent Errors:</h4>' + createHtmlList(errorsSent)]
+      : [];
+
+    this.email.send([message, ...recentErrors]);
+
+    this.notificationSent = true;
   }
 }

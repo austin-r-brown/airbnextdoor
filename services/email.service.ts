@@ -1,7 +1,7 @@
 import { EmailConfig } from '../types';
 import { LogService } from './log.service';
-import { EMAIL_TIMEOUT } from '../constants';
-import { createEmailBody, createHtmlList } from '../helpers/email.helper';
+import { API_TIMEOUT } from '../constants';
+import { createEmailBody } from '../helpers/email.helper';
 
 const SibApiV3Sdk = require('sib-api-v3-sdk');
 const { SIB_API_KEY, SEND_FROM_EMAIL, SEND_TO_EMAILS } = process.env;
@@ -35,21 +35,17 @@ export class EmailService {
     }
   }
 
-  public send(notifications: string[], isError: boolean = false) {
+  public send(notifications: string[]) {
     if (this.isUserInputValid) {
       this.log.info('********* Sending Email *********');
       this.smtpConfig.htmlContent = createEmailBody(notifications);
 
       this.api.sendTransacEmail(this.smtpConfig).then(
         (data: any) => {
-          if (isError) {
-            // If successfully sent email was an error message, mark it as sent in the errorsSent map
-            this.errorsSent.set(notifications[0], true);
-          }
           this.log.info(`Email sent successfully. Returned data: ${JSON.stringify(data)}`);
         },
         (err: any) => {
-          setTimeout(() => this.send(notifications, isError), EMAIL_TIMEOUT);
+          setTimeout(() => this.send(notifications), API_TIMEOUT);
           const { message } = JSON.parse(err?.response?.text ?? '{}');
           this.log.error(`Error occurred sending email: ${message ? `"${message}"` : err}`);
         }
@@ -62,27 +58,23 @@ export class EmailService {
       <br><br>
       <i>${JSON.stringify(details).slice(0, 1000)}</i>`;
 
-    if (this.errorsSent.get(email) === false) {
-      // Send email if error has previously been logged but not yet sent
-      this.send([email], true);
-    } else if (!this.errorsSent.has(email)) {
-      // Otherwise log it if hasn't been logged
-      this.errorsSent.set(email, false);
+    const previouslySent = this.errorsSent.get(email);
+
+    switch (previouslySent) {
+      case undefined:
+        // Save error to map if it hasn't been saved
+        this.errorsSent.set(email, false);
+        break;
+      case false:
+        // Send email if error has previously occurred but not yet sent
+        this.send([email]);
+        this.errorsSent.set(email, true);
+        break;
     }
   }
 
-  public sendTimeoutError(message: string) {
-    const recentErrors = this.errorsSent.size
-      ? ['<br><br><h4>Recent Errors:</h4>' + createHtmlList(Array.from(this.errorsSent.keys()))]
-      : [];
-
-    const timeoutEmailSent = Array.from(this.errorsSent.keys()).some(
-      (error) => error.replace(/[0-9]/g, '') === message.replace(/[0-9]/g, '')
-    );
-
-    if (!timeoutEmailSent) {
-      this.send([message, ...recentErrors], true);
-    }
+  public getRecentErrors() {
+    return Array.from(this.errorsSent.keys());
   }
 
   public clearErrors() {
