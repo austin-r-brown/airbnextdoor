@@ -5,7 +5,7 @@
   "scripts": {
     "start": "node dist/app.js",
     "build": "npx tsc --outDir dist app.ts",
-    "postinstall": "node postinstall.js"
+    "postinstall": "node postinstall.js && npm run build"
   },
   "dependencies": {
     "axios": "^1.6.5",
