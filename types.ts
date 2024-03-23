@@ -4,9 +4,12 @@ export type Booking = {
   firstNight: ISODate;
   lastNight: ISODate;
   isBlockedOff?: boolean;
+  isActive?: boolean;
 };
 
 export type BookingsMap = Map<ISODate, Booking>;
+
+export type NotificationBuffer = [string, Booking, Partial<Booking>?][];
 
 export type CalendarDay = {
   booked: boolean;

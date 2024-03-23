@@ -1,6 +1,5 @@
-import { Booking, BookingChange, ISODate, CalendarDay, BookingsMap } from './types';
+import { Booking, BookingChange, ISODate, CalendarDay, BookingsMap, NotificationBuffer } from './types';
 import {
-  timeUntilHour,
   countDaysBetween,
   offsetDay,
   getBookingDateRange,
@@ -13,23 +12,25 @@ import { EmailService } from './services/email.service';
 import { LogService } from './services/log.service';
 import { AirbnbService } from './services/airbnb.service';
 import { DateService } from './services/date.service';
-import { API_TIMEOUT, INTERVAL, SEND_DEBOUNCE_TIME } from './constants';
+import { SEND_DEBOUNCE_TIME } from './constants';
 import { WatchdogService } from './services/watchdog.service';
+import { SchedulerService } from './services/scheduler.service';
 
-class App {
+export class App {
   private readonly date: DateService = new DateService();
   private readonly log: LogService = new LogService();
   private readonly email: EmailService = new EmailService(this.log);
   private readonly watchdog: WatchdogService = new WatchdogService(this.log, this.email);
   private readonly airbnb: AirbnbService = new AirbnbService(this.log, this.date, this.email);
   private readonly db: DbService = new DbService(this.log, this.airbnb);
+  private readonly scheduler: SchedulerService = new SchedulerService(this);
 
   /** Array of all known bookings and blocked off periods */
   private bookings: Booking[] = [];
 
   /** Used for debouncing notifications sent and JSON backups saved */
   private sendDebounceTimer?: NodeJS.Timeout;
-  private notificationBuffer: string[] = [];
+  private notificationBuffer: NotificationBuffer = [];
 
   constructor() {
     this.log.start();
@@ -49,27 +50,37 @@ class App {
 
     if (!booking.isBlockedOff) {
       // Only send email if booking is not blocked off period
-      this.notificationBuffer.push(createNotification(title, booking, change));
+      this.notificationBuffer.push([title, booking, change]);
     }
 
     clearTimeout(this.sendDebounceTimer);
 
     this.sendDebounceTimer = setTimeout(() => {
-      const bookings = this.bookings.sort(
-        (a, b) => new Date(a.firstNight).valueOf() - new Date(b.firstNight).valueOf()
-      );
+      const bookings = this.sortAndUpdateBookings();
       this.db.save(bookings);
 
       if (this.notificationBuffer.length) {
+        const notifications = this.notificationBuffer.map((n) => createNotification(...n));
         const currentBookings = bookings.filter((b) => !b.isBlockedOff && b.lastNight >= this.date.yesterday);
-        if (currentBookings.length) {
-          this.notificationBuffer.push(formatCurrentBookings(currentBookings, this.date));
-        }
-        this.email.send(this.notificationBuffer);
 
+        if (currentBookings.length) {
+          notifications.push(formatCurrentBookings(currentBookings));
+        }
+
+        this.email.send(notifications);
         this.notificationBuffer = [];
       }
     }, SEND_DEBOUNCE_TIME);
+  }
+
+  private sortAndUpdateBookings(): Booking[] {
+    const bookings = this.bookings.sort(
+      (a, b) => new Date(a.firstNight).valueOf() - new Date(b.firstNight).valueOf()
+    );
+    bookings.forEach(
+      (b) => (b.isActive = b.firstNight <= this.date.today && b.lastNight >= this.date.yesterday)
+    );
+    return bookings;
   }
 
   /** Sets isBlockedOff property on booking to true and sends cancelled notification */
@@ -167,7 +178,7 @@ class App {
   }
 
   /** Sends notification when guests are arriving or leaving today */
-  private guestChangeNotification() {
+  public guestChangeNotification() {
     let startingToday;
     let endingToday;
 
@@ -291,45 +302,24 @@ class App {
     return existingBookings;
   }
 
-  /** Determines when app will run next and schedules it */
-  private scheduleNextRun() {
-    const timeUntilMidnight = timeUntilHour(24);
-    // Do a check just before and after midnight
-    if (timeUntilMidnight <= INTERVAL) {
-      const nextIsPostMidnight = timeUntilMidnight <= API_TIMEOUT;
-      const timeout = nextIsPostMidnight ? timeUntilMidnight + API_TIMEOUT : timeUntilMidnight - API_TIMEOUT;
-      setTimeout(() => this.run(nextIsPostMidnight), timeout);
-    } else {
-      setTimeout(this.run, INTERVAL);
-    }
-  }
-
-  private run = async (isPostMidnight: boolean = false) => {
+  public run = async () => {
     this.date.set(); // Set today's date
     const calendar = await this.airbnb.fetch(); // Fetch latest data from Airbnb
 
-    if (calendar?.size) {
-      // Check for new or altered bookings
-      const existingBookings = this.checkExistingBookings(calendar);
-      const [newBookings, gaps] = this.checkForNewBookings(calendar, existingBookings);
-
-      if (isPostMidnight) {
-        // If new booking appears right after midnight it is most likely a gap
-        gaps.concat(newBookings).forEach((gap) => this.addBlockedOff(gap));
-      } else {
-        this.addBookings(newBookings);
-        this.checkAdjacentBookings(gaps, existingBookings);
-      }
-    }
-
-    if (timeUntilHour(9) <= INTERVAL) {
-      // Send morning summary notifications
-      this.guestChangeNotification();
-    }
-
-    this.scheduleNextRun();
-
     if (calendar) {
+      if (calendar.size) {
+        // Check for new or altered bookings
+        const existingBookings = this.checkExistingBookings(calendar);
+        const [newBookings, gaps] = this.checkForNewBookings(calendar, existingBookings);
+
+        if (this.scheduler.isPostMidnight) {
+          // If new booking appears right after midnight it is most likely a gap
+          gaps.concat(newBookings).forEach((gap) => this.addBlockedOff(gap));
+        } else {
+          this.addBookings(newBookings);
+          this.checkAdjacentBookings(gaps, existingBookings);
+        }
+      }
       // Indicate process has successfully completed
       this.watchdog.success();
     }

@@ -1,4 +1,3 @@
-import { DateService } from '../services/date.service';
 import { Booking, BookingChange } from '../types';
 import { offsetDay } from './date.helper';
 
@@ -57,10 +56,9 @@ export const formatBooking = (
 };
 
 /** Generates HTML for Current Bookings summary that is appended to each email */
-export const formatCurrentBookings = (bookings: Booking[], date: DateService): string => {
+export const formatCurrentBookings = (bookings: Booking[]): string => {
   const bookingsHtml = bookings.map((b) => {
-    const isActive = b.firstNight <= date.today && b.lastNight >= date.yesterday;
-    return formatBooking(b, isActive ? 'today' : '');
+    return formatBooking(b, b.isActive ? 'today' : '');
   }).join(`
     `);
 
@@ -71,8 +69,10 @@ export const formatCurrentBookings = (bookings: Booking[], date: DateService): s
 /** Generates HTML for a notification to be sent via email */
 export const createNotification = (title: string, booking: Booking, change?: Partial<Booking>): string => {
   const [changeType] = Object.entries(BookingChange).find(([, c]) => c === title) ?? [];
+  const cssClass = changeType?.toLowerCase() ?? (booking.isActive ? 'today' : '');
+
   // Use BookingChange enum keys as CSS class names
-  const bookingHtml = formatBooking(booking, changeType?.toLowerCase(), change);
+  const bookingHtml = formatBooking(booking, cssClass, change);
 
   return `<span class="title">${title}</span>
     ${bookingHtml}`;
