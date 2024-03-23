@@ -72,11 +72,12 @@ export const isBookingInCalendarRange = (booking: Booking, calendar: Calendar): 
 };
 
 /** Calendar object used for mapping response from Airbnb */
-export class Calendar extends Map<ISODate, CalendarDay> {
+export class Calendar {
   private keyOrder: ISODate[] = [];
+  private map = new Map<ISODate, CalendarDay>();
 
-  constructor() {
-    super();
+  get size(): number {
+    return this.map.size;
   }
 
   first(): ISODate {
@@ -89,21 +90,21 @@ export class Calendar extends Map<ISODate, CalendarDay> {
 
   addUnsorted(days: CalendarDay[]) {
     days.forEach((day) => {
-      if (!this.has(day.date)) {
+      if (!this.map.has(day.date)) {
         this.keyOrder.push(day.date);
       }
-      this.set(day.date, day);
+      this.map.set(day.date, day);
     });
     this.keyOrder.sort();
   }
 
   push(day: CalendarDay) {
-    this.set(day.date, day);
+    this.map.set(day.date, day);
     this.keyOrder.push(day.date);
   }
 
   unshift(day: CalendarDay) {
-    this.set(day.date, day);
+    this.map.set(day.date, day);
     this.keyOrder.unshift(day.date);
   }
 
@@ -112,6 +113,10 @@ export class Calendar extends Map<ISODate, CalendarDay> {
   }
 
   days(): CalendarDay[] {
-    return this.keyOrder.map((key) => this.get(key) as CalendarDay);
+    return this.keyOrder.map((key) => this.map.get(key) as CalendarDay);
+  }
+
+  get(date: ISODate): CalendarDay | undefined {
+    return this.map.get(date);
   }
 }

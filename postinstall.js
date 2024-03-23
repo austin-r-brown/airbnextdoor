@@ -1,4 +1,5 @@
 const fs = require('fs');
+const { exec } = require('child_process');
 
 const fileName = '.env';
 
@@ -19,5 +20,14 @@ const createEnv = () => {
     });
   }
 };
+
+exec('npm run build', (error, stdout, stderr) => {
+  const errorMsg = error?.message || stderr;
+  if (errorMsg) {
+    console.error(`Error: ${errorMsg}`);
+    return;
+  }
+  console.log(stdout);
+});
 
 createEnv();

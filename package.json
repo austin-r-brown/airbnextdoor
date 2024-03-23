@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "main": "app.ts",
   "scripts": {
-    "start": "npx ts-node app.ts",
+    "start": "node dist/app.js",
+    "build": "npx tsc --outDir dist app.ts",
     "postinstall": "node postinstall.js"
   },
   "dependencies": {
@@ -12,7 +13,8 @@
     "fs": "^0.0.1-security",
     "path": "^0.12.7",
     "sib-api-v3-sdk": "^8.5.0",
-    "ts-node": "^10.9.2"
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.3"
   },
   "devDependencies": {
     "@types/node": "^20.11.16"

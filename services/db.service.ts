@@ -1,8 +1,8 @@
 import { Booking } from '../types';
 import { AirbnbService } from './airbnb.service';
 import { LogService } from './log.service';
-import fs from 'fs';
-import path from 'path';
+import * as fs from 'fs';
+import * as path from 'path';
 
 const DB_ROOT_DIR = 'db';
 const BACKUPS_ROOT_DIR = 'backups';

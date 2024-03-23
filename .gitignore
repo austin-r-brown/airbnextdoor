@@ -4,5 +4,6 @@ Thumbs.db
 .env
 *.json
 db
+dist
 
 node_modules
