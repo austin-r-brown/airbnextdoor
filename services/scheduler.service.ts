@@ -44,7 +44,7 @@ export class SchedulerService {
     // Set isMidnightCheck to true prior to doing the check so that no overlapping runs occur
     setTimeout(() => (this.isMidnightCheck = true), setIsMidnightCheck);
 
-    setTimeout(this.app.run, preMidnight);
+    setTimeout(() => this.app.run(), preMidnight);
 
     setTimeout(async () => {
       this.isPostMidnight = true;
