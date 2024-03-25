@@ -73,6 +73,7 @@ export class App {
     }, SEND_DEBOUNCE_TIME);
   }
 
+  /** Sorts bookings by check in date and sets isActive property based on current date */
   private sortAndUpdateBookings(): Booking[] {
     const bookings = this.bookings.sort(
       (a, b) => new Date(a.firstNight).valueOf() - new Date(b.firstNight).valueOf()

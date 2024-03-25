@@ -58,7 +58,7 @@ export const formatBooking = (
 /** Generates HTML for Current Bookings summary that is appended to each email */
 export const formatCurrentBookings = (bookings: Booking[]): string => {
   const bookingsHtml = bookings.map((b) => {
-    return formatBooking(b, b.isActive ? 'today' : '');
+    return formatBooking(b, b.isActive ? 'active' : '');
   }).join(`
     `);
 
@@ -69,9 +69,9 @@ export const formatCurrentBookings = (bookings: Booking[]): string => {
 /** Generates HTML for a notification to be sent via email */
 export const createNotification = (title: string, booking: Booking, change?: Partial<Booking>): string => {
   const [changeType] = Object.entries(BookingChange).find(([, c]) => c === title) ?? [];
-  const cssClass = changeType?.toLowerCase() ?? (booking.isActive ? 'today' : '');
-
   // Use BookingChange enum keys as CSS class names
+  const cssClass = changeType?.toLowerCase() ?? (booking.isActive ? 'active' : '');
+
   const bookingHtml = formatBooking(booking, cssClass, change);
 
   return `<span class="title">${title}</span>
@@ -214,7 +214,7 @@ const CSS = `
     }
   }
 
-  .booking.today .half {
+  .booking.active .half {
     border-color: #41b0fa;
     color: black;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);

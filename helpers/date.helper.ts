@@ -45,8 +45,8 @@ export const getBookingDateRange = (booking: Booking): ISODate[] => {
  * Extends calendar to include all dates from booking if booking dates are already partially included in calendar
  */
 export const isBookingInCalendarRange = (booking: Booking, calendar: Calendar): boolean => {
-  const firstDate = calendar.first();
-  const lastDate = calendar.last();
+  const firstDate = calendar.first;
+  const lastDate = calendar.last;
 
   if (booking.firstNight < firstDate) {
     if (booking.lastNight < firstDate) {
@@ -80,11 +80,11 @@ export class Calendar {
     return this.map.size;
   }
 
-  first(): ISODate {
+  get first(): ISODate {
     return this.keyOrder[0];
   }
 
-  last(): ISODate {
+  get last(): ISODate {
     return this.keyOrder[this.keyOrder.length - 1];
   }
 
