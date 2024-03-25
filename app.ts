@@ -6,7 +6,7 @@ import {
   Calendar,
   isBookingInCalendarRange,
 } from './helpers/date.helper';
-import { createNotification, formatCurrentBookings } from './helpers/email.helper';
+import { formatCurrentBookings, createNotifications } from './helpers/email.helper';
 import { DbService } from './services/db.service';
 import { EmailService } from './services/email.service';
 import { LogService } from './services/log.service';
@@ -59,8 +59,9 @@ export class App {
       const bookings = this.sortAndUpdateBookings();
       this.db.save(bookings);
 
-      if (this.notificationBuffer.length) {
-        const notifications = this.notificationBuffer.map((n) => createNotification(...n));
+      const notifications = createNotifications(this.notificationBuffer);
+
+      if (notifications.length) {
         const currentBookings = bookings.filter((b) => !b.isBlockedOff && b.lastNight >= this.date.yesterday);
 
         if (currentBookings.length) {

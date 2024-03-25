@@ -73,7 +73,7 @@ export enum ConsoleType {
 
 export enum BookingChange {
   New = 'New Booking',
-  Cancelled = 'Booking Cancelled',
+  Cancelled = 'Cancelled Booking',
   Extended = 'Booking Extended',
   Shortened = 'Booking Shortened',
 }
