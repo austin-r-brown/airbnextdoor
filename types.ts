@@ -1,5 +1,7 @@
 export type ISODate = `${string}-${string}-${string}`;
 
+export type Time24Hr = [number, number?, number?];
+
 export type Booking = {
   firstNight: ISODate;
   lastNight: ISODate;

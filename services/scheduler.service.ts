@@ -1,11 +1,15 @@
 import { App } from '../app';
 import { API_TIMEOUT, INTERVAL, MS_IN_DAY } from '../constants';
-import { timeUntilHour } from '../helpers/date.helper';
+import { timeUntil } from '../helpers/date.helper';
+import { Time24Hr } from '../types';
+
+const PRE_MIDNIGHT: Time24Hr = [23, 59, 50]; // 11:59:50 PM
+const POST_MIDNIGHT: Time24Hr = [0, 0, 10]; // 12:00:10 AM
 
 /** Service for scheduling recurring processes in main App */
 export class SchedulerService {
-  public isMidnightCheck: boolean = false;
   public isPostMidnight: boolean = false;
+  private isMidnightCheck: boolean = false;
 
   constructor(private readonly app: App) {
     this.midnightCheck();
@@ -18,8 +22,7 @@ export class SchedulerService {
     let nextRun = INTERVAL;
 
     if (this.isMidnightCheck) {
-      const postMidnight = timeUntilHour(24) + API_TIMEOUT;
-      nextRun += postMidnight;
+      nextRun += timeUntil(...POST_MIDNIGHT);
     }
 
     setTimeout(() => {
@@ -30,38 +33,45 @@ export class SchedulerService {
 
   /** Schedules app to be ran just before and after midnight for comparison */
   private midnightCheck() {
-    const timeUntilMidnight = timeUntilHour(24);
-    let preMidnight = timeUntilMidnight - API_TIMEOUT;
-    let postMidnight = timeUntilMidnight + API_TIMEOUT;
-    let setIsMidnightCheck = preMidnight - (INTERVAL + API_TIMEOUT);
+    let timeUntilCheck = timeUntil(...PRE_MIDNIGHT) - (INTERVAL + API_TIMEOUT);
 
-    if (setIsMidnightCheck <= 0) {
-      preMidnight += MS_IN_DAY;
-      postMidnight += MS_IN_DAY;
-      setIsMidnightCheck += MS_IN_DAY;
+    if (timeUntilCheck <= 0) {
+      timeUntilCheck += MS_IN_DAY;
     }
 
-    // Set isMidnightCheck to true prior to doing the check so that no overlapping runs occur
-    setTimeout(() => (this.isMidnightCheck = true), setIsMidnightCheck);
-
-    setTimeout(() => this.app.run(), preMidnight);
-
     setTimeout(async () => {
-      this.isPostMidnight = true;
+      this.isMidnightCheck = true;
+      await this.waitUntil(...PRE_MIDNIGHT);
       await this.app.run();
-      this.isPostMidnight = false;
+      if (new Date().getHours() !== 0) {
+        // Only proceed with check if midnight hasn't passed yet
+        await this.waitUntil(...POST_MIDNIGHT);
+        this.isPostMidnight = true;
+        await this.app.run();
+        this.isPostMidnight = false;
+      }
       this.isMidnightCheck = false;
       this.midnightCheck();
-    }, postMidnight);
+    }, timeUntilCheck);
   }
 
   /** Schedules anything that should occur in the morning */
   private morningActivities() {
-    const timeInMorning = timeUntilHour(9);
+    const timeInMorning = 9;
 
     setTimeout(() => {
       this.app.guestChangeNotification();
       this.morningActivities();
-    }, timeInMorning);
+    }, timeUntil(timeInMorning));
+  }
+
+  /** Returns a promise that resolves at specified time (24 hr) */
+  private waitUntil(hour: number, minute?: number, seconds?: number): Promise<void> {
+    const ms = timeUntil(hour, minute, seconds);
+    return new Promise<void>((resolve) => {
+      setTimeout(() => {
+        resolve();
+      }, ms);
+    });
   }
 }

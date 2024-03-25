@@ -4,11 +4,11 @@ import { MS_IN_DAY } from '../constants';
 /** Converts Date object to 'YYYY-MM-DD' formatted string */
 export const getIsoDate = (date: Date): ISODate => date.toISOString().split('T')[0] as ISODate;
 
-/** Returns number of ms until specified hour (24 hr time) */
-export const timeUntilHour = (hour: number): number => {
+/** Returns number of ms until specified time (24 hr) */
+export const timeUntil = (hour: number, minute?: number, seconds?: number): number => {
   const now = new Date();
   const target = new Date(now);
-  target.setHours(hour, 0, 0, 0);
+  target.setHours(hour, minute ?? 0, seconds ?? 0, 0);
   if (target.getTime() < now.getTime()) {
     target.setDate(target.getDate() + 1);
   }
