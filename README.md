@@ -1,6 +1,9 @@
 # airbnextdoor
 
-This application is designed to send email updates when the booked dates change on a specified Airbnb listing.
+This application is designed to keep track of a specified Airbnb listing's bookings by assuming check in and check out dates based on current booking availability. Notifications sent via email include:
+- New, cancelled, extended or shortened bookings in real time
+- Guests expected to be arriving or leaving
+- Every notification includes a full list of current/future bookings
 
 ### Installation
 
