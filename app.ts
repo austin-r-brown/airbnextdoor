@@ -63,12 +63,13 @@ export class App {
 
       if (notifications.length) {
         const currentBookings = bookings.filter((b) => !b.isBlockedOff && b.lastNight >= this.date.yesterday);
+        let footer: string | undefined;
 
         if (currentBookings.length) {
-          notifications.push(formatCurrentBookings(currentBookings));
+          footer = formatCurrentBookings(currentBookings);
         }
 
-        this.email.send(notifications);
+        this.email.send(notifications, footer);
         this.notificationBuffer = [];
       }
     }, SEND_DEBOUNCE_TIME);
@@ -198,10 +199,10 @@ export class App {
     }
 
     if (endingToday) {
-      this.notify('Bookings Ending Today', endingToday);
+      this.notify('Ending Today', endingToday);
     }
     if (startingToday) {
-      this.notify('Bookings Starting Today', startingToday);
+      this.notify('Starting Today', startingToday);
     }
   }
 

@@ -35,17 +35,17 @@ export class EmailService {
     }
   }
 
-  public send(notifications: string[]) {
+  public send(notifications: string[], footer?: string) {
     if (this.isUserInputValid) {
       this.log.info('********* Sending Email *********');
-      this.smtpConfig.htmlContent = createEmailBody(notifications);
+      this.smtpConfig.htmlContent = createEmailBody(notifications, footer);
 
       this.api.sendTransacEmail(this.smtpConfig).then(
         (data: any) => {
           this.log.info(`Email sent successfully. Returned data: ${JSON.stringify(data)}`);
         },
         (err: any) => {
-          setTimeout(() => this.send(notifications), API_TIMEOUT);
+          setTimeout(() => this.send(notifications, footer), API_TIMEOUT);
           const { message } = JSON.parse(err?.response?.text ?? '{}');
           this.log.error(`Error occurred sending email: ${message ? `"${message}"` : err}`);
         }

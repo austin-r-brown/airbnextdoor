@@ -103,7 +103,7 @@ export const formatNotification = (title: string, bookings: Booking[], change?: 
 };
 
 /** Generates HTML for entire email body using previously created notifications */
-export const createEmailBody = (notifications: string[]): string =>
+export const createEmailBody = (notifications: string[], footer?: string): string =>
   `<!DOCTYPE html>
   <html lang="en">
     <head>
@@ -114,6 +114,7 @@ export const createEmailBody = (notifications: string[]): string =>
     <body>
       ${notifications.map((n) => `<div class="notification">${n}</div>`).join(`
       `)}
+      <div class="notification" id="footer">${footer}</div>
     </body>
   </html>`;
 
@@ -149,6 +150,13 @@ const CSS = `
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     justify-content: center;
     display: grid;
+  }
+
+  #footer {
+    background: none;
+    box-shadow: none;
+    color: #383838;
+    margin-top: 20px;
   }
 
   .booking {
