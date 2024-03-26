@@ -44,7 +44,7 @@ export class App {
     this.run();
   }
 
-  /** Sends all notifications that have been attempted within debounce period and archives bookings */
+  /** Sends all notifications that have been attempted within debounce period */
   private notify(title: string, booking: Booking, change?: Partial<Booking>) {
     this.log.notification(title, booking, change);
 
@@ -57,17 +57,11 @@ export class App {
 
     this.sendDebounceTimer = setTimeout(() => {
       const bookings = this.sortAndUpdateBookings();
-      this.db.save(bookings);
-
       const notifications = createNotifications(this.notificationBuffer);
 
       if (notifications.length) {
         const currentBookings = bookings.filter((b) => !b.isBlockedOff && b.lastNight >= this.date.yesterday);
-        let footer: string | undefined;
-
-        if (currentBookings.length) {
-          footer = formatCurrentBookings(currentBookings);
-        }
+        const footer = formatCurrentBookings(currentBookings);
 
         this.email.send(notifications, footer);
         this.notificationBuffer = [];
@@ -75,7 +69,7 @@ export class App {
     }, SEND_DEBOUNCE_TIME);
   }
 
-  /** Sorts bookings by check in date and sets isActive property based on current date */
+  /** Sorts bookings by check in date, sets isActive property based on current date and saves to DB */
   private sortAndUpdateBookings(): Booking[] {
     const bookings = this.bookings.sort(
       (a, b) => new Date(a.firstNight).valueOf() - new Date(b.firstNight).valueOf()
@@ -83,6 +77,7 @@ export class App {
     bookings.forEach(
       (b) => (b.isActive = b.firstNight <= this.date.today && b.lastNight >= this.date.yesterday)
     );
+    this.db.save(bookings);
     return bookings;
   }
 
@@ -92,7 +87,7 @@ export class App {
     booking.isBlockedOff = true;
   }
 
-  /** Adds blocked off booking to this.bookings array and saves to DB */
+  /** Adds new blocked off period and saves to DB */
   private addBlockedOff(booking: Booking) {
     booking.isBlockedOff = true;
     this.bookings.push(booking);

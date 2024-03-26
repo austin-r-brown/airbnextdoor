@@ -56,14 +56,16 @@ export const formatBooking = (
 };
 
 /** Generates HTML for Current Bookings summary that is appended to each email */
-export const formatCurrentBookings = (bookings: Booking[]): string => {
-  const bookingsHtml = bookings.map((b) => {
-    return formatBooking(b, b.isActive ? 'active' : '');
-  }).join(`
-    `);
+export const formatCurrentBookings = (bookings: Booking[]): string | undefined => {
+  if (bookings.length) {
+    const bookingsHtml = bookings.map((b) => {
+      return formatBooking(b, b.isActive ? 'active' : '');
+    }).join(`
+      `);
 
-  return `<span class="title">Current Bookings</span>
-    ${bookingsHtml}`;
+    return `<span class="title">Current Bookings</span>
+      ${bookingsHtml}`;
+  }
 };
 
 /** Groups notifications from notification buffer by title and returns array of HTML notification strings */
