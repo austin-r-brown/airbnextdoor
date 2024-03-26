@@ -44,7 +44,7 @@ export class App {
     this.run();
   }
 
-  /** Sends all notifications that have been attempted within past second, sorts bookings and saves to DB */
+  /** Sends all notifications that have been attempted within debounce period and archives bookings */
   private notify(title: string, booking: Booking, change?: Partial<Booking>) {
     this.log.notification(title, booking, change);
 
