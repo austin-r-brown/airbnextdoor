@@ -1,7 +1,7 @@
 import { EmailConfig } from '../types';
 import { LogService } from './log.service';
 import { API_TIMEOUT } from '../constants';
-import { createEmailBody } from '../helpers/email.helper';
+import { EMAIL_CSS } from '../helpers/email.helper';
 
 const SibApiV3Sdk = require('sib-api-v3-sdk');
 const { SIB_API_KEY, SEND_FROM_EMAIL, SEND_TO_EMAILS } = process.env;
@@ -38,7 +38,23 @@ export class EmailService {
   public send(notifications: string[], footer?: string) {
     if (this.isUserInputValid) {
       this.log.info('********* Sending Email *********');
-      this.smtpConfig.htmlContent = createEmailBody(notifications, footer);
+
+      const footerHtml = footer ? `<div class="notification" id="footer">${footer}</div>` : '';
+      const bodyHtml = notifications.map((n) => `<div class="notification">${n}</div>`).join(`
+      `);
+
+      this.smtpConfig.htmlContent = `<!DOCTYPE html>
+        <html lang="en">
+          <head>
+            <style>
+              ${EMAIL_CSS}
+            </style>
+          </head>
+          <body>
+            ${bodyHtml}
+            ${footerHtml}
+          </body>
+        </html>`;
 
       this.api.sendTransacEmail(this.smtpConfig).then(
         (data: any) => {

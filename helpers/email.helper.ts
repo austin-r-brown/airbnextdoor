@@ -104,28 +104,12 @@ export const formatNotification = (title: string, bookings: Booking[], change?: 
     ${bookingHtml}`;
 };
 
-/** Generates HTML for entire email body using previously created notifications */
-export const createEmailBody = (notifications: string[], footer?: string): string =>
-  `<!DOCTYPE html>
-  <html lang="en">
-    <head>
-      <style>
-        ${CSS}
-      </style>
-    </head>
-    <body>
-      ${notifications.map((n) => `<div class="notification">${n}</div>`).join(`
-      `)}
-      <div class="notification" id="footer">${footer}</div>
-    </body>
-  </html>`;
-
 /** Generates HTML for unordered list using array of strings */
 export const createHtmlList = (items: string[]): string =>
   '<ul>' + items.map((li) => `<li>${li}</li>`).join('<br>') + '</ul>';
 
 /** CSS used for email body */
-const CSS = `
+export const EMAIL_CSS = `
   body {
     font-family: Arial, sans-serif;
     background-color: #f2f2f2;
@@ -137,7 +121,6 @@ const CSS = `
     margin-bottom: 4px;
     text-align: center;
     font-weight: bold;
-    font-size: 16.5px;
   }
 
   ul {
@@ -145,6 +128,8 @@ const CSS = `
   }
 
   .notification {
+    color: black;
+    font-size: 17px;
     margin: 15px 0px;
     padding: 15px 10px;
     background-color: #fff;
@@ -155,10 +140,14 @@ const CSS = `
   }
 
   #footer {
+    color: #333;
+    font-size: 16px;
     background: none;
     box-shadow: none;
-    color: #383838;
-    margin-top: 20px;
+    margin-top: 24px;
+    .active .half {
+      color: #1c1c1c;
+    }
   }
 
   .booking {
@@ -172,21 +161,21 @@ const CSS = `
     padding: 8px 0px;
     border: 1px solid #525252;
     background-color: #fcfcfc;
-    color: #383838;
     font-weight: bold;
+    font-size: 16px;
     padding-left: 10px;
     z-index: 2;
   }
 
   .left {
-    width: 155px;
+    width: 154px;
     border-top-left-radius: 8px;
     border-bottom-left-radius: 8px;
     border-right-width: 0.5px;
   }
 
   .right {
-    width: 165px;
+    width: 160px;
     border-top-right-radius: 8px;
     border-bottom-right-radius: 8px;
     border-left-width: 0.5px;
@@ -207,20 +196,17 @@ const CSS = `
   .booking.new .half {
     border-color: #27ae60;
     background-color: #eafaf1;
-    color: #333;
   }
 
   .booking.cancelled .half {
     border-color: #ff0000;
     background-color: #ffe6e6;
-    color: #333;
   }
 
   .booking.change {
     .half {
       border-color: #ffd700;
       background-color: #fffacd;
-      color: #333;
     }
     &.check-in {
       .right {
@@ -250,6 +236,5 @@ const CSS = `
 
   .booking.active .half {
     border-color: #41b0fa;
-    color: black;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
   }`;

@@ -117,7 +117,6 @@ export class App {
 
     if (changeType) {
       this.notify(changeType, booking, change);
-
       Object.assign(booking, change);
     }
   }
