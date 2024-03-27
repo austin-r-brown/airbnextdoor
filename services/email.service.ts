@@ -37,8 +37,6 @@ export class EmailService {
 
   public send(notifications: string[], footer?: string) {
     if (this.isUserInputValid) {
-      this.log.info('********* Sending Email *********');
-
       const footerHtml = footer ? `<div class="notification" id="footer">${footer}</div>` : '';
       const bodyHtml = notifications.map((n) => `<div class="notification">${n}</div>`).join(`
       `);
@@ -63,7 +61,7 @@ export class EmailService {
         (err: any) => {
           setTimeout(() => this.send(notifications, footer), API_TIMEOUT);
           const { message } = JSON.parse(err?.response?.text ?? '{}');
-          this.log.error(`Error occurred sending email: ${message ? `"${message}"` : err}`);
+          this.log.error(`Error occurred while sending email: ${message ? `"${message}"` : err}`);
         }
       );
     }
