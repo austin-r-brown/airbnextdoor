@@ -149,7 +149,7 @@ export class App {
     let firstNight: ISODate | null = null;
     let lastNight: ISODate | null = null;
 
-    calendar.days().forEach((day) => {
+    calendar.days.forEach((day) => {
       if (day.booked && !existingBookings.has(day.date)) {
         // If a booking is in progress, update the end date
         if (firstNight !== null) {
@@ -309,8 +309,11 @@ export class App {
         const existingBookings = this.checkExistingBookings(calendar);
         const [newBookings, gaps] = this.checkForNewBookings(calendar, existingBookings);
 
-        if (this.scheduler.isPostMidnight) {
-          // If new booking appears right after midnight it is most likely a gap
+        if (
+          this.scheduler.isPostMidnight ||
+          (newBookings.length > 1 && calendar.days.every((d) => d.booked))
+        ) {
+          // If new booking appears right after midnight, or if suddenly the entire calendar is booked, it is most likely blocked off
           gaps.concat(newBookings).forEach((gap) => this.addBlockedOff(gap));
         } else {
           this.addBookings(newBookings);

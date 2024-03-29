@@ -88,6 +88,10 @@ export class Calendar {
     return this.keyOrder[this.keyOrder.length - 1];
   }
 
+  get days(): CalendarDay[] {
+    return this.keyOrder.map((key) => this.map.get(key) as CalendarDay);
+  }
+
   addUnsorted(days: CalendarDay[]) {
     days.forEach((day) => {
       if (!this.map.has(day.date)) {
@@ -106,14 +110,6 @@ export class Calendar {
   unshift(day: CalendarDay) {
     this.map.set(day.date, day);
     this.keyOrder.unshift(day.date);
-  }
-
-  dates(): ISODate[] {
-    return this.keyOrder;
-  }
-
-  days(): CalendarDay[] {
-    return this.keyOrder.map((key) => this.map.get(key) as CalendarDay);
   }
 
   get(date: ISODate): CalendarDay | undefined {
