@@ -59,9 +59,14 @@ export class EmailService {
           this.log.info(`Email sent successfully. Returned data: ${JSON.stringify(data)}`);
         },
         (err: any) => {
-          setTimeout(() => this.send(notifications, footer), API_TIMEOUT);
           const { message } = JSON.parse(err?.response?.text ?? '{}');
           this.log.error(`Error occurred while sending email: ${message ? `"${message}"` : err}`);
+
+          if (err?.status === 401) {
+            this.isUserInputValid = false;
+          } else {
+            setTimeout(() => this.send(notifications, footer), API_TIMEOUT);
+          }
         }
       );
     }
