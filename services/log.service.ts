@@ -79,7 +79,7 @@ export class LogService {
       endDate = booking.lastNight;
     }
 
-    const bookingMsg = `[${start}: ${formatDate(booking.firstNight)}, ${end}: ${formatDate(endDate)}]`;
+    const bookingMsg = `[${start}: ${formatDate(booking.firstNight)} | ${end}: ${formatDate(endDate)}]`;
 
     if (change?.firstNight) {
       changeMsg = [`New ${start}: ${formatDate(change.firstNight)}`];

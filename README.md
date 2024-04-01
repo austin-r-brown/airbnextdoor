@@ -50,7 +50,7 @@ The email address you would like the notifications to be sent to. Either single 
 
 #### INTERVAL_MINS
 
-This number determines how many minutes the app will wait between each time it checks for new bookings.
+This number determines how many minutes the app will wait between each time it checks Airbnb for new bookings. By default, this value is 5 minutes, with a minimum of 30 seconds and a maximum of 12 hours.
 
 ### Starting The App
 
