@@ -218,13 +218,16 @@ export class App {
         succeeding = succeedingBooking;
       }
 
-      if (preceding && !succeeding) {
+      if (preceding && succeeding) {
+        // Gap between two bookings is likely blocked off
+        this.addBlockedOff(gap);
+      } else if (preceding && !succeeding) {
         this.changeBookingLength(preceding, { lastNight: gap.lastNight });
-      } else if (succeeding && !preceding) {
+      } else if (!preceding && succeeding) {
         this.changeBookingLength(succeeding, { firstNight: gap.firstNight });
       } else {
-        // Gap is either between two bookings or orphaned, save to exclude from adjacent future bookings
-        this.addBlockedOff(gap);
+        // Orphaned gap may be actual booking
+        this.addBookings([gap]);
       }
     });
   }
