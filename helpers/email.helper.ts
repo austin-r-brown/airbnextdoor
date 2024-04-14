@@ -213,11 +213,7 @@ export const EMAIL_CSS = `
         z-index: -1;
       }
       .v-line {
-        position: absolute;
-        bottom: 36px;
         left: 85px;
-        border-left: 1px solid #333;
-        height: 15px;
       }
     }
     &.check-out {
@@ -225,11 +221,7 @@ export const EMAIL_CSS = `
         z-index: -1;
       }
       .v-line {
-        position: absolute;
-        bottom: 36px;
         right: 90px;
-        border-left: 1px solid #333;
-        height: 15px;
       }
     }
   }
@@ -237,4 +229,11 @@ export const EMAIL_CSS = `
   .booking.active .half {
     border-color: #41b0fa;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  .v-line {
+    position: absolute;
+    bottom: 36px;
+    border-left: 1px solid #333;
+    height: 15px;
   }`;
