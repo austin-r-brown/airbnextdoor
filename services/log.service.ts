@@ -9,14 +9,16 @@ const SUCCESS_MSG = 'Airbnb dates checked successfully';
 export class LogService {
   private readonly logged: LogItem[] = [];
 
-  private readonly timestamp = () => `(${new Date().toLocaleString()})`;
+  private get timestamp() {
+    return `(${new Date().toLocaleString()})`;
+  }
 
   private log(values: any[], type: ConsoleType) {
     const [first] = values;
     if (values.length === 1 && typeof first === 'string') {
-      values[0] = `${first} ${this.timestamp()}`;
+      values[0] = `${first} ${this.timestamp}`;
     } else {
-      values.push(this.timestamp());
+      values.push(this.timestamp);
     }
 
     const item: LogItem = [
@@ -53,7 +55,7 @@ export class LogService {
     const [lastItem] = this.logged[this.logged.length - 1];
     if (lastItem[0].startsWith(SUCCESS_MSG)) {
       // Only display one success message at a time
-      lastItem[0] = `${SUCCESS_MSG} ${this.timestamp()}`;
+      lastItem[0] = `${SUCCESS_MSG} ${this.timestamp}`;
       this.resetConsole();
     } else {
       this.info(SUCCESS_MSG);
@@ -61,7 +63,7 @@ export class LogService {
   }
 
   public start() {
-    this.logged.unshift([[`${START_MSG} ${this.timestamp()}`], ConsoleType.Info]);
+    this.logged.unshift([[`${START_MSG} ${this.timestamp}`], ConsoleType.Info]);
     this.resetConsole();
   }
 
