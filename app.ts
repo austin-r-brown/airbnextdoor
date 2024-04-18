@@ -25,7 +25,7 @@ export class App {
   private readonly db: DbService = new DbService(this.log, this.airbnb);
   private readonly scheduler: SchedulerService = new SchedulerService(this);
 
-  /** Array of all known bookings and blocked off periods */
+  /** All known bookings and blocked off periods */
   private bookings: Booking[] = [];
 
   /** Used for debouncing notifications sent and JSON backups saved */
@@ -44,7 +44,7 @@ export class App {
     this.run();
   }
 
-  /** Sends all notifications that have been attempted within debounce period */
+  /** Sends all notifications that have accumulated during debounce period */
   private notify(title: string, booking: Booking, change?: Partial<Booking>) {
     this.log.notification(title, booking, change);
 
@@ -81,7 +81,7 @@ export class App {
     return bookings;
   }
 
-  /** Sets isBlockedOff property on booking to true and sends cancelled notification */
+  /** Sets isBlockedOff property and sends cancelled notification */
   private changeToBlockedOff(booking: Booking) {
     this.notify(BookingChange.Cancelled, booking);
     booking.isBlockedOff = true;
