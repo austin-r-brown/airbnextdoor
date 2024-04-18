@@ -60,7 +60,7 @@ export class EmailService {
         },
         (err: any) => {
           const { message } = JSON.parse(err?.response?.text ?? '{}');
-          this.log.error(`Error occurred while sending email: ${message ? `"${message}"` : err}`);
+          this.log.error(`Unable to send email: ${message ? `"${message}"` : err}`);
 
           if (err?.status === 401) {
             this.isUserInputValid = false;
