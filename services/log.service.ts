@@ -10,7 +10,7 @@ export class LogService {
   private readonly logged: LogItem[] = [];
 
   private get timestamp() {
-    return `(${new Date().toLocaleString()})`;
+    return `[${new Date().toLocaleString()}]`;
   }
 
   private log(values: any[], type: ConsoleType) {
@@ -53,7 +53,7 @@ export class LogService {
 
   public success() {
     const [lastItem] = this.logged[this.logged.length - 1];
-    if (lastItem[0].startsWith(SUCCESS_MSG)) {
+    if (typeof lastItem[0] === 'string' && lastItem[0].startsWith(SUCCESS_MSG)) {
       // Only display one success message at a time
       lastItem[0] = `${SUCCESS_MSG} ${this.timestamp}`;
       this.resetConsole();
@@ -81,7 +81,7 @@ export class LogService {
       endDate = booking.lastNight;
     }
 
-    const bookingMsg = `[${start}: ${formatDate(booking.firstNight)} | ${end}: ${formatDate(endDate)}]`;
+    const bookingMsg = `(${start}: ${formatDate(booking.firstNight)} | ${end}: ${formatDate(endDate)})`;
 
     if (change?.firstNight) {
       changeMsg = [`New ${start}: ${formatDate(change.firstNight)}`];
@@ -90,6 +90,6 @@ export class LogService {
       changeMsg = [`New ${end}: ${formatDate(changeDate)}`];
     }
 
-    this.info(...[titleMsg, bookingMsg, ...changeMsg]);
+    this.info(...[`${titleMsg}:`, bookingMsg, ...changeMsg]);
   }
 }

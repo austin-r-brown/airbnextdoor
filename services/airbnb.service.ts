@@ -33,7 +33,6 @@ export class AirbnbService {
     params: {
       operationName: API_OPERATION,
       locale: LOCALE,
-      currency: 'USD',
       extensions: JSON.stringify({
         persistedQuery: {
           version: 1,
@@ -56,10 +55,10 @@ export class AirbnbService {
   }
 
   /**
-   * Sends Airbnb request and builds Calendar object from response.
+   * Sends Airbnb request for calendar and builds Calendar object from response.
    * Returns empty calendar if no changes were found from previous response, null if request is unsuccessful
    */
-  public async fetch(): Promise<Calendar | null> {
+  public async fetchCalendar(): Promise<Calendar | null> {
     const requestVariables: AirbnbRequestVariables = {
       request: {
         count: 12,
@@ -120,6 +119,19 @@ export class AirbnbService {
       .catch(this.handleError);
 
     return result;
+  }
+
+  /** Fetches listing title from main Airbnb listing page */
+  public async fetchTitle(): Promise<string> {
+    try {
+      const response = await axios.get(`https://www.airbnb.com/rooms/${this.listingId}`);
+      const match = response.data.match(/<meta\s+property="og:description"\s+content="([^"]+)"\s*\/?>/);
+
+      if (match?.length > 1) {
+        return match[1];
+      }
+    } catch {}
+    return '';
   }
 
   /** Validates user input for Airbnb URL. Returns ID from URL if value is URL, trimmed ID if value is ID, otherwise undefined */

@@ -35,7 +35,7 @@ export type AirbnbApiConfig = {
   params: {
     operationName: string;
     locale: string;
-    currency: string;
+    currency?: string;
     variables?: string;
     extensions: string;
   };

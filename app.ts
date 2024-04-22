@@ -35,10 +35,10 @@ export class App {
   constructor() {
     this.log.start();
 
-    const previousBookings = this.db.load();
-    if (previousBookings.length) {
-      this.bookings = previousBookings;
-      this.log.info(`Loaded ${this.bookings.length} booking(s) from DB for listing ${this.airbnb.listingId}`);
+    const savedBookings = this.db.load();
+    if (savedBookings.length) {
+      this.bookings = savedBookings;
+      this.log.info(`Loaded ${savedBookings.length} booking(s) from DB for listing ${this.airbnb.listingId}`);
     }
 
     this.run();
@@ -304,7 +304,7 @@ export class App {
 
   public run = async () => {
     this.date.set(); // Set today's date
-    const calendar = await this.airbnb.fetch(); // Fetch latest data from Airbnb
+    const calendar = await this.airbnb.fetchCalendar(); // Fetch latest data from Airbnb
 
     if (calendar) {
       if (calendar.size) {
