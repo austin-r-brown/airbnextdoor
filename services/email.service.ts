@@ -1,7 +1,7 @@
 import { EmailConfig } from '../types';
 import { LogService } from './log.service';
 import { API_TIMEOUT } from '../constants';
-import { EMAIL_CSS } from '../helpers/email.helper';
+import * as fs from 'fs';
 
 const SibApiV3Sdk = require('sib-api-v3-sdk');
 const { SIB_API_KEY, SEND_FROM_EMAIL, SEND_TO_EMAILS } = process.env;
@@ -9,6 +9,8 @@ const { SIB_API_KEY, SEND_FROM_EMAIL, SEND_TO_EMAILS } = process.env;
 /** Service for handling user notifications */
 export class EmailService {
   private readonly api = new SibApiV3Sdk.TransactionalEmailsApi();
+  private readonly css = fs.readFileSync('styles.css', 'utf8');
+  private readonly errorsSent = new Map<string, boolean>();
 
   private readonly smtpConfig: EmailConfig = {
     sender: { email: (SEND_FROM_EMAIL ?? '').trim() },
@@ -16,10 +18,7 @@ export class EmailService {
       .trim()
       .split(',')
       .map((e) => ({ email: e.trim() })),
-    subject: 'Nextdoor Airbnb Updates',
   };
-
-  private readonly errorsSent = new Map<string, boolean>();
 
   private isUserInputValid: boolean = false;
 
@@ -41,11 +40,13 @@ export class EmailService {
       const bodyHtml = notifications.map((n) => `<div class="notification">${n}</div>`).join(`
       `);
 
+      const count = notifications.length;
+      this.smtpConfig.subject = `${this.log.listingTitle}: ${count} Notification${count > 1 ? 's' : ''}`;
       this.smtpConfig.htmlContent = `<!DOCTYPE html>
         <html lang="en">
           <head>
             <style>
-              ${EMAIL_CSS}
+              ${this.css}
             </style>
           </head>
           <body>

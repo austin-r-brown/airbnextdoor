@@ -22,7 +22,7 @@ export type CalendarDay = {
 export type EmailConfig = {
   sender: { email: string };
   to: { email: string }[];
-  subject: string;
+  subject?: string;
   htmlContent?: string;
 };
 

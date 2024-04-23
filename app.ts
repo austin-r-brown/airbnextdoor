@@ -33,15 +33,19 @@ export class App {
   private notificationBuffer: NotificationBuffer = [];
 
   constructor() {
-    this.log.start();
+    this.airbnb.fetchTitle().then((title) => {
+      this.log.start(title);
 
-    const savedBookings = this.db.load();
-    if (savedBookings.length) {
-      this.bookings = savedBookings;
-      this.log.info(`Loaded ${savedBookings.length} booking(s) from DB for listing ${this.airbnb.listingId}`);
-    }
+      const savedBookings = this.db.load();
+      if (savedBookings.length) {
+        this.bookings = savedBookings;
+        this.log.info(
+          `Loaded ${savedBookings.length} booking(s) from DB for listing ${this.airbnb.listingId}`
+        );
+      }
 
-    this.run();
+      this.run();
+    });
   }
 
   /** Sends all notifications that have accumulated during debounce period */

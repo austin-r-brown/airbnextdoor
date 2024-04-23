@@ -7,10 +7,13 @@ const SUCCESS_MSG = 'Airbnb dates checked successfully';
 
 /** Service for handling console log messages */
 export class LogService {
+  public listingTitle: string = '';
+
   private readonly logged: LogItem[] = [];
 
   private get timestamp() {
-    return `[${new Date().toLocaleString()}]`;
+    const title = this.listingTitle && ` - ${this.listingTitle}`;
+    return `[${new Date().toLocaleString() + title}]`;
   }
 
   private log(values: any[], type: ConsoleType) {
@@ -62,9 +65,9 @@ export class LogService {
     }
   }
 
-  public start() {
-    this.logged.unshift([[`${START_MSG} ${this.timestamp}`], ConsoleType.Info]);
-    this.resetConsole();
+  public start(listingTitle: string) {
+    this.listingTitle = listingTitle;
+    this.info(START_MSG);
   }
 
   public notification(title: string, booking: Booking, change?: Partial<Booking>) {

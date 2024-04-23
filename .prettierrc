@@ -4,5 +4,6 @@
   "singleQuote": true,
   "singleAttributePerLine": false,
   "printWidth": 110,
-  "bracketSameLine": true
+  "bracketSameLine": true,
+  "cssEnable": ["css"]
 }

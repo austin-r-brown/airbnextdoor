@@ -1,0 +1,132 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f2f2f2;
+    margin: 0px 5px;
+    min-width: 355px;
+}
+
+.title {
+    margin-bottom: 4px;
+    text-align: center;
+    font-weight: bold;
+}
+
+ul {
+    margin-bottom: 0px;
+}
+
+.notification {
+    color: black;
+    font-size: 17px;
+    margin: 15px 0px;
+    padding: 15px 10px;
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    justify-content: center;
+    display: grid;
+}
+
+#footer {
+    color: #333;
+    font-size: 16px;
+    background: none;
+    box-shadow: none;
+    margin-top: 24px;
+
+    .active .half {
+        color: #1c1c1c;
+    }
+}
+
+.booking {
+    display: flex;
+    margin-top: 10px;
+    position: relative;
+}
+
+.half {
+    display: flex;
+    padding: 8px 0px;
+    border: 1px solid #525252;
+    background-color: #fcfcfc;
+    font-weight: bold;
+    font-size: 16px;
+    padding-left: 10px;
+    z-index: 2;
+}
+
+.left {
+    width: 154px;
+    border-top-left-radius: 8px;
+    border-bottom-left-radius: 8px;
+    border-right-width: 0.5px;
+}
+
+.right {
+    width: 160px;
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+    border-left-width: 0.5px;
+}
+
+.text {
+    white-space: nowrap;
+    width: 50%;
+}
+
+.text.date {
+    padding-left: 6px;
+    font-weight: normal;
+    text-align: center;
+    padding-right: 4px;
+}
+
+.booking.new .half {
+    border-color: #27ae60;
+    background-color: #eafaf1;
+}
+
+.booking.cancelled .half {
+    border-color: #ff0000;
+    background-color: #ffe6e6;
+}
+
+.booking.change {
+    .half {
+        border-color: #ffd700;
+        background-color: #fffacd;
+    }
+
+    &.check-in {
+        .right {
+            z-index: -1;
+        }
+
+        .v-line {
+            left: 85px;
+        }
+    }
+
+    &.check-out {
+        .left {
+            z-index: -1;
+        }
+
+        .v-line {
+            right: 90px;
+        }
+    }
+}
+
+.booking.active .half {
+    border-color: #41b0fa;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.v-line {
+    position: absolute;
+    bottom: 36px;
+    border-left: 1px solid #333;
+    height: 15px;
+}
