@@ -1,10 +1,10 @@
 {
   "name": "airbnextdoor",
-  "version": "1.0.0-beta0",
-  "main": "app.ts",
+  "version": "1.1.0-beta0",
+  "main": "start.ts",
   "scripts": {
-    "start": "node -r ./dist/app.js -e \"new (require('./dist/app.js').App)()\"",
-    "build": "npx tsc --outDir dist app.ts",
+    "start": "node -r ./dist/start.js -e \"new (require('./dist/start.js').startApp)()\"",
+    "build": "npx tsc --outDir dist start.ts",
     "postinstall": "node createEnv.js && npm run build"
   },
   "dependencies": {

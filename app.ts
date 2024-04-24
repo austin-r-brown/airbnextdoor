@@ -15,14 +15,14 @@ import { DateService } from './services/date.service';
 import { SEND_DEBOUNCE_TIME } from './constants';
 import { WatchdogService } from './services/watchdog.service';
 import { SchedulerService } from './services/scheduler.service';
+import { CoreService } from './services/core.service';
 
 export class App {
   private readonly date: DateService = new DateService();
-  private readonly log: LogService = new LogService();
-  private readonly email: EmailService = new EmailService(this.log);
-  private readonly watchdog: WatchdogService = new WatchdogService(this.log, this.email);
-  private readonly airbnb: AirbnbService = new AirbnbService(this.log, this.date, this.email);
-  private readonly db: DbService = new DbService(this.log, this.airbnb);
+  private readonly email: EmailService = new EmailService(this.core, this.log);
+  private readonly watchdog: WatchdogService = new WatchdogService(this.core, this.log, this.email);
+  private readonly airbnb: AirbnbService = new AirbnbService(this.core, this.log, this.date, this.email);
+  private readonly db: DbService = new DbService(this.core, this.log);
   private readonly scheduler: SchedulerService = new SchedulerService(this);
 
   /** All known bookings and blocked off periods */
@@ -32,20 +32,14 @@ export class App {
   private sendDebounceTimer?: NodeJS.Timeout;
   private notificationBuffer: NotificationBuffer = [];
 
-  constructor() {
-    this.airbnb.fetchTitle().then((title) => {
-      this.log.start(title);
+  constructor(private readonly core: CoreService, private readonly log: LogService) {
+    const savedBookings = this.db.load();
+    if (savedBookings.length) {
+      this.bookings = savedBookings;
+      this.core.logInfoMessage(`Loaded ${savedBookings.length} booking(s) from DB`);
+    }
 
-      const savedBookings = this.db.load();
-      if (savedBookings.length) {
-        this.bookings = savedBookings;
-        this.log.info(
-          `Loaded ${savedBookings.length} booking(s) from DB for listing ${this.airbnb.listingId}`
-        );
-      }
-
-      this.run();
-    });
+    this.run();
   }
 
   /** Sends all notifications that have accumulated during debounce period */

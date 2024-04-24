@@ -1,5 +1,6 @@
 import { Booking } from '../types';
 import { AirbnbService } from './airbnb.service';
+import { CoreService } from './core.service';
 import { LogService } from './log.service';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -13,9 +14,9 @@ export class DbService {
   private backupsDir: string;
   private lastSavedFile?: string;
 
-  constructor(private readonly log: LogService, private readonly airbnb: AirbnbService) {
-    this.filepath = path.join(DB_ROOT_DIR, `${this.airbnb.listingId}.json`);
-    this.backupsDir = path.join(DB_ROOT_DIR, BACKUPS_ROOT_DIR, this.airbnb.listingId);
+  constructor(private readonly core: CoreService, private readonly log: LogService) {
+    this.filepath = path.join(DB_ROOT_DIR, `${this.core.listingId}.json`);
+    this.backupsDir = path.join(DB_ROOT_DIR, BACKUPS_ROOT_DIR, this.core.listingId);
     this.createFolders(this.backupsDir);
   }
 
@@ -26,9 +27,9 @@ export class DbService {
 
       fs.writeFile(this.filepath, jsonString, 'utf8', (err: any) => {
         if (err) {
-          this.log.error(`Error writing to DB file: "${err}"`);
+          this.core.logErrorMessage(`Error writing to DB file: "${err}"`);
         } else {
-          this.log.info('Data saved to DB successfully');
+          this.core.logInfoMessage(`Data saved to DB successfully`);
           this.lastSavedFile = jsonString;
           this.backup();
         }
@@ -48,7 +49,7 @@ export class DbService {
         }
       }
     } catch (err) {
-      this.log.error(`Error reading DB file: "${err}"`);
+      this.core.logErrorMessage(`Error reading DB file: "${err}"`);
     }
     if (!result.length) {
       const backup = this.restoreBackup();
@@ -64,7 +65,7 @@ export class DbService {
       if (this.lastSavedFile) {
         fs.copyFile(this.filepath, path.join(this.backupsDir, `${Date.now()}.json`), (err: any) => {
           if (err) {
-            this.log.error(`Error creating backup of DB file: "${err}"`);
+            this.core.logErrorMessage(`Error creating backup of DB file: "${err}"`);
           }
           resolve();
         });
@@ -88,11 +89,11 @@ export class DbService {
 
           if (Array.isArray(backupJsonData) && backupJsonData.length) {
             const date = this.getDateFromFile(file).toLocaleString();
-            this.log.info(`Successfully restored ${date} backup`);
+            this.core.logInfoMessage(`Successfully restored ${date} backup`);
             return backupJsonData;
           }
         } catch (err) {
-          this.log.error(`Error reading backup file ${file}: "${err}"`);
+          this.core.logErrorMessage(`Error reading backup file ${file}: "${err}"`);
         }
       }
     }
@@ -119,7 +120,7 @@ export class DbService {
         }
       }
     } catch (err: any) {
-      this.log.error(`Error creating folder: "${err.message}"`);
+      this.core.logErrorMessage(`Error creating folder: "${err.message}"`);
     }
   }
 }

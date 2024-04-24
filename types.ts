@@ -1,3 +1,8 @@
+// export type AirbnbListingDetails = {
+//   id: string;
+//   title: string;
+// };
+
 export type ISODate = `${string}-${string}-${string}`;
 
 export type Time24Hr = [number, number?, number?];

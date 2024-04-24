@@ -1,5 +1,6 @@
 import { MS_IN_MINUTE, WATCHDOG_TIMEOUT } from '../constants';
 import { createHtmlList } from '../helpers/email.helper';
+import { CoreService } from './core.service';
 import { EmailService } from './email.service';
 import { LogService } from './log.service';
 
@@ -8,7 +9,11 @@ export class WatchdogService {
   private lastSuccessfulRun: number = 0;
   private notificationSent: boolean = false;
 
-  constructor(private readonly log: LogService, private readonly email: EmailService) {
+  constructor(
+    private readonly core: CoreService,
+    private readonly log: LogService,
+    private readonly email: EmailService
+  ) {
     this.monitor();
   }
 
@@ -27,7 +32,7 @@ export class WatchdogService {
         const error = 'Application has not successfully run';
         const minutes = Math.round(timeSinceLastRun / MS_IN_MINUTE);
         const message = (this.lastSuccessfulRun ? `${error} within past ${minutes} minutes` : error) + '.';
-        this.log.error(message);
+        this.core.logErrorMessage(message);
         if (!this.notificationSent) {
           this.sendNotification(message);
         }

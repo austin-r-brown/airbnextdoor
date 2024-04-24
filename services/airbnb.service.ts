@@ -11,6 +11,7 @@ import { LogService } from './log.service';
 import { EmailService } from './email.service';
 import { DateService } from './date.service';
 import { LOCALE } from '../constants';
+import { CoreService } from './core.service';
 
 const API_OPERATION = 'PdpAvailabilityCalendar';
 const API_HASH = '8f08e03c7bd16fcad3c92a3592c19a8b559a0d0855a84028d1163d4733ed9ade';
@@ -18,7 +19,6 @@ const API_KEY = 'd306zoyjsyarp7ifhu67rjxn52tv0t20';
 
 /** Service for interacting with Airbnb */
 export class AirbnbService {
-  public listingId: string;
   private previousResponse?: string;
 
   /** Furthest date in the future known as having been available to book */
@@ -43,16 +43,11 @@ export class AirbnbService {
   };
 
   constructor(
+    private readonly core: CoreService,
     private readonly log: LogService,
     private readonly date: DateService,
     private readonly email: EmailService
-  ) {
-    const listingId = this.validateListingId();
-    if (!listingId) {
-      throw 'Valid Airbnb URL or Listing ID must be provided in .env file. See README.md for more info.';
-    }
-    this.listingId = listingId;
-  }
+  ) {}
 
   /**
    * Sends Airbnb request for calendar and builds Calendar object from response.
@@ -62,7 +57,7 @@ export class AirbnbService {
     const requestVariables: AirbnbRequestVariables = {
       request: {
         count: 12,
-        listingId: this.listingId,
+        listingId: this.core.listingId,
         month: this.date.month,
         year: this.date.year,
       },
@@ -122,27 +117,14 @@ export class AirbnbService {
   }
 
   /** Fetches listing title from main Airbnb listing page */
-  public async fetchTitle(): Promise<string> {
+  public static async fetchTitle(listingId: string): Promise<string | undefined> {
     try {
-      const response = await axios.get(`https://www.airbnb.com/rooms/${this.listingId}`);
+      const response = await axios.get(`https://www.airbnb.com/rooms/${listingId}`);
       const match = response.data.match(/<meta\s+property="og:description"\s+content="([^"]+)"\s*\/?>/);
-
       if (match?.length > 1) {
         return match[1];
       }
     } catch {}
-    return '';
-  }
-
-  /** Validates user input for Airbnb URL. Returns ID from URL if value is URL, trimmed ID if value is ID, otherwise undefined */
-  private validateListingId(): string | void {
-    const { AIRBNB_URL } = process.env;
-    if (AIRBNB_URL) {
-      const trimmed = AIRBNB_URL.trim();
-      const isId = Array.from(trimmed).every((c) => Number.isInteger(Number.parseInt(c)));
-      const [, idFromUrl] = !isId ? trimmed.match(/airbnb\.com\/rooms\/(\d+)(\?.*)?/) ?? [] : [];
-      return isId ? trimmed : idFromUrl;
-    }
   }
 
   private handleError = (err: AxiosError, response?: AxiosResponse) => {
@@ -151,11 +133,11 @@ export class AirbnbService {
     if (response) {
       description = 'Airbnb API response is in unexpected format';
       details = response.data;
-      this.log.error(`${description}:`, details);
+      this.core.logErrorMessage(`${description}:`, details);
     } else {
       description = err.isAxiosError ? 'Unable to reach Airbnb API' : 'Airbnb API responded with an error';
       details = err?.message || err;
-      this.log.error(`${description}: "${details}"`);
+      this.core.logErrorMessage(`${description}: "${details}"`);
     }
 
     this.email.sendError(description, details);
