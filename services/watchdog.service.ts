@@ -41,7 +41,7 @@ export class WatchdogService {
       ? ['<span class="title">Recent Errors:</span>' + createHtmlList(errorsSent)]
       : [];
 
-    this.email.send([message, ...recentErrors]);
+    this.email.send('Error Notification', [message, ...recentErrors]);
 
     this.notificationSent = true;
   }

@@ -33,19 +33,13 @@ export class App {
   private notificationBuffer: NotificationBuffer = [];
 
   constructor() {
-    this.airbnb.fetchTitle().then((title) => {
-      this.log.start(title);
+    const savedBookings = this.db.load();
+    if (savedBookings.length) {
+      this.bookings = savedBookings;
+      this.log.info(`Loaded ${savedBookings.length} booking(s) from DB for listing ${this.airbnb.listingId}`);
+    }
 
-      const savedBookings = this.db.load();
-      if (savedBookings.length) {
-        this.bookings = savedBookings;
-        this.log.info(
-          `Loaded ${savedBookings.length} booking(s) from DB for listing ${this.airbnb.listingId}`
-        );
-      }
-
-      this.run();
-    });
+    this.airbnb.fetchTitle().then(this.run);
   }
 
   /** Sends all notifications that have accumulated during debounce period */
@@ -64,10 +58,12 @@ export class App {
       const notifications = createNotifications(this.notificationBuffer);
 
       if (notifications.length) {
+        const count = this.notificationBuffer.length;
+        const subject = `${this.airbnb.listingTitle}: ${count} Notification${count > 1 ? 's' : ''}`;
         const currentBookings = bookings.filter((b) => !b.isBlockedOff && b.lastNight >= this.date.yesterday);
         const footer = formatCurrentBookings(currentBookings);
 
-        this.email.send(notifications, footer);
+        this.email.send(subject, notifications, footer);
         this.notificationBuffer = [];
       }
     }, SEND_DEBOUNCE_TIME);

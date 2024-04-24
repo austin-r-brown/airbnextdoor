@@ -19,6 +19,8 @@ const API_KEY = 'd306zoyjsyarp7ifhu67rjxn52tv0t20';
 /** Service for interacting with Airbnb */
 export class AirbnbService {
   public listingId: string;
+  public listingTitle: string = 'Airbnb';
+
   private previousResponse?: string;
 
   /** Furthest date in the future known as having been available to book */
@@ -122,16 +124,15 @@ export class AirbnbService {
   }
 
   /** Fetches listing title from main Airbnb listing page */
-  public async fetchTitle(): Promise<string> {
+  public async fetchTitle(): Promise<void> {
     try {
       const response = await axios.get(`https://www.airbnb.com/rooms/${this.listingId}`);
       const match = response.data.match(/<meta\s+property="og:description"\s+content="([^"]+)"\s*\/?>/);
 
       if (match?.length > 1) {
-        return match[1];
+        this.listingTitle = match[1];
       }
     } catch {}
-    return '';
   }
 
   /** Validates user input for Airbnb URL. Returns ID from URL if value is URL, trimmed ID if value is ID, otherwise undefined */

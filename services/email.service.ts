@@ -34,14 +34,13 @@ export class EmailService {
     }
   }
 
-  public send(notifications: string[], footer?: string) {
+  public send(subject: string, notifications: string[], footer?: string) {
     if (this.isUserInputValid) {
       const footerHtml = footer ? `<div class="notification" id="footer">${footer}</div>` : '';
       const bodyHtml = notifications.map((n) => `<div class="notification">${n}</div>`).join(`
       `);
 
-      const count = notifications.length;
-      this.smtpConfig.subject = `${this.log.listingTitle}: ${count} Notification${count > 1 ? 's' : ''}`;
+      this.smtpConfig.subject = subject;
       this.smtpConfig.htmlContent = `<!DOCTYPE html>
         <html lang="en">
           <head>
@@ -66,7 +65,7 @@ export class EmailService {
           if (err?.status === 401) {
             this.isUserInputValid = false;
           } else {
-            setTimeout(() => this.send(notifications, footer), API_TIMEOUT);
+            setTimeout(() => this.send(subject, notifications, footer), API_TIMEOUT);
           }
         }
       );
@@ -87,7 +86,7 @@ export class EmailService {
         break;
       case false:
         // Send email if error has previously occurred but not yet sent
-        this.send([email]);
+        this.send('Error Notification', [email]);
         this.errorsSent.set(email, true);
         break;
     }
