@@ -90,13 +90,14 @@ export class App {
   /** Adds new blocked off period and saves to DB */
   private addBlockedOff(booking: Booking) {
     booking.isBlockedOff = true;
-    this.bookings.push(booking);
-    this.notify(BookingChange.New, booking);
+    this.addBookings([booking]);
   }
 
   /** Adds new bookings and sends notification */
   private addBookings(bookings: Booking[]) {
+    const createdAt = new Date();
     bookings.forEach((b) => {
+      b.createdAt = createdAt;
       this.bookings.push(b);
       this.notify(BookingChange.New, b);
     });

@@ -7,6 +7,7 @@ export type Booking = {
   lastNight: ISODate;
   isBlockedOff?: boolean;
   isActive?: boolean;
+  createdAt?: Date;
 };
 
 export type BookingsMap = Map<ISODate, Booking>;
