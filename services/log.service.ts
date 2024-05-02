@@ -14,6 +14,7 @@ export class LogService {
   }
 
   constructor() {
+    this.resetConsole();
     this.info(START_MSG);
   }
 

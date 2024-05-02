@@ -38,9 +38,7 @@ export class App {
     const savedBookings = this.db.load();
     if (savedBookings.length) {
       this.bookings = savedBookings;
-      this.log.info(
-        `Loaded ${savedBookings.length} booking(s) from DB for listing ${this.airbnb.listingTitle}`
-      );
+      this.log.info(`Loaded ${savedBookings.length} booking(s) from DB for ${this.airbnb.listingTitle}`);
     }
 
     this.run();
