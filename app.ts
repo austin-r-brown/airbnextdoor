@@ -32,14 +32,19 @@ export class App {
   private sendDebounceTimer?: NodeJS.Timeout;
   private notificationBuffer: NotificationBuffer = [];
 
-  constructor() {
+  public async init() {
+    await this.airbnb.fetchTitle();
+
     const savedBookings = this.db.load();
     if (savedBookings.length) {
       this.bookings = savedBookings;
-      this.log.info(`Loaded ${savedBookings.length} booking(s) from DB for listing ${this.airbnb.listingId}`);
+      this.log.info(
+        `Loaded ${savedBookings.length} booking(s) from DB for listing ${this.airbnb.listingTitle}`
+      );
     }
 
-    this.airbnb.fetchTitle().then(this.run);
+    this.run();
+    this.scheduler.schedule();
   }
 
   /** Sends all notifications that have accumulated during debounce period */
@@ -293,7 +298,7 @@ export class App {
           }
         }
 
-        getBookingDateRange(b).forEach((date) => {
+        dates.forEach((date) => {
           existingBookings.set(date, b);
         });
       }

@@ -11,7 +11,9 @@ export class SchedulerService {
   public isPostMidnight: boolean = false;
   private isMidnightCheck: boolean = false;
 
-  constructor(private readonly app: App) {
+  constructor(private readonly app: App) {}
+
+  public schedule() {
     this.midnightCheck();
     this.nextRun();
     this.morningActivities();

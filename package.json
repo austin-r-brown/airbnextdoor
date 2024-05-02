@@ -3,7 +3,7 @@
   "version": "1.0.0-beta0",
   "main": "app.ts",
   "scripts": {
-    "start": "node -r ./dist/app.js -e \"new (require('./dist/app.js').App)()\"",
+    "start": "node -r ./dist/app.js -e \"new (require('./dist/app.js').App)().init()\"",
     "build": "npx tsc --outDir dist app.ts",
     "postinstall": "node createEnv.js && npm run build"
   },
