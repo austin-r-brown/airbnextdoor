@@ -27,8 +27,8 @@ export class SchedulerService {
       nextRun += timeUntil(...POST_MIDNIGHT);
     }
 
-    setTimeout(() => {
-      this.app.run();
+    setTimeout(async () => {
+      await this.app.run();
       this.nextRun();
     }, nextRun);
   }

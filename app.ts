@@ -41,7 +41,7 @@ export class App {
       this.log.info(`Loaded ${savedBookings.length} booking(s) from DB for ${this.airbnb.listingTitle}`);
     }
 
-    this.run();
+    await this.run();
     this.scheduler.schedule();
   }
 
