@@ -26,19 +26,15 @@ export class iCalService {
 
     bookings.forEach((booking) => {
       if (!booking.isBlockedOff) {
-        const checkIn = booking.firstNight;
-        const checkOut = offsetDay(booking.lastNight, 1);
+        const start = new Date(`${booking.firstNight}T15:00:00`);
+        const end = new Date(`${offsetDay(booking.lastNight, 1)}T11:00:00`);
         const bookedOn = booking.createdAt ? new Date(booking.createdAt).toLocaleString() : '';
-        const start = new Date(`${checkIn}T15:00:00`);
-        const end = new Date(`${checkOut}T11:00:00`);
 
         this.calendar.createEvent({
           start: start.toUTCString(),
           end: end.toUTCString(),
           summary: `Airbnb Booking`,
-          description: `Check In: ${formatDate(checkIn)}\nCheck Out: ${formatDate(
-            checkOut
-          )}\nBooked On: ${bookedOn}`,
+          description: `Booked On: ${bookedOn}`,
           location: this.airbnb.listingTitle,
           url: this.airbnb.listingUrl,
         });
