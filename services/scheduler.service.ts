@@ -8,7 +8,6 @@ const POST_MIDNIGHT: Time24Hr = [0, 0, 10]; // 12:00:10 AM
 
 /** Service for scheduling recurring processes in main App */
 export class SchedulerService {
-  public isPostMidnight: boolean = false;
   private isMidnightCheck: boolean = false;
 
   constructor(private readonly app: App) {}
@@ -48,9 +47,7 @@ export class SchedulerService {
       if (new Date().getHours() !== 0) {
         // Only proceed with check if midnight hasn't passed yet
         await this.waitUntil(...POST_MIDNIGHT);
-        this.isPostMidnight = true;
-        await this.app.run();
-        this.isPostMidnight = false;
+        await this.app.run({ isPostMidnightRun: true });
       }
       this.isMidnightCheck = false;
       this.midnightCheck();

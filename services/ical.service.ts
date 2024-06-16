@@ -1,11 +1,10 @@
-import ical, { ICalCalendar, ICalCalendarMethod } from 'ical-generator';
+import ical, { ICalCalendar, ICalCalendarMethod, ICalEventData } from 'ical-generator';
 import { AirbnbService } from './airbnb.service';
 import { Booking } from '../types';
-import { getIsoDate, offsetDay } from '../helpers/date.helper';
+import { offsetDay } from '../helpers/date.helper';
 import { LogService } from './log.service';
 import express from 'express';
 import os from 'os';
-import { formatDate } from '../helpers/email.helper';
 
 const PORT = 3000;
 const ICS_FILE = 'calendar.ics';
@@ -28,16 +27,20 @@ export class iCalService {
       if (!booking.isBlockedOff) {
         const start = new Date(`${booking.firstNight}T15:00:00`);
         const end = new Date(`${offsetDay(booking.lastNight, 1)}T11:00:00`);
-        const bookedOn = booking.createdAt ? new Date(booking.createdAt).toLocaleString() : '';
 
-        this.calendar.createEvent({
+        const event: ICalEventData = {
           start: start.toUTCString(),
           end: end.toUTCString(),
-          summary: `Airbnb Booking`,
-          description: `Booked On: ${bookedOn}`,
+          summary: 'Airbnb Booking',
           location: this.airbnb.listingTitle,
           url: this.airbnb.listingUrl,
-        });
+        };
+
+        if (booking.createdAt) {
+          event.description = `Booked On: ${new Date(booking.createdAt).toLocaleString()}`;
+        }
+
+        this.calendar.createEvent(event);
       }
     });
   }

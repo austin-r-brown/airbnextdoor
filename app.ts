@@ -1,4 +1,12 @@
-import { Booking, BookingChange, ISODate, CalendarDay, BookingsMap, NotificationBuffer } from './types';
+import {
+  Booking,
+  BookingChange,
+  ISODate,
+  CalendarDay,
+  BookingsMap,
+  NotificationBuffer,
+  RunOptions,
+} from './types';
 import {
   countDaysBetween,
   offsetDay,
@@ -18,6 +26,8 @@ import { SchedulerService } from './services/scheduler.service';
 import { iCalService } from './services/ical.service';
 
 export class App {
+  private isInitialized: boolean = false;
+
   private readonly date: DateService = new DateService();
   private readonly log: LogService = new LogService();
   private readonly email: EmailService = new EmailService(this.log);
@@ -42,12 +52,12 @@ export class App {
     if (savedBookings.length) {
       this.bookings = savedBookings;
       this.log.info(`Loaded ${savedBookings.length} booking(s) from DB for ${this.airbnb.listingTitle}`);
-
       this.ical.updateEvents(savedBookings);
     }
 
-    await this.run();
+    await this.run({ isFirstRun: true });
     this.scheduler.schedule();
+    this.isInitialized = true;
   }
 
   /** Sends all notifications that have accumulated during debounce period */
@@ -106,7 +116,10 @@ export class App {
   private addBookings(bookings: Booking[]) {
     const createdAt = new Date();
     bookings.forEach((b) => {
-      b.createdAt = createdAt;
+      if (this.isInitialized) {
+        // Creation date is unknown if booked when app was not running
+        b.createdAt = createdAt;
+      }
       this.bookings.push(b);
       this.notify(BookingChange.New, b);
     });
@@ -312,7 +325,7 @@ export class App {
     return existingBookings;
   }
 
-  public run = async () => {
+  public run = async (options: RunOptions = {}) => {
     this.date.set(); // Set today's date
     const calendar = await this.airbnb.fetchCalendar(); // Fetch latest data from Airbnb
 
@@ -322,10 +335,7 @@ export class App {
         const existingBookings = this.checkExistingBookings(calendar);
         const [newBookings, gaps] = this.checkForNewBookings(calendar, existingBookings);
 
-        if (
-          this.scheduler.isPostMidnight ||
-          (newBookings.length > 1 && calendar.days.every((d) => d.booked))
-        ) {
+        if (options.isPostMidnightRun || (newBookings.length > 1 && calendar.days.every((d) => d.booked))) {
           // If new booking appears right after midnight, or if suddenly the entire calendar is booked, it is most likely blocked off
           gaps.concat(newBookings).forEach((gap) => this.addBlockedOff(gap));
         } else {
