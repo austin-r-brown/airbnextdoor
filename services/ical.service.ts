@@ -5,6 +5,7 @@ import { getIsoDate, offsetDay } from '../helpers/date.helper';
 import { LogService } from './log.service';
 import express from 'express';
 import os from 'os';
+import { formatDate } from '../helpers/email.helper';
 
 const PORT = 3000;
 const ICS_FILE = 'calendar.ics';
@@ -35,7 +36,9 @@ export class iCalService {
           start: start.toUTCString(),
           end: end.toUTCString(),
           summary: `Airbnb Booking`,
-          description: `Check In: ${checkIn}\nCheck Out: ${checkOut}\nBooked On: ${bookedOn}`,
+          description: `Check In: ${formatDate(checkIn)}\nCheck Out: ${formatDate(
+            checkOut
+          )}\nBooked On: ${bookedOn}`,
           location: this.airbnb.listingTitle,
           url: this.airbnb.listingUrl,
         });
