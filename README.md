@@ -29,7 +29,7 @@ INTERVAL_MINS=5
 
 #### SIB_API_KEY
 
-This is the API key needed for the app to send notification emails.
+This is the API key needed for the app to send notification emails. If no API key is provided, the app will still run but no emails will be sent.
 
 - Sign up for a Brevo account at https://brevo.com (I was able to do a free account for this)
 - Go to the API keys page (https://app.brevo.com/settings/keys/api) and click 'Generate a new API key'
@@ -44,11 +44,11 @@ This is the URL for the Airbnb listing that you would like to track.
 
 #### SEND_FROM_EMAIL
 
-The email address you would like the emails to appear to have been sent from. If no email address is provided, the app will still no run but no emails will be sent.
+The email address you would like the emails to appear to have been sent from. If no email address is provided, the app will still run but no emails will be sent.
 
 #### SEND_TO_EMAILS
 
-The email address you would like the notifications to be sent to. Either single email address or multiple emails separated by comma can be entered here. If no email address is provided, the app will still no run but no emails will be sent.
+The email address you would like the notifications to be sent to. Either single email address or multiple emails separated by comma can be entered here. If no email address is provided, the app will still run but no emails will be sent.
 
 #### INTERVAL_MINS
 
