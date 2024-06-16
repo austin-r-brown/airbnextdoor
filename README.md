@@ -5,6 +5,8 @@ This application is designed to keep track of a specified Airbnb listing's booki
 - Guests expected to be arriving or leaving
 - Every notification includes a full list of current/future bookings
 
+Additionally, an iCal file is hosted which can be subscribed to for bookings to be shown as calendar events on iPhone calendar.
+
 ### Installation
 
 - To use, you will first need to install the latest version of Node (https://nodejs.org/en/download).
@@ -42,11 +44,11 @@ This is the URL for the Airbnb listing that you would like to track.
 
 #### SEND_FROM_EMAIL
 
-The email address you would like the emails to appear to have been sent from.
+The email address you would like the emails to appear to have been sent from. If no email address is provided, the app will still no run but no emails will be sent.
 
 #### SEND_TO_EMAILS
 
-The email address you would like the notifications to be sent to. Either single email address or multiple emails separated by comma can be entered here.
+The email address you would like the notifications to be sent to. Either single email address or multiple emails separated by comma can be entered here. If no email address is provided, the app will still no run but no emails will be sent.
 
 #### INTERVAL_MINS
 
@@ -55,6 +57,10 @@ This number determines how many minutes the app will wait between each time it c
 ### Starting The App
 
 Once you've filled these in and saved to the .env file, the application should be ready to go. Now you may run the `npm start` command from your terminal, or if on Windows simply open the `Start.bat` file in the folder labeled 'setup'. You'll want it running on a machine that is always on. I have this running on my Plex Server. The booking data retrieved from Airbnb is saved to the hard disk and will be restored automatically should the application be restarted.
+
+### Setup: iCal calendar events
+
+After you start the app, there should be an iCal file hosted from your servers localhost at port 3000, and can be used to automatically update your iPhone calendar with events representing the Airbnb bookings. To set this up, simply add a new calendar from your iPhone's calendar app, choose the subscription option, and enter the url shown from the console where this app is running. Since it is being hosted locally, this will only work when both devices are on the same network. Port forwarding can be utilized for access outside the network.
 
 ### A couple other things to note
 
