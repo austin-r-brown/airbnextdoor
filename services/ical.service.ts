@@ -35,9 +35,7 @@ export class iCalService {
           start: start.toUTCString(),
           end: end.toUTCString(),
           summary: `Airbnb Booking`,
-          description: `Check In: ${checkIn}
-          Check Out: ${checkOut}
-          Booked On: ${bookedOn}`,
+          description: `Check In: ${checkIn}\nCheck Out: ${checkOut}\nBooked On: ${bookedOn}`,
           location: this.airbnb.listingTitle,
           url: this.airbnb.listingUrl,
         });
@@ -63,7 +61,7 @@ export class iCalService {
       const ifaceInfo = interfaces[iface];
       if (ifaceInfo) {
         for (const alias of ifaceInfo) {
-          if (alias.family === 'IPv4' && !alias.internal) {
+          if (alias.family === 'IPv4' && !alias.internal && alias.address.startsWith('192.168')) {
             return alias.address;
           }
         }
