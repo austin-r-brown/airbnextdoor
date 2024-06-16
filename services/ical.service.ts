@@ -22,16 +22,18 @@ export class iCalService {
     this.calendar.clear();
 
     bookings.forEach((booking) => {
-      const start = new Date(`${booking.firstNight}T15:00:00`);
-      const end = new Date(`${offsetDay(booking.lastNight, 1)}T11:00:00`);
+      if (!booking.isBlockedOff) {
+        const start = new Date(`${booking.firstNight}T15:00:00`);
+        const end = new Date(`${offsetDay(booking.lastNight, 1)}T11:00:00`);
 
-      this.calendar.createEvent({
-        start: start.toUTCString(),
-        end: end.toUTCString(),
-        summary: `Airbnb Booking`,
-        location: this.airbnb.listingTitle,
-        url: this.airbnb.listingUrl,
-      });
+        this.calendar.createEvent({
+          start: start.toUTCString(),
+          end: end.toUTCString(),
+          summary: `Airbnb Booking`,
+          location: this.airbnb.listingTitle,
+          url: this.airbnb.listingUrl,
+        });
+      }
     });
   }
 
