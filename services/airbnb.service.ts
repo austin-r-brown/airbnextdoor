@@ -60,7 +60,7 @@ export class AirbnbService {
 
   public async init(): Promise<void> {
     try {
-      const response = await axios.get(this.listingId);
+      const response = await axios.get(this.listingUrl);
       const match = response.data.match(/<meta\s+property="og:description"\s+content="([^"]+)"\s*\/?>/);
 
       if (match?.length > 1) {
