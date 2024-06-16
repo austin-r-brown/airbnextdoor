@@ -19,6 +19,7 @@ const API_KEY = 'd306zoyjsyarp7ifhu67rjxn52tv0t20';
 /** Service for interacting with Airbnb */
 export class AirbnbService {
   public listingId: string;
+  public listingUrl: string;
   public listingTitle: string = 'Airbnb';
 
   private previousResponse?: string;
@@ -54,6 +55,18 @@ export class AirbnbService {
       throw 'Valid Airbnb URL or Listing ID must be provided in .env file. See README.md for more info.';
     }
     this.listingId = listingId;
+    this.listingUrl = `https://www.airbnb.com/rooms/${listingId}`;
+  }
+
+  public async init(): Promise<void> {
+    try {
+      const response = await axios.get(this.listingId);
+      const match = response.data.match(/<meta\s+property="og:description"\s+content="([^"]+)"\s*\/?>/);
+
+      if (match?.length > 1) {
+        this.listingTitle = match[1];
+      }
+    } catch {}
   }
 
   /**
@@ -121,18 +134,6 @@ export class AirbnbService {
       .catch(this.handleError);
 
     return result;
-  }
-
-  /** Fetches listing title from main Airbnb listing page */
-  public async fetchTitle(): Promise<void> {
-    try {
-      const response = await axios.get(`https://www.airbnb.com/rooms/${this.listingId}`);
-      const match = response.data.match(/<meta\s+property="og:description"\s+content="([^"]+)"\s*\/?>/);
-
-      if (match?.length > 1) {
-        this.listingTitle = match[1];
-      }
-    } catch {}
   }
 
   /** Validates user input for Airbnb URL. Returns ID from URL if value is URL, trimmed ID if value is ID, otherwise undefined */

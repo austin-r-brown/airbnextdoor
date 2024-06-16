@@ -15,6 +15,7 @@ import { DateService } from './services/date.service';
 import { SEND_DEBOUNCE_TIME } from './constants';
 import { WatchdogService } from './services/watchdog.service';
 import { SchedulerService } from './services/scheduler.service';
+import { iCalService } from './services/ical.service';
 
 export class App {
   private readonly date: DateService = new DateService();
@@ -23,6 +24,7 @@ export class App {
   private readonly watchdog: WatchdogService = new WatchdogService(this.log, this.email);
   private readonly airbnb: AirbnbService = new AirbnbService(this.log, this.date, this.email);
   private readonly db: DbService = new DbService(this.log, this.airbnb);
+  private readonly ical: iCalService = new iCalService(this.log, this.airbnb);
   private readonly scheduler: SchedulerService = new SchedulerService(this);
 
   /** All known bookings and blocked off periods */
@@ -33,12 +35,15 @@ export class App {
   private notificationBuffer: NotificationBuffer = [];
 
   public async init() {
-    await this.airbnb.fetchTitle();
+    await this.airbnb.init();
+    this.ical.init();
 
     const savedBookings = this.db.load();
     if (savedBookings.length) {
       this.bookings = savedBookings;
       this.log.info(`Loaded ${savedBookings.length} booking(s) from DB for ${this.airbnb.listingTitle}`);
+
+      this.ical.updateEvents(savedBookings);
     }
 
     await this.run();
@@ -58,6 +63,7 @@ export class App {
 
     this.sendDebounceTimer = setTimeout(() => {
       const bookings = this.sortAndUpdateBookings();
+      this.ical.updateEvents(bookings);
       const notifications = createNotifications(this.notificationBuffer);
 
       if (notifications.length) {

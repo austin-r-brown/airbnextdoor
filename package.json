@@ -1,19 +1,22 @@
 {
   "name": "airbnextdoor",
-  "version": "1.0.0-beta0",
+  "version": "1.1.0-beta0",
   "main": "app.ts",
   "scripts": {
     "start": "node -r ./dist/app.js -e \"new (require('./dist/app.js').App)().init()\"",
-    "build": "npx tsc --outDir dist app.ts",
+    "build": "npx tsc",
     "postinstall": "node createEnv.js && npm run build"
   },
   "dependencies": {
     "axios": "^1.6.5",
     "dotenv": "^16.3.2",
+    "express": "^4.19.2",
+    "ical-generator": "^7.1.0",
     "sib-api-v3-sdk": "^8.5.0",
     "typescript": "^5.4.3"
   },
   "devDependencies": {
+    "@types/express": "^4.17.21",
     "@types/node": "^20.11.16"
   }
 }
