@@ -6,7 +6,7 @@ import * as fs from 'fs';
 const SibApiV3Sdk = require('sib-api-v3-sdk');
 const { SIB_API_KEY, SEND_FROM_EMAIL, SEND_TO_EMAILS } = process.env;
 
-/** Service for handling user notifications */
+/** Service for handling user notifications via email */
 export class EmailService {
   private readonly api = new SibApiV3Sdk.TransactionalEmailsApi();
   private readonly css = fs.readFileSync('styles.css', 'utf8');

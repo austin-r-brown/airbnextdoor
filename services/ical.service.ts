@@ -9,6 +9,7 @@ import os from 'os';
 const PORT = 3000;
 const ICS_FILE = 'calendar.ics';
 
+/** Service for generating/hosting iCal data for calendar subscription */
 export class iCalService {
   private readonly calendar: ICalCalendar = ical({ method: ICalCalendarMethod.REQUEST });
   private readonly server = express();
