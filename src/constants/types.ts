@@ -1,4 +1,5 @@
 import { ISODate, Booking } from './Booking';
+import { ConsoleType } from './enums';
 
 export type Time24Hr = [number, number?, number?];
 
@@ -62,16 +63,3 @@ export type RunOptions = {
   isFirstRun?: boolean;
   isPostMidnightRun?: boolean;
 };
-
-export enum ConsoleType {
-  Info = 'info',
-  Error = 'error',
-  Warn = 'warn',
-}
-
-export enum BookingChange {
-  New = 'New Booking',
-  Cancelled = 'Cancelled Booking',
-  Extended = 'Booking Extended',
-  Shortened = 'Booking Shortened',
-}

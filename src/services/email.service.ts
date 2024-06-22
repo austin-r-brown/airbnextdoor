@@ -1,6 +1,6 @@
-import { EmailConfig } from '../types/types';
+import { EmailConfig } from '../constants/types';
+import { API_TIMEOUT } from '../constants/constants';
 import { LogService } from './log.service';
-import { API_TIMEOUT } from '../constants';
 import * as fs from 'fs';
 import * as path from 'path';
 

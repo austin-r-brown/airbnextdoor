@@ -1,6 +1,7 @@
-import { Booking, ISODate } from './types/Booking';
-import { Calendar } from './types/Calendar';
-import { BookingChange, CalendarDay, BookingsMap, NotificationBuffer, RunOptions } from './types/types';
+import { Booking, ISODate } from './constants/Booking';
+import { Calendar } from './constants/Calendar';
+import { CalendarDay, BookingsMap, NotificationBuffer, RunOptions } from './constants/types';
+import { BookingChange } from './constants/enums';
 import {
   countDaysBetween,
   offsetDay,
@@ -13,7 +14,7 @@ import { EmailService } from './services/email.service';
 import { LogService } from './services/log.service';
 import { AirbnbService } from './services/airbnb.service';
 import { DateService } from './services/date.service';
-import { SEND_DEBOUNCE_TIME } from './constants';
+import { SEND_DEBOUNCE_TIME } from './constants/constants';
 import { WatchdogService } from './services/watchdog.service';
 import { SchedulerService } from './services/scheduler.service';
 import { iCalService } from './services/ical.service';
@@ -59,13 +60,13 @@ export class App {
 
     if (!booking.isBlockedOff) {
       // Only send email if booking is not blocked off period
-      this.notificationBuffer.push([title, booking, change]);
+      this.notificationBuffer.push([title, new Booking(booking), change]);
     }
 
     clearTimeout(this.sendDebounceTimer);
 
     this.sendDebounceTimer = setTimeout(() => {
-      const bookings = this.sortAndUpdateBookings();
+      const bookings = this.sortAndSaveBookings();
       this.ical.updateEvents(bookings);
       const notifications = createNotifications(this.notificationBuffer);
 
@@ -81,8 +82,8 @@ export class App {
     }, SEND_DEBOUNCE_TIME);
   }
 
-  /** Sorts bookings by check in date, sets isActive property based on current date and saves to DB */
-  private sortAndUpdateBookings(): Booking[] {
+  /** Sorts bookings by check in date and saves to DB */
+  private sortAndSaveBookings(): Booking[] {
     const bookings = this.bookings.sort(
       (a, b) => new Date(a.firstNight).valueOf() - new Date(b.firstNight).valueOf()
     );

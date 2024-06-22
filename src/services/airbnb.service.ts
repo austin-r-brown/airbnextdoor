@@ -4,13 +4,13 @@ import {
   AirbnbRequestVariables,
   MerlinCalendarDay,
   MerlinCalendarMonth,
-} from '../types/types';
-import { Calendar } from '../types/Calendar';
+} from '../constants/types';
+import { Calendar } from '../constants/Calendar';
+import { LOCALE } from '../constants/constants';
+import { ISODate } from '../constants/Booking';
 import { LogService } from './log.service';
 import { EmailService } from './email.service';
 import { DateService } from './date.service';
-import { LOCALE } from '../constants';
-import { ISODate } from '../types/Booking';
 
 const API_OPERATION = 'PdpAvailabilityCalendar';
 const API_HASH = '8f08e03c7bd16fcad3c92a3592c19a8b559a0d0855a84028d1163d4733ed9ade';

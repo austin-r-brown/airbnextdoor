@@ -1,4 +1,4 @@
-import { MS_IN_MINUTE, WATCHDOG_TIMEOUT } from '../constants';
+import { MS_IN_MINUTE, WATCHDOG_TIMEOUT } from '../constants/constants';
 import { createHtmlList } from '../helpers/email.helper';
 import { EmailService } from './email.service';
 import { LogService } from './log.service';

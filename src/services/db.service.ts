@@ -1,4 +1,4 @@
-import { Booking } from '../types/Booking';
+import { Booking } from '../constants/Booking';
 import { AirbnbService } from './airbnb.service';
 import { LogService } from './log.service';
 import * as fs from 'fs';

@@ -1,6 +1,6 @@
-import { ISODate, Booking } from '../types/Booking';
-import { MS_IN_DAY } from '../constants';
-import { Calendar } from '../types/Calendar';
+import { ISODate, Booking } from '../constants/Booking';
+import { MS_IN_DAY } from '../constants/constants';
+import { Calendar } from '../constants/Calendar';
 
 /** Converts Date object to 'YYYY-MM-DD' formatted string */
 export const getIsoDate = (date: Date): ISODate => date.toISOString().split('T')[0] as ISODate;

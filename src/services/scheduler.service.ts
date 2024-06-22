@@ -1,7 +1,7 @@
 import { App } from '../app';
-import { API_TIMEOUT, INTERVAL, MS_IN_DAY } from '../constants';
+import { API_TIMEOUT, INTERVAL, MS_IN_DAY } from '../constants/constants';
 import { timeUntil } from '../helpers/date.helper';
-import { Time24Hr } from '../types/types';
+import { Time24Hr } from '../constants/types';
 
 const PRE_MIDNIGHT: Time24Hr = [23, 59, 50]; // 11:59:50 PM
 const POST_MIDNIGHT: Time24Hr = [0, 0, 10]; // 12:00:10 AM

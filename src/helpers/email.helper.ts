@@ -1,5 +1,6 @@
-import { Booking } from '../types/Booking';
-import { BookingChange, NotificationBuffer } from '../types/types';
+import { Booking } from '../constants/Booking';
+import { BookingChange } from '../constants/enums';
+import { NotificationBuffer } from '../constants/types';
 import { offsetDay } from './date.helper';
 
 /** Converts 'YYYY-MM-DD' formatted string to 'MM/DD/YY' for email readability */

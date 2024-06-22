@@ -1,4 +1,4 @@
-import { MS_IN_DAY } from '../constants';
+import { MS_IN_DAY } from './constants';
 
 export type ISODate = `${string}-${string}-${string}`;
 

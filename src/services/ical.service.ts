@@ -1,6 +1,6 @@
 import ical, { ICalCalendar, ICalCalendarMethod, ICalEventData } from 'ical-generator';
 import { AirbnbService } from './airbnb.service';
-import { Booking } from '../types/Booking';
+import { Booking } from '../constants/Booking';
 import { offsetDay } from '../helpers/date.helper';
 import { LogService } from './log.service';
 import express from 'express';
