@@ -1,7 +1,8 @@
-import { EmailConfig } from '../types';
+import { EmailConfig } from '../types/types';
 import { LogService } from './log.service';
 import { API_TIMEOUT } from '../constants';
 import * as fs from 'fs';
+import * as path from 'path';
 
 const SibApiV3Sdk = require('sib-api-v3-sdk');
 const { SIB_API_KEY, SEND_FROM_EMAIL, SEND_TO_EMAILS } = process.env;
@@ -9,7 +10,7 @@ const { SIB_API_KEY, SEND_FROM_EMAIL, SEND_TO_EMAILS } = process.env;
 /** Service for handling user notifications via email */
 export class EmailService {
   private readonly api = new SibApiV3Sdk.TransactionalEmailsApi();
-  private readonly css = fs.readFileSync('styles.css', 'utf8');
+  private readonly css = fs.readFileSync(path.join('src', 'styles.css'), 'utf8');
   private readonly errorsSent = new Map<string, boolean>();
 
   private readonly smtpConfig: EmailConfig = {

@@ -1,6 +1,7 @@
 import { offsetDay } from '../helpers/date.helper';
 import { formatDate } from '../helpers/email.helper';
-import { Booking, ConsoleType, LogItem } from '../types';
+import { Booking } from '../types/Booking';
+import { ConsoleType, LogItem } from '../types/types';
 
 const START_MSG = 'Starting application...';
 const SUCCESS_MSG = 'Airbnb dates checked successfully';

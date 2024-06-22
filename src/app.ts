@@ -1,17 +1,10 @@
-import {
-  Booking,
-  BookingChange,
-  ISODate,
-  CalendarDay,
-  BookingsMap,
-  NotificationBuffer,
-  RunOptions,
-} from './types';
+import { Booking, ISODate } from './types/Booking';
+import { Calendar } from './types/Calendar';
+import { BookingChange, CalendarDay, BookingsMap, NotificationBuffer, RunOptions } from './types/types';
 import {
   countDaysBetween,
   offsetDay,
   getBookingDateRange,
-  Calendar,
   isBookingInCalendarRange,
 } from './helpers/date.helper';
 import { formatCurrentBookings, createNotifications } from './helpers/email.helper';
@@ -92,9 +85,6 @@ export class App {
   private sortAndUpdateBookings(): Booking[] {
     const bookings = this.bookings.sort(
       (a, b) => new Date(a.firstNight).valueOf() - new Date(b.firstNight).valueOf()
-    );
-    bookings.forEach(
-      (b) => (b.isActive = b.firstNight <= this.date.today && b.lastNight >= this.date.yesterday)
     );
     this.db.save(bookings);
     return bookings;
@@ -184,7 +174,7 @@ export class App {
         }
       } else if (firstNight && lastNight) {
         // If a booking was in progress and now it's not, save it
-        push({ firstNight, lastNight }, day.minNights);
+        push(new Booking({ firstNight, lastNight }), day.minNights);
         firstNight = null;
         lastNight = null;
       }
@@ -192,7 +182,7 @@ export class App {
 
     // Add a booking if a booking was in progress at the end of the loop
     if (firstNight && lastNight) {
-      push({ firstNight, lastNight });
+      push(new Booking({ firstNight, lastNight }));
     }
     return [bookings, gaps];
   }

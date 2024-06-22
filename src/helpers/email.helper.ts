@@ -1,4 +1,5 @@
-import { Booking, BookingChange, NotificationBuffer } from '../types';
+import { Booking } from '../types/Booking';
+import { BookingChange, NotificationBuffer } from '../types/types';
 import { offsetDay } from './date.helper';
 
 /** Converts 'YYYY-MM-DD' formatted string to 'MM/DD/YY' for email readability */

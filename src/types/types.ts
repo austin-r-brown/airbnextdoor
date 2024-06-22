@@ -1,14 +1,6 @@
-export type ISODate = `${string}-${string}-${string}`;
+import { ISODate, Booking } from './Booking';
 
 export type Time24Hr = [number, number?, number?];
-
-export type Booking = {
-  firstNight: ISODate;
-  lastNight: ISODate;
-  isBlockedOff?: boolean;
-  isActive?: boolean;
-  createdAt?: Date;
-};
 
 export type BookingsMap = Map<ISODate, Booking>;
 

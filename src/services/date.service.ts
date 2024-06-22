@@ -1,5 +1,5 @@
 import { offsetDay } from '../helpers/date.helper';
-import { ISODate } from '../types';
+import { ISODate } from '../types/Booking';
 
 /** Service for keeping track of today's date */
 export class DateService {

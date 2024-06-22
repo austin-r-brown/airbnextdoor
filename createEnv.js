@@ -8,7 +8,7 @@ const env = `SIB_API_KEY=\r\n` +
     `SEND_TO_EMAILS=\r\n` +
     `INTERVAL_MINS=5\r\n`;
 
-const createEnv = () => {
+(() => {
   if (!fs.existsSync(fileName)) {
     fs.writeFile(fileName, env, (err) => {
       if (err) {
@@ -18,6 +18,4 @@ const createEnv = () => {
       }
     });
   }
-};
-
-createEnv();
+})();

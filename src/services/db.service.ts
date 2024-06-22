@@ -1,4 +1,4 @@
-import { Booking } from '../types';
+import { Booking } from '../types/Booking';
 import { AirbnbService } from './airbnb.service';
 import { LogService } from './log.service';
 import * as fs from 'fs';
@@ -56,7 +56,7 @@ export class DbService {
         result = backup;
       }
     }
-    return result;
+    return result.map((b) => new Booking(b));
   }
 
   private backup(): Promise<void> {
