@@ -1,4 +1,5 @@
-import { ISODate } from './Booking';
+import { getBookingDateRange } from '../helpers/date.helper';
+import { Booking, ISODate } from './Booking';
 import { CalendarDay } from './types';
 
 /** Calendar object used for mapping response from Airbnb */
@@ -44,5 +45,36 @@ export class Calendar {
 
   get(date: ISODate): CalendarDay | undefined {
     return this.map.get(date);
+  }
+
+  /**
+   * Returns true if at least one date in booking is within calendar date range, otherwise false.
+   * Extends calendar to include all dates from booking if booking dates are already partially included in calendar
+   */
+  isBookingInRange(booking: Booking): boolean {
+    const firstDate = this.first;
+    const lastDate = this.last;
+
+    if (booking.firstNight < firstDate) {
+      if (booking.lastNight < firstDate) {
+        return false;
+      } else {
+        const pastDays = getBookingDateRange(booking)
+          .filter((d) => d < firstDate)
+          .map((d) => ({ date: d, booked: true, minNights: 1 }));
+        this.addUnsorted(pastDays);
+      }
+    }
+    if (booking.lastNight > lastDate) {
+      if (booking.firstNight > lastDate) {
+        return false;
+      } else {
+        const futureDays = getBookingDateRange(booking)
+          .filter((d) => d > lastDate)
+          .map((d) => ({ date: d, booked: true, minNights: 1 }));
+        this.addUnsorted(futureDays);
+      }
+    }
+    return true;
   }
 }

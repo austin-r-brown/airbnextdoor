@@ -1,9 +1,14 @@
 import { ISODate, Booking } from '../constants/Booking';
 import { MS_IN_DAY } from '../constants/constants';
-import { Calendar } from '../constants/Calendar';
 
 /** Converts Date object to 'YYYY-MM-DD' formatted string */
 export const getIsoDate = (date: Date): ISODate => date.toISOString().split('T')[0] as ISODate;
+
+/** Converts 'YYYY-MM-DD' formatted string to 'MM/DD/YY' for better readability */
+export const formatIsoDate = (date: string): string => {
+  const [y, m, d] = date.split('-');
+  return `${Number(m)}/${Number(d)}/${y.slice(2)}`;
+};
 
 /** Returns number of ms until specified time (24 hr) */
 export const timeUntil = (hour: number, minute?: number, seconds?: number): number => {
@@ -15,6 +20,16 @@ export const timeUntil = (hour: number, minute?: number, seconds?: number): numb
   }
 
   return target.getTime() - now.getTime();
+};
+
+/** Returns a promise that resolves at specified time (24 hr) */
+export const waitUntil = (hour: number, minute?: number, seconds?: number): Promise<void> => {
+  const ms = timeUntil(hour, minute, seconds);
+  return new Promise<void>((resolve) => {
+    setTimeout(() => {
+      resolve();
+    }, ms);
+  });
 };
 
 /** Returns total number of days between two dates */
@@ -39,35 +54,4 @@ export const getBookingDateRange = (booking: Booking): ISODate[] => {
   }
 
   return dateArray;
-};
-
-/**
- * Returns true if at least one date in booking is within calendar date range, otherwise false.
- * Extends calendar to include all dates from booking if booking dates are already partially included in calendar
- */
-export const isBookingInCalendarRange = (booking: Booking, calendar: Calendar): boolean => {
-  const firstDate = calendar.first;
-  const lastDate = calendar.last;
-
-  if (booking.firstNight < firstDate) {
-    if (booking.lastNight < firstDate) {
-      return false;
-    } else {
-      const pastDays = getBookingDateRange(booking)
-        .filter((d) => d < firstDate)
-        .map((d) => ({ date: d, booked: true, minNights: 1 }));
-      calendar.addUnsorted(pastDays);
-    }
-  }
-  if (booking.lastNight > lastDate) {
-    if (booking.firstNight > lastDate) {
-      return false;
-    } else {
-      const futureDays = getBookingDateRange(booking)
-        .filter((d) => d > lastDate)
-        .map((d) => ({ date: d, booked: true, minNights: 1 }));
-      calendar.addUnsorted(futureDays);
-    }
-  }
-  return true;
 };

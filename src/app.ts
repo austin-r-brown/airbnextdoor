@@ -2,12 +2,7 @@ import { Booking, ISODate } from './constants/Booking';
 import { Calendar } from './constants/Calendar';
 import { CalendarDay, BookingsMap, NotificationBuffer, RunOptions } from './constants/types';
 import { BookingChange } from './constants/enums';
-import {
-  countDaysBetween,
-  offsetDay,
-  getBookingDateRange,
-  isBookingInCalendarRange,
-} from './helpers/date.helper';
+import { countDaysBetween, offsetDay, getBookingDateRange } from './helpers/date.helper';
 import { formatCurrentBookings, createNotifications } from './helpers/email.helper';
 import { DbService } from './services/db.service';
 import { EmailService } from './services/email.service';
@@ -252,7 +247,7 @@ export class App {
     const cancelledBookings: number[] = [];
 
     this.bookings.forEach((b, i) => {
-      if (!isBookingInCalendarRange(b, calendar)) {
+      if (!calendar.isBookingInRange(b)) {
         return;
       }
       const dates = getBookingDateRange(b);

@@ -1,5 +1,5 @@
 import { offsetDay } from '../helpers/date.helper';
-import { formatDate } from '../helpers/email.helper';
+import { formatIsoDate } from '../helpers/date.helper';
 import { Booking } from '../constants/Booking';
 import { LogItem } from '../constants/types';
 import { ConsoleType } from '../constants/enums';
@@ -83,13 +83,13 @@ export class LogService {
       endDate = booking.lastNight;
     }
 
-    const bookingMsg = `(${start}: ${formatDate(booking.firstNight)} | ${end}: ${formatDate(endDate)})`;
+    const bookingMsg = `(${start}: ${formatIsoDate(booking.firstNight)} | ${end}: ${formatIsoDate(endDate)})`;
 
     if (change?.firstNight) {
-      changeMsg = [`New ${start}: ${formatDate(change.firstNight)}`];
+      changeMsg = [`New ${start}: ${formatIsoDate(change.firstNight)}`];
     } else if (change?.lastNight) {
       const changeDate = booking.isBlockedOff ? change.lastNight : offsetDay(change.lastNight, 1);
-      changeMsg = [`New ${end}: ${formatDate(changeDate)}`];
+      changeMsg = [`New ${end}: ${formatIsoDate(changeDate)}`];
     }
 
     this.info(...[`${titleMsg}:`, bookingMsg, ...changeMsg]);

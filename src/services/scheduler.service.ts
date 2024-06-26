@@ -1,6 +1,6 @@
 import { App } from '../app';
 import { API_TIMEOUT, INTERVAL, MS_IN_DAY } from '../constants/constants';
-import { timeUntil } from '../helpers/date.helper';
+import { timeUntil, waitUntil } from '../helpers/date.helper';
 import { Time24Hr } from '../constants/types';
 
 const PRE_MIDNIGHT: Time24Hr = [23, 59, 50]; // 11:59:50 PM
@@ -42,11 +42,11 @@ export class SchedulerService {
 
     setTimeout(async () => {
       this.isMidnightCheck = true;
-      await this.waitUntil(...PRE_MIDNIGHT);
+      await waitUntil(...PRE_MIDNIGHT);
       await this.app.run();
       if (new Date().getHours() !== 0) {
         // Only proceed with check if midnight hasn't passed yet
-        await this.waitUntil(...POST_MIDNIGHT);
+        await waitUntil(...POST_MIDNIGHT);
         await this.app.run({ isPostMidnightRun: true });
       }
       this.isMidnightCheck = false;
@@ -62,15 +62,5 @@ export class SchedulerService {
       this.app.guestChangeNotification();
       this.morningActivities();
     }, timeUntil(timeInMorning));
-  }
-
-  /** Returns a promise that resolves at specified time (24 hr) */
-  private waitUntil(hour: number, minute?: number, seconds?: number): Promise<void> {
-    const ms = timeUntil(hour, minute, seconds);
-    return new Promise<void>((resolve) => {
-      setTimeout(() => {
-        resolve();
-      }, ms);
-    });
   }
 }

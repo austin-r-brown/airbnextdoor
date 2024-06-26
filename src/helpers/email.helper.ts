@@ -1,13 +1,7 @@
 import { Booking } from '../constants/Booking';
 import { BookingChange } from '../constants/enums';
 import { NotificationBuffer } from '../constants/types';
-import { offsetDay } from './date.helper';
-
-/** Converts 'YYYY-MM-DD' formatted string to 'MM/DD/YY' for email readability */
-export const formatDate = (date: string): string => {
-  const [y, m, d] = date.split('-');
-  return `${Number(m)}/${Number(d)}/${y.slice(2)}`;
-};
+import { formatIsoDate, offsetDay } from './date.helper';
 
 /** Generates HTML for booking, with optional CSS class or partial booking to indicate a change to a booking */
 export const formatBooking = (
@@ -15,7 +9,7 @@ export const formatBooking = (
   cssClass?: string,
   change?: Partial<Booking>
 ): string => {
-  const [checkIn, checkOut] = [firstNight, offsetDay(lastNight, 1)].map(formatDate);
+  const [checkIn, checkOut] = [firstNight, offsetDay(lastNight, 1)].map(formatIsoDate);
 
   const bookingHtml = `<div class="booking ${change ? '' : cssClass ?? ''}">
       <div class="left half">
@@ -37,7 +31,7 @@ export const formatBooking = (
           ${
             change.firstNight
               ? `<span class="text">Check In:</span>
-          <span class="text date">${formatDate(change.firstNight)}</span>`
+          <span class="text date">${formatIsoDate(change.firstNight)}</span>`
               : ''
           }
         </div>
@@ -46,7 +40,7 @@ export const formatBooking = (
           ${
             change.lastNight
               ? `<span class="text">Check Out:</span>
-          <span class="text date">${formatDate(offsetDay(change.lastNight, 1))}</span>`
+          <span class="text date">${formatIsoDate(offsetDay(change.lastNight, 1))}</span>`
               : ''
           }
         </div>
