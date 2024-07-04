@@ -96,25 +96,21 @@ export class AirbnbService {
           const calendar = new Calendar();
 
           if (apiResponseStr !== this.previousResponse) {
-            apiResponse
-              .reverse()
-              .forEach(({ calendarDate, bookable, availableForCheckin, availableForCheckout, minNights }) => {
-                if (calendarDate >= this.date.today) {
-                  const available = availableForCheckin || availableForCheckout;
-
-                  if (available && (!this.calendarRange || calendarDate > this.calendarRange)) {
-                    this.calendarRange = calendarDate;
-                  }
-
-                  if (this.calendarRange && calendarDate <= this.calendarRange) {
-                    calendar.unshift({
-                      booked: !bookable,
-                      date: calendarDate,
-                      minNights: Number(minNights),
-                    });
-                  }
+            apiResponse.reverse().forEach(({ calendarDate, bookable, minNights }) => {
+              if (calendarDate >= this.date.today) {
+                if (bookable && (!this.calendarRange || calendarDate > this.calendarRange)) {
+                  this.calendarRange = calendarDate;
                 }
-              });
+
+                if (this.calendarRange && calendarDate <= this.calendarRange) {
+                  calendar.unshift({
+                    booked: !bookable,
+                    date: calendarDate,
+                    minNights: Number(minNights),
+                  });
+                }
+              }
+            });
             this.previousResponse = apiResponseStr;
           }
           result = calendar;
