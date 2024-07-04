@@ -45,6 +45,7 @@ export type AirbnbRequestVariables = {
 };
 
 export type MerlinCalendarDay = {
+  bookable: boolean;
   availableForCheckin: boolean;
   availableForCheckout: boolean;
   calendarDate: ISODate;

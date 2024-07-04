@@ -98,7 +98,7 @@ export class AirbnbService {
           if (apiResponseStr !== this.previousResponse) {
             apiResponse
               .reverse()
-              .forEach(({ calendarDate, availableForCheckin, availableForCheckout, minNights }) => {
+              .forEach(({ calendarDate, bookable, availableForCheckin, availableForCheckout, minNights }) => {
                 if (calendarDate >= this.date.today) {
                   const available = availableForCheckin || availableForCheckout;
 
@@ -108,7 +108,7 @@ export class AirbnbService {
 
                   if (this.calendarRange && calendarDate <= this.calendarRange) {
                     calendar.unshift({
-                      booked: !available,
+                      booked: !bookable,
                       date: calendarDate,
                       minNights: Number(minNights),
                     });
