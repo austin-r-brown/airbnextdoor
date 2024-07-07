@@ -58,7 +58,7 @@ This number determines how many minutes the app will wait between each time it c
 
 Once you've filled these in and saved to the .env file, the application should be ready to go. Now you may run the `npm start` command from your terminal, or if on Windows simply open the `Start.bat` file in the folder labeled 'setup'. You'll want it running on a machine that is always on. I have this running on my Plex Server. The booking data retrieved from Airbnb is saved to the hard disk and will be restored automatically should the application be restarted.
 
-### Setup: iCal calendar events
+### Setup: iCal Calendar Events
 
 After you start the app, there should be an iCal file hosted from your servers localhost at port 3000, and can be used to automatically update your iPhone calendar with events representing the Airbnb bookings. To set this up, simply add a new calendar from your iPhone's calendar app, choose the subscription option, and enter the url shown from the console where this app is running. Since it is being hosted locally, this will only work when both devices are on the same network. Port forwarding can be utilized for access outside the network.
 

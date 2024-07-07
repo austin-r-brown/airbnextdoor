@@ -1,3 +1,4 @@
+import { getIsoDate } from '../helpers/date.helper';
 import { MS_IN_DAY } from './constants';
 
 export type ISODate = `${string}-${string}-${string}`;
@@ -21,6 +22,6 @@ export class Booking {
   get isActive(): boolean {
     const today = new Date(new Date().toLocaleDateString());
     const yesterday = new Date(today.valueOf() - MS_IN_DAY);
-    return new Date(this.firstNight) <= today && new Date(this.lastNight) >= yesterday;
+    return this.firstNight <= getIsoDate(today) && this.lastNight >= getIsoDate(yesterday);
   }
 }

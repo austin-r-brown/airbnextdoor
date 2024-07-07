@@ -4,12 +4,12 @@ import { NotificationBuffer } from '../constants/types';
 import { formatIsoDate, offsetDay } from './date.helper';
 
 /** Generates HTML for booking, with optional CSS class or partial booking to indicate a change to a booking */
-export const formatBooking = (
-  { firstNight, lastNight }: Booking,
-  cssClass?: string,
-  change?: Partial<Booking>
-): string => {
-  const [checkIn, checkOut] = [firstNight, offsetDay(lastNight, 1)].map(formatIsoDate);
+export const formatBooking = (booking: Booking, cssClass?: string, change?: Partial<Booking>): string => {
+  const [checkIn, checkOut] = [booking.firstNight, offsetDay(booking.lastNight, 1)].map(formatIsoDate);
+
+  if (!cssClass && booking.isActive) {
+    cssClass = 'active';
+  }
 
   const bookingHtml = `<div class="booking ${change ? '' : cssClass ?? ''}">
       <div class="left half">
@@ -54,9 +54,7 @@ export const formatBooking = (
 /** Generates HTML for Current Bookings summary that is appended to each email */
 export const formatCurrentBookings = (bookings: Booking[]): string | undefined => {
   if (bookings.length) {
-    const bookingsHtml = bookings.map((b) => {
-      return formatBooking(b, b.isActive ? 'active' : '');
-    }).join(`
+    const bookingsHtml = bookings.map((b) => formatBooking(b)).join(`
       `);
 
     return `<span class="title">Current Bookings</span>
@@ -90,11 +88,8 @@ export const createNotifications = (buffer: NotificationBuffer): string[] => {
 export const formatNotification = (title: string, bookings: Booking[], change?: Partial<Booking>): string => {
   const [changeType] = Object.entries(BookingChange).find(([, c]) => c === title) ?? [];
   // Use BookingChange enum keys as CSS class names
-  const bookingHtml = bookings.map((b) => {
-    const cssClass = changeType?.toLowerCase() ?? (b.isActive ? 'active' : '');
-    return formatBooking(b, cssClass, change);
-  }).join(`
-  `);
+  const bookingHtml = bookings.map((b) => formatBooking(b, changeType?.toLowerCase(), change)).join(`
+    `);
 
   return `<span class="title">${bookings.length > 1 ? title.replace('Booking', 'Bookings') : title}</span>
     ${bookingHtml}`;
