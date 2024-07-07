@@ -3,8 +3,9 @@ import { formatIsoDate } from '../helpers/date.helper';
 import { Booking } from '../constants/Booking';
 import { LogItem } from '../constants/types';
 import { ConsoleType } from '../constants/enums';
+import { readFileSync } from 'fs';
 
-const START_MSG = 'Starting application...';
+const START_MSG = 'Starting application';
 const SUCCESS_MSG = 'Airbnb dates checked successfully';
 
 /** Service for handling console log messages */
@@ -17,7 +18,8 @@ export class LogService {
 
   constructor() {
     this.resetConsole();
-    this.info(START_MSG);
+    const { version } = JSON.parse(readFileSync('package.json', 'utf-8'));
+    this.info(`${START_MSG} v${version}`);
   }
 
   private log(values: any[], type: ConsoleType) {
