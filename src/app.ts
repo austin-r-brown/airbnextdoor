@@ -62,7 +62,6 @@ export class App {
 
     this.sendDebounceTimer = setTimeout(() => {
       const bookings = this.sortAndSaveBookings();
-      this.ical.updateEvents(bookings);
       const notifications = createNotifications(this.notificationBuffer);
 
       if (notifications.length) {
@@ -77,12 +76,13 @@ export class App {
     }, SEND_DEBOUNCE_TIME);
   }
 
-  /** Sorts bookings by check in date and saves to DB */
+  /** Sorts bookings by check in date, updates DB and iCal services with latest bookings */
   private sortAndSaveBookings(): Booking[] {
     const bookings = this.bookings.sort(
       (a, b) => new Date(a.firstNight).valueOf() - new Date(b.firstNight).valueOf()
     );
     this.db.save(bookings);
+    this.ical.updateEvents(bookings);
     return bookings;
   }
 
