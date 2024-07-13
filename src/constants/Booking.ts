@@ -1,27 +1,45 @@
-import { getIsoDate } from '../helpers/date.helper';
-import { MS_IN_DAY } from './constants';
+import { getIsoDate, offsetDay } from '../helpers/date.helper';
 
 export type ISODate = `${string}-${string}-${string}`;
 
 export class Booking {
   firstNight: ISODate;
-  lastNight: ISODate;
   isBlockedOff?: boolean;
   createdAt?: Date;
 
-  constructor(booking: Partial<Booking>) {
-    if (!booking.firstNight || !booking.lastNight) {
+  private _lastNight: ISODate;
+  private _checkOut: ISODate;
+
+  constructor({ firstNight, lastNight, isBlockedOff, createdAt }: Partial<Booking>) {
+    if (!firstNight || !lastNight) {
       throw 'Cannot create booking without first and last nights';
     }
-    this.firstNight = booking.firstNight;
-    this.lastNight = booking.lastNight;
-    this.isBlockedOff = booking.isBlockedOff;
-    this.createdAt = booking.createdAt;
+    this.firstNight = firstNight;
+    this._lastNight = lastNight;
+    this._checkOut = offsetDay(lastNight, 1);
+    this.isBlockedOff = isBlockedOff;
+    this.createdAt = createdAt;
+  }
+
+  get checkIn(): ISODate {
+    return this.firstNight;
+  }
+
+  get checkOut(): ISODate {
+    return this._checkOut;
+  }
+
+  get lastNight(): ISODate {
+    return this._lastNight;
+  }
+
+  set lastNight(date: ISODate) {
+    this._lastNight = date;
+    this._checkOut = offsetDay(date, 1);
   }
 
   get isActive(): boolean {
-    const today = new Date(new Date().toLocaleDateString());
-    const yesterday = new Date(today.valueOf() - MS_IN_DAY);
-    return this.firstNight <= getIsoDate(today) && this.lastNight >= getIsoDate(yesterday);
+    const today = getIsoDate(new Date(new Date().toLocaleDateString()));
+    return this.checkIn <= today && this.checkOut >= today;
   }
 }

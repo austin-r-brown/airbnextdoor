@@ -75,7 +75,7 @@ export class LogService {
     let titleMsg = title,
       start = 'Check In',
       end = 'Check Out',
-      endDate = offsetDay(booking.lastNight, 1),
+      endDate = booking.checkOut,
       changeMsg: string[] = [];
 
     if (booking.isBlockedOff) {

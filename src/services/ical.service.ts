@@ -1,7 +1,6 @@
 import ical, { ICalCalendar, ICalCalendarMethod, ICalEventData } from 'ical-generator';
 import { AirbnbService } from './airbnb.service';
 import { Booking } from '../constants/Booking';
-import { offsetDay } from '../helpers/date.helper';
 import { LogService } from './log.service';
 import express from 'express';
 import os from 'os';
@@ -26,8 +25,8 @@ export class iCalService {
 
     bookings.forEach((booking) => {
       if (!booking.isBlockedOff) {
-        const start = new Date(`${booking.firstNight}T15:00:00`);
-        const end = new Date(`${offsetDay(booking.lastNight, 1)}T11:00:00`);
+        const start = new Date(`${booking.checkIn}T15:00:00`);
+        const end = new Date(`${booking.checkOut}T11:00:00`);
 
         const event: ICalEventData = {
           start: start.toUTCString(),

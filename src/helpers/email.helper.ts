@@ -5,7 +5,7 @@ import { formatIsoDate, offsetDay } from './date.helper';
 
 /** Generates HTML for booking, with optional CSS class or partial booking to indicate a change to a booking */
 export const formatBooking = (booking: Booking, cssClass?: string, change?: Partial<Booking>): string => {
-  const [checkIn, checkOut] = [booking.firstNight, offsetDay(booking.lastNight, 1)].map(formatIsoDate);
+  const [checkIn, checkOut] = [booking.checkIn, booking.checkOut].map(formatIsoDate);
 
   if (!cssClass && booking.isActive) {
     cssClass = 'active';

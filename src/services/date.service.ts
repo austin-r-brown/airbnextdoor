@@ -1,12 +1,9 @@
-import { offsetDay } from '../helpers/date.helper';
 import { ISODate } from '../constants/Booking';
 
 /** Service for keeping track of today's date */
 export class DateService {
   public date!: Date;
   public today!: ISODate;
-  public yesterday!: ISODate;
-  public tomorrow!: ISODate;
   public month!: number;
   public year!: number;
 
@@ -19,8 +16,6 @@ export class DateService {
     if (dateChanged) {
       this.date = new Date(todayIso);
       this.today = todayIso;
-      this.yesterday = offsetDay(todayIso, -1);
-      this.tomorrow = offsetDay(todayIso, 1);
       this.month = Number(m);
       this.year = Number(y);
     }

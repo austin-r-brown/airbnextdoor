@@ -67,7 +67,7 @@ export class App {
       if (notifications.length) {
         const count = this.notificationBuffer.length;
         const subject = `${this.airbnb.listingTitle}: ${count} Notification${count > 1 ? 's' : ''}`;
-        const currentBookings = bookings.filter((b) => !b.isBlockedOff && b.lastNight >= this.date.yesterday);
+        const currentBookings = bookings.filter((b) => !b.isBlockedOff && b.checkOut >= this.date.today);
         const footer = formatCurrentBookings(currentBookings);
 
         this.email.send(subject, notifications, footer);
@@ -190,13 +190,13 @@ export class App {
 
     for (const b of this.bookings) {
       if (!b.isBlockedOff) {
-        if (b.firstNight === this.date.today) {
+        if (b.checkIn === this.date.today) {
           startingToday = b;
-        } else if (b.lastNight === this.date.yesterday) {
+        } else if (b.checkOut === this.date.today) {
           endingToday = b;
         }
       }
-      if (startingToday && endingToday) {
+      if (b.checkIn > this.date.today) {
         break;
       }
     }
@@ -221,9 +221,8 @@ export class App {
         preceding = precedingBooking;
       }
 
-      const succeedingDate = offsetDay(gap.lastNight, 1);
-      const succeedingBooking = existingBookings.get(succeedingDate);
-      if (succeedingBooking?.firstNight === succeedingDate && !succeedingBooking.isBlockedOff) {
+      const succeedingBooking = existingBookings.get(gap.checkOut);
+      if (succeedingBooking?.checkIn === gap.checkOut && !succeedingBooking.isBlockedOff) {
         succeeding = succeedingBooking;
       }
 
