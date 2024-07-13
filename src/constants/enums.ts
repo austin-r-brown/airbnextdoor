@@ -4,7 +4,7 @@ export enum ConsoleType {
   Warn = 'warn',
 }
 
-export enum BookingChange {
+export enum BookingChangeType {
   New = 'New Booking',
   Cancelled = 'Cancelled Booking',
   Extended = 'Booking Extended',

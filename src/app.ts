@@ -1,7 +1,7 @@
 import { Booking, ISODate } from './constants/Booking';
 import { Calendar } from './constants/Calendar';
-import { CalendarDay, BookingsMap, NotificationBuffer, RunOptions } from './constants/types';
-import { BookingChange } from './constants/enums';
+import { CalendarDay, BookingMap, NotificationBuffer, RunOptions } from './constants/types';
+import { BookingChangeType } from './constants/enums';
 import { countDaysBetween, offsetDay, getBookingDateRange } from './helpers/date.helper';
 import { formatCurrentBookings, createNotifications } from './helpers/email.helper';
 import { DbService } from './services/db.service';
@@ -88,7 +88,7 @@ export class App {
 
   /** Sets isBlockedOff property and sends cancelled notification */
   private changeToBlockedOff(booking: Booking) {
-    this.notify(BookingChange.Cancelled, booking);
+    this.notify(BookingChangeType.Cancelled, booking);
     booking.isBlockedOff = true;
   }
 
@@ -107,20 +107,20 @@ export class App {
         b.createdAt = createdAt;
       }
       this.bookings.push(b);
-      this.notify(BookingChange.New, b);
+      this.notify(BookingChangeType.New, b);
     });
   }
 
   /** Validates changes in booking length, updates booking accordingly and sends notification */
   private changeBookingLength(booking: Booking, change: Partial<Booking>) {
-    let changeType: BookingChange | undefined;
+    let changeType: BookingChangeType | undefined;
     const { firstNight, lastNight } = change;
 
     if (firstNight && firstNight !== booking.firstNight) {
-      changeType = firstNight < booking.firstNight ? BookingChange.Extended : BookingChange.Shortened;
+      changeType = firstNight < booking.firstNight ? BookingChangeType.Extended : BookingChangeType.Shortened;
       delete change.lastNight;
     } else if (lastNight && lastNight !== booking.lastNight) {
-      changeType = lastNight > booking.lastNight ? BookingChange.Extended : BookingChange.Shortened;
+      changeType = lastNight > booking.lastNight ? BookingChangeType.Extended : BookingChangeType.Shortened;
       delete change.firstNight;
     }
 
@@ -135,13 +135,13 @@ export class App {
     indexes.forEach((index, i) => {
       const currentIndex = index - i;
       const booking: Booking = this.bookings[currentIndex];
-      this.notify(BookingChange.Cancelled, booking);
+      this.notify(BookingChangeType.Cancelled, booking);
       this.bookings.splice(currentIndex, 1);
     });
   }
 
   /** Returns tuple of newly found bookings and newly found gaps that are too short to be bookings */
-  private checkForNewBookings(calendar: Calendar, existingBookings: BookingsMap): [Booking[], Booking[]] {
+  private checkForNewBookings(calendar: Calendar, existingBookings: BookingMap): [Booking[], Booking[]] {
     const bookings: Booking[] = [];
     const gaps: Booking[] = [];
 
@@ -210,7 +210,7 @@ export class App {
   }
 
   /** Extends adjacent booking with gap if one adjacent booking exists, otherwise blocks off gap from future bookings */
-  private checkAdjacentBookings(gaps: Booking[], existingBookings: BookingsMap) {
+  private checkAdjacentBookings(gaps: Booking[], existingBookings: BookingMap) {
     gaps.forEach((gap) => {
       let preceding;
       let succeeding;
@@ -241,8 +241,8 @@ export class App {
   }
 
   /** Handles changes if existing bookings have shortened or cancelled, returns map of updated existing bookings */
-  private checkExistingBookings(calendar: Calendar): BookingsMap {
-    const existingBookings: BookingsMap = new Map();
+  private checkExistingBookings(calendar: Calendar): BookingMap {
+    const existingBookings: BookingMap = new Map();
     const cancelledBookings: number[] = [];
 
     this.bookings.forEach((b, i) => {

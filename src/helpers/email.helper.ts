@@ -1,5 +1,5 @@
 import { Booking } from '../constants/Booking';
-import { BookingChange } from '../constants/enums';
+import { BookingChangeType } from '../constants/enums';
 import { NotificationBuffer } from '../constants/types';
 import { formatIsoDate, offsetDay } from './date.helper';
 
@@ -86,7 +86,7 @@ export const createNotifications = (buffer: NotificationBuffer): string[] => {
 
 /** Generates HTML for a notification to be sent via email */
 export const formatNotification = (title: string, bookings: Booking[], change?: Partial<Booking>): string => {
-  const [changeType] = Object.entries(BookingChange).find(([, c]) => c === title) ?? [];
+  const [changeType] = Object.entries(BookingChangeType).find(([, c]) => c === title) ?? [];
   // Use BookingChange enum keys as CSS class names
   const bookingHtml = bookings.map((b) => formatBooking(b, changeType?.toLowerCase(), change)).join(`
     `);

@@ -3,7 +3,7 @@ import { ConsoleType } from './enums';
 
 export type Time24Hr = [number, number?, number?];
 
-export type BookingsMap = Map<ISODate, Booking>;
+export type BookingMap = Map<ISODate, Booking>;
 
 export type NotificationBuffer = [string, Booking, Partial<Booking>?][];
 
