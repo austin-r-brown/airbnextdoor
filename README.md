@@ -9,7 +9,7 @@ Additionally, an iCal file is hosted which can be subscribed to for bookings to 
 
 ### Installation
 
-- To use, you will first need to install the latest version of Node (https://nodejs.org/en/download).
+- To use, you will first need to install Node if you do not already have it (https://nodejs.org/en/download). The current known compatible versions are 18.15.0 - 20.10.0, but the latest version will most likely be fine.
 
 - Next, you will need to run the `npm install` command from your terminal. If on Windows, you may simply open the `Install.bat` file in the folder labeled 'setup' and this command will be run automatically.
 
