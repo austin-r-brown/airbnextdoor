@@ -1,7 +1,7 @@
 import { ISODate, Booking } from './Booking';
 import { ConsoleType } from './enums';
 
-export type Time24Hr = [number, number?, number?];
+export type Time = [number, number?, number?];
 
 export type BookingMap = Map<ISODate, Booking>;
 
