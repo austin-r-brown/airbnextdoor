@@ -147,7 +147,7 @@ export class App {
 
     const push = (b: Booking, minNights?: number) => {
       const min = minNights ?? calendar.get(b.firstNight)?.minNights ?? 1;
-      const totalNights = countDaysBetween(b.firstNight, b.lastNight) + 1;
+      const totalNights = countDaysBetween(b.checkIn, b.checkOut);
       if (totalNights >= min) {
         bookings.push(b);
       } else {
