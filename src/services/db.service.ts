@@ -1,4 +1,5 @@
 import { Booking } from '../constants/Booking';
+import { BackupFile } from '../constants/types';
 import { AirbnbService } from './airbnb.service';
 import { LogService } from './log.service';
 import * as fs from 'fs';
@@ -77,12 +78,16 @@ export class DbService {
     });
   }
 
-  private loadBackupFiles(): string[] {
+  private loadBackupFiles(): BackupFile[] {
     if (fs.existsSync(this.backupsDir)) {
       return fs
         .readdirSync(this.backupsDir)
         .filter((f: string) => f.endsWith('.json'))
-        .sort((a, b) => this.getDateFromFile(b).valueOf() - this.getDateFromFile(a).valueOf());
+        .map((filename: string) => ({
+          path: path.join(this.backupsDir, filename),
+          createdAt: this.getDateFromFile(filename),
+        }))
+        .sort((a: BackupFile, b: BackupFile) => b.createdAt.valueOf() - a.createdAt.valueOf());
     }
     return [];
   }
@@ -91,13 +96,12 @@ export class DbService {
     const backupFiles = this.loadBackupFiles();
     for (const file of backupFiles) {
       try {
-        const backupData = fs.readFileSync(path.join(this.backupsDir, file), 'utf8');
-        const backupJsonData = JSON.parse(backupData);
+        const backupJson = JSON.parse(fs.readFileSync(file.path, 'utf8'));
 
-        if (Array.isArray(backupJsonData) && backupJsonData.length) {
-          const date = this.getDateFromFile(file).toLocaleString();
+        if (Array.isArray(backupJson) && backupJson.length) {
+          const date = file.createdAt.toLocaleString();
           this.log.info(`Successfully restored ${date} backup`);
-          return backupJsonData;
+          return backupJson;
         }
       } catch (err) {
         this.log.error(`Error reading backup file ${file}: "${err}"`);
@@ -106,9 +110,9 @@ export class DbService {
     return null;
   }
 
-  cleanupBackupFiles(): void {
+  private cleanupBackupFiles(): void {
     const oldBackups = this.loadBackupFiles().slice(10);
-    oldBackups.forEach((file) => fs.unlinkSync(path.join(this.backupsDir, file)));
+    oldBackups.forEach((file) => fs.unlinkSync(file.path));
   }
 
   private getDateFromFile(filename: string): Date {

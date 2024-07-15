@@ -65,3 +65,8 @@ export type RunOptions = {
   isFirstRun?: boolean;
   isPostMidnightRun?: boolean;
 };
+
+export type BackupFile = {
+  path: string;
+  createdAt: Date;
+};
