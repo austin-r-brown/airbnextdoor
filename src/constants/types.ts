@@ -5,6 +5,8 @@ export type Time = [number, number?, number?];
 
 export type BookingMap = Map<ISODate, Booking>;
 
+export type BookingSerialized = Omit<Booking, 'checkIn' | 'checkOut' | 'isActive' | 'toJSON'>;
+
 export type NotificationBuffer = [string, Booking, Partial<Booking>?][];
 
 export type CalendarDay = {

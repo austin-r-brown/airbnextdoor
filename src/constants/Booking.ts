@@ -1,4 +1,5 @@
 import { getIsoDate, offsetDay } from '../helpers/date.helper';
+import { BookingSerialized } from './types';
 
 export type ISODate = `${string}-${string}-${string}`;
 
@@ -41,5 +42,14 @@ export class Booking {
   get isActive(): boolean {
     const today = getIsoDate(new Date(new Date().toLocaleDateString()));
     return this.checkIn <= today && this.checkOut >= today;
+  }
+
+  toJSON(): BookingSerialized {
+    return {
+      firstNight: this.firstNight,
+      lastNight: this.lastNight,
+      isBlockedOff: this.isBlockedOff,
+      createdAt: this.createdAt,
+    };
   }
 }

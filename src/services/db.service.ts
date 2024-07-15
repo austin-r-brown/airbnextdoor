@@ -22,7 +22,8 @@ export class DbService {
   public async save(bookings: Booking[]) {
     if (bookings.length) {
       await this.backup();
-      const jsonString = JSON.stringify(bookings, null, 2);
+      const serialized = bookings.map((booking) => booking.toJSON());
+      const jsonString = JSON.stringify(serialized, null, 2);
 
       fs.writeFile(this.filepath, jsonString, 'utf8', (err: any) => {
         if (err) {
