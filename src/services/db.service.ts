@@ -66,6 +66,8 @@ export class DbService {
         fs.copyFile(this.filepath, path.join(this.backupsDir, `${Date.now()}.json`), (err: any) => {
           if (err) {
             this.log.error(`Error creating backup of DB file: "${err}"`);
+          } else {
+            this.cleanupBackupFiles();
           }
           resolve();
         });
@@ -75,29 +77,38 @@ export class DbService {
     });
   }
 
-  private restoreBackup(): Booking[] | null {
+  private loadBackupFiles(): string[] {
     if (fs.existsSync(this.backupsDir)) {
-      const backupFiles: string[] = fs
+      return fs
         .readdirSync(this.backupsDir)
-        .filter((f: string) => f.endsWith('.json'));
-      backupFiles.sort((a, b) => this.getDateFromFile(b).valueOf() - this.getDateFromFile(a).valueOf());
+        .filter((f: string) => f.endsWith('.json'))
+        .sort((a, b) => this.getDateFromFile(b).valueOf() - this.getDateFromFile(a).valueOf());
+    }
+    return [];
+  }
 
-      for (const file of backupFiles) {
-        try {
-          const backupData = fs.readFileSync(path.join(this.backupsDir, file), 'utf8');
-          const backupJsonData = JSON.parse(backupData);
+  private restoreBackup(): Booking[] | null {
+    const backupFiles = this.loadBackupFiles();
+    for (const file of backupFiles) {
+      try {
+        const backupData = fs.readFileSync(path.join(this.backupsDir, file), 'utf8');
+        const backupJsonData = JSON.parse(backupData);
 
-          if (Array.isArray(backupJsonData) && backupJsonData.length) {
-            const date = this.getDateFromFile(file).toLocaleString();
-            this.log.info(`Successfully restored ${date} backup`);
-            return backupJsonData;
-          }
-        } catch (err) {
-          this.log.error(`Error reading backup file ${file}: "${err}"`);
+        if (Array.isArray(backupJsonData) && backupJsonData.length) {
+          const date = this.getDateFromFile(file).toLocaleString();
+          this.log.info(`Successfully restored ${date} backup`);
+          return backupJsonData;
         }
+      } catch (err) {
+        this.log.error(`Error reading backup file ${file}: "${err}"`);
       }
     }
     return null;
+  }
+
+  cleanupBackupFiles(): void {
+    const oldBackups = this.loadBackupFiles().slice(10);
+    oldBackups.forEach((file) => fs.unlinkSync(path.join(this.backupsDir, file)));
   }
 
   private getDateFromFile(filename: string): Date {
