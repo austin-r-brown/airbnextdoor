@@ -13,7 +13,7 @@ export class Booking {
 
   constructor({ firstNight, lastNight, isBlockedOff, createdAt }: Partial<Booking>) {
     if (!firstNight || !lastNight) {
-      throw 'Cannot create booking without first and last nights';
+      throw new Error('Cannot create booking without first and last nights');
     }
     this.firstNight = firstNight;
     this._lastNight = lastNight;
