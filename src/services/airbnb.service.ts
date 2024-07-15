@@ -24,7 +24,7 @@ export class AirbnbService {
 
   private previousResponse?: string;
 
-  /** Furthest date in the future known as having been available to check out */
+  /** Furthest date in the future ever known to be available for check out */
   private calendarRange?: ISODate;
 
   private readonly apiConfig: AirbnbApiConfig = {
@@ -98,21 +98,28 @@ export class AirbnbService {
           const calendar = new Calendar();
 
           if (apiResponseStr !== this.previousResponse) {
-            apiResponse.reverse().forEach(({ calendarDate, bookable, availableForCheckout, minNights }) => {
+            // Iterate backwards to simultaneously find calendarRange and build Calendar object
+            for (let i = apiResponse.length - 1; i >= 0; i--) {
+              const { calendarDate, bookable, availableForCheckout, minNights } = apiResponse[i];
+
               if (calendarDate >= this.date.today) {
                 if (availableForCheckout && (!this.calendarRange || calendarDate > this.calendarRange)) {
                   this.calendarRange = calendarDate;
                 }
 
                 if (this.calendarRange && calendarDate <= this.calendarRange) {
+                  // Last available date always shows as available for checkout but not bookable
+                  const available = calendarDate === this.calendarRange ? availableForCheckout : bookable;
                   calendar.unshift({
-                    booked: calendarDate === this.calendarRange ? !availableForCheckout : !bookable,
+                    booked: !available,
                     date: calendarDate,
                     minNights: Number(minNights),
                   });
                 }
+              } else {
+                break;
               }
-            });
+            }
             this.previousResponse = apiResponseStr;
           }
           result = calendar;
