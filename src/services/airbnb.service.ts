@@ -84,15 +84,20 @@ export class AirbnbService {
           this.listingTitle = title;
         }
 
-        const houseRules = sectionsMap.get('PoliciesSection')?.houseRules.map((r: any) => r.title);
-        const [checkInTime, checkOutTime] = houseRules.map(getTimeFromString).filter(Boolean);
+        const houseRules: string[] = sectionsMap.get('PoliciesSection')?.houseRules.map((r: any) => r.title);
+        houseRules.forEach((rule) => {
+          const time = getTimeFromString(rule);
+          if (time) {
+            const checkInRegex = /check[\s-]?in/i;
+            const checkOutRegex = /check[\s-]?out/i;
 
-        if (checkInTime) {
-          this.checkInTime = checkInTime;
-        }
-        if (checkOutTime) {
-          this.checkOutTime = checkOutTime;
-        }
+            if (checkInRegex.test(rule)) {
+              this.checkInTime = time;
+            } else if (checkOutRegex.test(rule)) {
+              this.checkOutTime = time;
+            }
+          }
+        });
       }
     } catch (e: any) {
       this.log.error(`Error fetching Airbnb listing details for ID ${this.listingId}:`, e?.message);

@@ -58,20 +58,15 @@ export const getBookingDateRange = (booking: Booking): ISODate[] => {
 };
 
 export const getTimeFromString = (str: string): Time | null => {
-  const checkInOutRegex = /check[\s-]?in|check[\s-]?out/i;
-  const timeRegex = /\b\d{1,2}:\d{2}\s*(AM|PM)\b/i;
+  const timeMatch = str.match(/\b\d{1,2}:\d{2}\s*(AM|PM)\b/i);
 
-  const checkMatch = str.match(checkInOutRegex);
-  if (checkMatch) {
-    const timeMatch = str.match(timeRegex);
-    if (timeMatch) {
-      const time = timeMatch[0];
-      let [h, m] = time?.split(':').map((str) => Number(str.replace(/\D/g, '')));
-      if (h && time?.toUpperCase().includes('PM')) {
-        h += 12;
-      }
-      return [h, m];
+  if (timeMatch) {
+    const time = timeMatch[0];
+    let [h, m] = time?.split(':').map((str) => Number(str.replace(/\D/g, '')));
+    if (h && time?.toUpperCase().includes('PM')) {
+      h += 12;
     }
+    return [h, m];
   }
 
   return null;
