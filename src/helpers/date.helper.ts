@@ -57,15 +57,19 @@ export const getBookingDateRange = (booking: Booking): ISODate[] => {
   return dateArray;
 };
 
-export const getTimeFromString = (str: string): Time | null => {
-  const timeMatch = str.match(/\b\d{1,2}:\d{2}\s*(AM|PM)\b/i);
+export const getTimeFromString = (str: string): [number, number] | null => {
+  const timeMatch = str.match(/(?<!\d)\d{1,2}:\d{2}(?!\d)/g);
 
   if (timeMatch) {
     const time = timeMatch[0];
-    let [h, m] = time?.split(':').map((str) => Number(str.replace(/\D/g, '')));
-    if (h && time?.toUpperCase().includes('PM')) {
+    let [h, m] = time.split(':').map((str) => Number(str));
+
+    const timeEndIndex = str.indexOf(time) + time.length;
+    const remainder = str.slice(timeEndIndex);
+    if (remainder.trim().toLowerCase().startsWith('p') && h < 12) {
       h += 12;
     }
+
     return [h, m];
   }
 

@@ -24,8 +24,8 @@ export class AirbnbService {
   public listingUrl: string;
   public listingTitle: string = 'Airbnb';
 
-  public checkInTime: Time = [11];
-  public checkOutTime: Time = [15];
+  public checkInTime: Time = [15];
+  public checkOutTime: Time = [11];
 
   private previousResponse?: string;
 
