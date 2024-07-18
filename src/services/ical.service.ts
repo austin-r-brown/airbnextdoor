@@ -13,10 +13,22 @@ export class iCalService {
   private readonly calendar: ICalCalendar = ical({ method: ICalCalendarMethod.REQUEST });
   private readonly server = express();
 
+  private bookingStartTime: string = '';
+  private bookingEndTime: string = '';
+
   constructor(private log: LogService, private airbnb: AirbnbService) {}
 
   public init() {
     this.calendar.name(`${this.airbnb.listingTitle} Calendar`);
+
+    const [checkInH, checkInM] = this.airbnb.checkInTime;
+    const [checkOutH, checkOutM] = this.airbnb.checkOutTime;
+    const [startH, startM, endH, endM] = [checkInH, checkInM, checkOutH, checkOutM].map((num) =>
+      `${num ?? 0}`.padStart(2, '0')
+    );
+    this.bookingStartTime = `${startH}:${startM}`;
+    this.bookingEndTime = `${endH}:${endM}`;
+
     this.startServer();
   }
 
@@ -25,8 +37,8 @@ export class iCalService {
 
     bookings.forEach((booking) => {
       if (!booking.isBlockedOff) {
-        const start = new Date(`${booking.checkIn}T15:00:00`);
-        const end = new Date(`${booking.checkOut}T11:00:00`);
+        const start = new Date(`${booking.checkIn}T${this.bookingStartTime}:00`);
+        const end = new Date(`${booking.checkOut}T${this.bookingEndTime}:00`);
 
         const event: ICalEventData = {
           start: start.toUTCString(),

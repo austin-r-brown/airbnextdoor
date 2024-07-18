@@ -4,6 +4,7 @@ import {
   AirbnbRequestVariables,
   MerlinCalendarDay,
   MerlinCalendarMonth,
+  Time,
 } from '../constants/types';
 import { Calendar } from '../constants/Calendar';
 import { LOCALE } from '../constants/constants';
@@ -11,6 +12,7 @@ import { ISODate } from '../constants/Booking';
 import { LogService } from './log.service';
 import { EmailService } from './email.service';
 import { DateService } from './date.service';
+import { getTimeFromString } from '../helpers/date.helper';
 
 const API_OPERATION = 'PdpAvailabilityCalendar';
 const API_HASH = '8f08e03c7bd16fcad3c92a3592c19a8b559a0d0855a84028d1163d4733ed9ade';
@@ -21,6 +23,9 @@ export class AirbnbService {
   public listingId: string;
   public listingUrl: string;
   public listingTitle: string = 'Airbnb';
+
+  public checkInTime: Time = [11];
+  public checkOutTime: Time = [15];
 
   private previousResponse?: string;
 
@@ -63,12 +68,35 @@ export class AirbnbService {
   public async init(): Promise<void> {
     try {
       const response = await axios.get(this.listingUrl);
-      const match = response.data.match(/<meta\s+property="og:description"\s+content="([^"]+)"\s*\/?>/);
+      const titleMatch = response.data.match(/<meta\s+property="og:description"\s+content="([^"]+)"\s*\/?>/);
+      const jsonMatch = response.data.match(
+        /<script\s+id="data-deferred-state-0"\s+[^>]*>([\s\S]*?)<\/script>/i
+      );
 
-      if (match?.length > 1) {
-        this.listingTitle = match[1];
+      if (titleMatch?.length > 1) {
+        this.listingTitle = titleMatch[1];
       }
-    } catch {}
+
+      if (jsonMatch?.length > 1) {
+        const json = JSON.parse(jsonMatch[1]);
+        const houseRules =
+          json.niobeMinimalClientData[0][1].data.presentation.stayProductDetailPage.sections.sections
+            .map((s: any) => s.section)
+            .find((s: any) => s?.__typename === 'PoliciesSection')
+            .houseRules.map((r: any) => r.title);
+
+        const [checkInTime, checkOutTime] = houseRules.map(getTimeFromString).filter(Boolean);
+
+        if (checkInTime) {
+          this.checkInTime = checkInTime;
+        }
+        if (checkOutTime) {
+          this.checkOutTime = checkOutTime;
+        }
+      }
+    } catch (e: any) {
+      this.log.error(`Error fetching Airbnb listing details for ID ${this.listingId}:`, e?.message);
+    }
   }
 
   /**
@@ -102,7 +130,9 @@ export class AirbnbService {
             for (let i = apiResponse.length - 1; i >= 0; i--) {
               const { calendarDate, bookable, minNights } = apiResponse[i];
 
-              if (calendarDate >= this.date.today) {
+              if (calendarDate < this.date.today) {
+                break;
+              } else {
                 if (bookable && (!this.calendarRange || calendarDate > this.calendarRange)) {
                   this.calendarRange = calendarDate;
                 }
@@ -114,8 +144,6 @@ export class AirbnbService {
                     minNights: Number(minNights),
                   });
                 }
-              } else {
-                break;
               }
             }
             this.previousResponse = apiResponseStr;
