@@ -68,23 +68,23 @@ export class AirbnbService {
   public async init(): Promise<void> {
     try {
       const response = await axios.get(this.listingUrl);
-      const titleMatch = response.data.match(/<meta\s+property="og:description"\s+content="([^"]+)"\s*\/?>/);
-      const jsonMatch = response.data.match(
-        /<script\s+id="data-deferred-state-0"\s+[^>]*>([\s\S]*?)<\/script>/i
-      );
+      const match = response.data.match(/<script\s+id="data-deferred-state-0"\s+[^>]*>([\s\S]*?)<\/script>/i);
 
-      if (titleMatch?.length > 1) {
-        this.listingTitle = titleMatch[1];
-      }
+      if (match?.length > 1) {
+        const json = JSON.parse(match[1]);
+        const { sections } =
+          json.niobeMinimalClientData[0][1].data.presentation.stayProductDetailPage.sections;
+        const sectionsMap: Map<string, any> = new Map(
+          sections.map((s: any) => s.section).map((s: any) => [s?.__typename, s])
+        );
 
-      if (jsonMatch?.length > 1) {
-        const json = JSON.parse(jsonMatch[1]);
-        const houseRules =
-          json.niobeMinimalClientData[0][1].data.presentation.stayProductDetailPage.sections.sections
-            .map((s: any) => s.section)
-            .find((s: any) => s?.__typename === 'PoliciesSection')
-            .houseRules.map((r: any) => r.title);
+        const title = sectionsMap.get('AvailabilityCalendarSection')?.listingTitle;
 
+        if (title) {
+          this.listingTitle = title;
+        }
+
+        const houseRules = sectionsMap.get('PoliciesSection')?.houseRules.map((r: any) => r.title);
         const [checkInTime, checkOutTime] = houseRules.map(getTimeFromString).filter(Boolean);
 
         if (checkInTime) {
