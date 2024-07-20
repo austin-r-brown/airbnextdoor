@@ -1,10 +1,10 @@
 import { Booking } from '../constants/Booking';
 import { BookingChangeType } from '../constants/enums';
-import { NotificationBuffer } from '../constants/types';
+import { BookingChange, NotificationBuffer } from '../constants/types';
 import { formatIsoDate, offsetDay } from './date.helper';
 
 /** Generates HTML for booking, with optional CSS class or partial booking to indicate a change to a booking */
-export const formatBooking = (booking: Booking, cssClass?: string, change?: Partial<Booking>): string => {
+export const formatBooking = (booking: Booking, cssClass?: string, change?: BookingChange): string => {
   const [checkIn, checkOut] = [booking.checkIn, booking.checkOut].map(formatIsoDate);
 
   if (!cssClass && booking.isActive) {
@@ -85,7 +85,7 @@ export const createNotifications = (buffer: NotificationBuffer): string[] => {
 };
 
 /** Generates HTML for a notification to be sent via email */
-export const formatNotification = (title: string, bookings: Booking[], change?: Partial<Booking>): string => {
+export const formatNotification = (title: string, bookings: Booking[], change?: BookingChange): string => {
   const [changeType] = Object.entries(BookingChangeType).find(([, c]) => c === title) ?? [];
   // Use BookingChange enum keys as CSS class names
   const bookingHtml = bookings.map((b) => formatBooking(b, changeType?.toLowerCase(), change)).join(`

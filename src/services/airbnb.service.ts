@@ -66,6 +66,11 @@ export class AirbnbService {
   }
 
   public async init(): Promise<void> {
+    let listingTitle,
+      checkInTime,
+      checkOutTime,
+      throwErrors = [];
+
     try {
       const response = await axios.get(this.listingUrl);
       const match = response.data.match(/<script\s+id="data-deferred-state-0"\s+[^>]*>([\s\S]*?)<\/script>/i);
@@ -74,17 +79,14 @@ export class AirbnbService {
         const json = JSON.parse(match[1]);
         const { sections } =
           json.niobeMinimalClientData[0][1].data.presentation.stayProductDetailPage.sections;
-        const sectionsMap: Map<string, any> = new Map(
+
+        const sectionsMap = Object.fromEntries(
           sections.map((s: any) => s.section).map((s: any) => [s?.__typename, s])
         );
 
-        const title = sectionsMap.get('AvailabilityCalendarSection')?.listingTitle;
+        listingTitle = sectionsMap.AvailabilityCalendarSection?.listingTitle;
 
-        if (title) {
-          this.listingTitle = title;
-        }
-
-        const houseRules: string[] = sectionsMap.get('PoliciesSection')?.houseRules.map((r: any) => r.title);
+        const houseRules: string[] = sectionsMap.PoliciesSection?.houseRules.map((r: any) => r.title);
         houseRules.forEach((rule) => {
           const time = getTimeFromString(rule);
           if (time) {
@@ -92,12 +94,34 @@ export class AirbnbService {
             const checkOutRegex = /check[\s-]?out/i;
 
             if (checkInRegex.test(rule)) {
-              this.checkInTime = time;
+              checkInTime = time;
             } else if (checkOutRegex.test(rule)) {
-              this.checkOutTime = time;
+              checkOutTime = time;
             }
           }
         });
+      }
+
+      if (listingTitle) {
+        this.listingTitle = listingTitle;
+      } else {
+        throwErrors.push('Title');
+      }
+
+      if (checkInTime) {
+        this.checkInTime = checkInTime;
+      } else {
+        throwErrors.push('Check In Time');
+      }
+
+      if (checkOutTime) {
+        this.checkOutTime = checkOutTime;
+      } else {
+        throwErrors.push('Check Out Time');
+      }
+
+      if (throwErrors.length) {
+        throw new Error(`Unable to find the following: ${throwErrors.join(', ')}`);
       }
     } catch (e: any) {
       this.log.error(`Error fetching Airbnb listing details for ID ${this.listingId}:`, e?.message);
@@ -178,7 +202,7 @@ export class AirbnbService {
     if (AIRBNB_URL) {
       const trimmed = AIRBNB_URL.trim();
       const isId = Array.from(trimmed).every((c) => Number.isInteger(Number.parseInt(c)));
-      const [, idFromUrl] = !isId ? trimmed.match(/airbnb\.com\/rooms\/(\d+)(\?.*)?/) ?? [] : [];
+      const [, idFromUrl] = !isId ? trimmed.match(/airbnb\.com\/rooms\/(\d+)(\?.*)?$/) ?? [] : [];
       return isId ? trimmed : idFromUrl;
     }
   }

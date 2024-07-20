@@ -1,7 +1,7 @@
 import { offsetDay } from '../helpers/date.helper';
 import { formatIsoDate } from '../helpers/date.helper';
 import { Booking } from '../constants/Booking';
-import { LogItem } from '../constants/types';
+import { BookingChange, LogItem } from '../constants/types';
 import { ConsoleType } from '../constants/enums';
 import { readFileSync } from 'fs';
 
@@ -71,7 +71,7 @@ export class LogService {
     }
   }
 
-  public notification(title: string, booking: Booking, change?: Partial<Booking>) {
+  public notification(title: string, booking: Booking, change?: BookingChange) {
     let titleMsg = title,
       start = 'Check In',
       end = 'Check Out',

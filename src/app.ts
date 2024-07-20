@@ -1,6 +1,6 @@
 import { Booking, ISODate } from './constants/Booking';
 import { Calendar } from './constants/Calendar';
-import { CalendarDay, BookingMap, NotificationBuffer, RunOptions } from './constants/types';
+import { CalendarDay, BookingMap, NotificationBuffer, RunOptions, BookingChange } from './constants/types';
 import { BookingChangeType } from './constants/enums';
 import { countDaysBetween, offsetDay, getBookingDateRange } from './helpers/date.helper';
 import { formatCurrentBookings, createNotifications } from './helpers/email.helper';
@@ -50,7 +50,7 @@ export class App {
   }
 
   /** Sends all notifications that have accumulated during debounce period */
-  private notify(title: string, booking: Booking, change?: Partial<Booking>) {
+  private notify(title: string, booking: Booking, change?: BookingChange) {
     this.log.notification(title, booking, change);
 
     if (!booking.isBlockedOff) {
@@ -112,7 +112,7 @@ export class App {
   }
 
   /** Validates changes in booking length, updates booking accordingly and sends notification */
-  private changeBookingLength(booking: Booking, change: Partial<Booking>) {
+  private changeBookingLength(booking: Booking, change: BookingChange) {
     let changeType: BookingChangeType | undefined;
     const { firstNight, lastNight } = change;
 

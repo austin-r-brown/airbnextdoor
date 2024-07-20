@@ -5,7 +5,6 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 const SibApiV3Sdk = require('sib-api-v3-sdk');
-const { SIB_API_KEY, SEND_FROM_EMAIL, SEND_TO_EMAILS } = process.env;
 
 /** Service for handling user notifications via email */
 export class EmailService {
@@ -13,30 +12,24 @@ export class EmailService {
   private readonly css = fs.readFileSync(path.join('src', 'styles.css'), 'utf8');
   private readonly errorsSent = new Map<string, boolean>();
 
-  private readonly smtpConfig: EmailConfig = {
-    sender: { email: (SEND_FROM_EMAIL ?? '').trim() },
-    to: (SEND_TO_EMAILS ?? '')
-      .trim()
-      .split(',')
-      .map((e) => ({ email: e.trim() })),
-  };
-
-  private isUserInputValid: boolean = false;
+  private smtpConfig: EmailConfig | null;
 
   constructor(private readonly log: LogService) {
-    SibApiV3Sdk.ApiClient.instance.authentications['api-key'].apiKey = SIB_API_KEY?.trim();
+    const userConfig = this.validateUserInput();
 
-    if (this.validateUserInput()) {
-      this.isUserInputValid = true;
+    if (userConfig) {
+      SibApiV3Sdk.ApiClient.instance.authentications['api-key'].apiKey = userConfig.apiKey;
     } else {
       this.log.warn(
         'Valid Email Addresses and API Key must be provided in .env file for emails to be sent. See README.md for more info.'
       );
     }
+
+    this.smtpConfig = userConfig;
   }
 
   public send(subject: string, notifications: string[], footer?: string) {
-    if (this.isUserInputValid) {
+    if (this.smtpConfig) {
       const footerHtml = footer ? `<div class="notification" id="footer">${footer}</div>` : '';
       const bodyHtml = notifications.map((n) => `<div class="notification">${n}</div>`).join(`
       `);
@@ -64,7 +57,7 @@ export class EmailService {
           this.log.error(`Unable to send email: ${message ? `"${message}"` : err}`);
 
           if (err?.status === 401) {
-            this.isUserInputValid = false;
+            this.smtpConfig = null;
           } else {
             setTimeout(() => this.send(subject, notifications, footer), API_TIMEOUT);
           }
@@ -101,14 +94,28 @@ export class EmailService {
     this.errorsSent.clear();
   }
 
-  private validateUserInput(): boolean {
-    const { apiKey } = SibApiV3Sdk.ApiClient.instance.authentications['api-key'];
-    const { sender, to } = this.smtpConfig;
-    const emails = [sender.email, ...to.map((t) => t.email)];
+  private validateUserInput(): EmailConfig | null {
+    const apiKey: string = process.env.SIB_API_KEY?.trim() ?? '';
+    const sendFromEmail: string = process.env.SEND_FROM_EMAIL?.trim() ?? '';
+    const sendToEmails: string[] = (process.env.SEND_TO_EMAILS ?? '')
+      .trim()
+      .split(',')
+      .map((e) => e.trim());
+    const allEmails: string[] = [sendFromEmail, ...sendToEmails];
 
-    const apiKeyValid = apiKey?.length >= 32;
-    const emailsValid = emails.every((e) => /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g.test(e));
+    const apiKeyValid = apiKey.length >= 32 && /^[a-zA-Z0-9-]+$/.test(apiKey);
+    const emailsValid =
+      allEmails.length > 1 &&
+      allEmails.every((e) => /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(e.trim()));
 
-    return apiKeyValid && emailsValid;
+    if (apiKeyValid && emailsValid) {
+      return {
+        sender: { email: sendFromEmail },
+        to: sendToEmails.map((email) => ({ email })),
+        apiKey,
+      };
+    }
+
+    return null;
   }
 }

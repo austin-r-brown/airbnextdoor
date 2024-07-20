@@ -7,7 +7,9 @@ export type BookingMap = Map<ISODate, Booking>;
 
 export type BookingSerialized = Omit<Booking, 'checkIn' | 'checkOut' | 'isActive' | 'toJSON'>;
 
-export type NotificationBuffer = [string, Booking, Partial<Booking>?][];
+export type BookingChange = Partial<BookingSerialized>;
+
+export type NotificationBuffer = [string, Booking, BookingChange?][];
 
 export type CalendarDay = {
   booked: boolean;
@@ -20,6 +22,7 @@ export type EmailConfig = {
   to: { email: string }[];
   subject?: string;
   htmlContent?: string;
+  apiKey: string;
 };
 
 export type AirbnbApiConfig = {
