@@ -198,12 +198,12 @@ export class AirbnbService {
 
   /** Validates user input for Airbnb URL. Returns ID from URL if value is URL, trimmed ID if value is ID, otherwise undefined */
   private validateListingId(): string | void {
-    const { AIRBNB_URL } = process.env;
-    if (AIRBNB_URL) {
-      const trimmed = AIRBNB_URL.trim();
-      const isId = Array.from(trimmed).every((c) => Number.isInteger(Number.parseInt(c)));
-      const [, idFromUrl] = !isId ? trimmed.match(/airbnb\.com\/rooms\/(\d+)(\?.*)?$/) ?? [] : [];
-      return isId ? trimmed : idFromUrl;
+    const airbnbUrl = process.env.AIRBNB_URL?.trim();
+
+    if (airbnbUrl) {
+      const isId = /^\d+$/.test(airbnbUrl);
+      const [, idFromUrl] = !isId ? airbnbUrl.match(/airbnb\.com\/rooms\/(\d+)(\?.*)?$/) ?? [] : [];
+      return isId ? airbnbUrl : idFromUrl;
     }
   }
 
