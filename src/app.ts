@@ -40,13 +40,27 @@ export class App {
     const savedBookings = this.db.load();
     if (savedBookings.length) {
       this.bookings = savedBookings;
-      this.log.info(`Loaded ${savedBookings.length} booking(s) from DB for ${this.airbnb.listingTitle}`);
       this.ical.updateEvents(savedBookings);
+      this.log.info(`Loaded ${savedBookings.length} booking(s) from DB for ${this.airbnb.listingTitle}`);
     }
 
     await this.run({ isFirstRun: true });
     this.scheduler.schedule();
     this.isInitialized = true;
+  }
+
+  private handleBookingChange(changeType: BookingChangeType, booking: Booking, change?: BookingChange) {
+    this.notify(changeType, booking, change);
+
+    if (change) {
+      Object.assign(booking, change);
+    }
+
+    if (changeType === BookingChangeType.New) {
+      this.ical.addEvent(booking);
+    } else {
+      this.ical.updateEvents(this.bookings);
+    }
   }
 
   /** Sends all notifications that have accumulated during debounce period */
@@ -82,14 +96,12 @@ export class App {
       (a, b) => new Date(a.firstNight).valueOf() - new Date(b.firstNight).valueOf()
     );
     this.db.save(bookings);
-    this.ical.updateEvents(bookings);
     return bookings;
   }
 
   /** Sets isBlockedOff property and sends cancelled notification */
   private changeToBlockedOff(booking: Booking) {
-    this.notify(BookingChangeType.Cancelled, booking);
-    booking.isBlockedOff = true;
+    this.handleBookingChange(BookingChangeType.Cancelled, booking, { isBlockedOff: true });
   }
 
   /** Adds new blocked off period and saves to DB */
@@ -107,7 +119,7 @@ export class App {
         b.createdAt = createdAt;
       }
       this.bookings.push(b);
-      this.notify(BookingChangeType.New, b);
+      this.handleBookingChange(BookingChangeType.New, b);
     });
   }
 
@@ -125,18 +137,15 @@ export class App {
     }
 
     if (changeType) {
-      this.notify(changeType, booking, change);
-      Object.assign(booking, change);
+      this.handleBookingChange(changeType, booking, change);
     }
   }
 
   /** Removes bookings by index and sends notification */
   private cancelBookings(indexes: number[]) {
     indexes.forEach((index, i) => {
-      const currentIndex = index - i;
-      const booking: Booking = this.bookings[currentIndex];
-      this.notify(BookingChangeType.Cancelled, booking);
-      this.bookings.splice(currentIndex, 1);
+      const [booking] = this.bookings.splice(index - i, 1);
+      this.handleBookingChange(BookingChangeType.Cancelled, booking);
     });
   }
 

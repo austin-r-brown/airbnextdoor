@@ -1,4 +1,4 @@
-import ical, { ICalCalendar, ICalCalendarMethod, ICalEventData } from 'ical-generator';
+import ical, { ICalCalendar, ICalCalendarMethod, ICalEvent, ICalEventData } from 'ical-generator';
 import { AirbnbService } from './airbnb.service';
 import { Booking } from '../constants/Booking';
 import { LogService } from './log.service';
@@ -19,7 +19,7 @@ export class iCalService {
   constructor(private log: LogService, private airbnb: AirbnbService) {}
 
   public init() {
-    this.calendar.name(`${this.airbnb.listingTitle} Calendar`);
+    this.calendar.name(`Airbnb: ${this.airbnb.listingTitle}`);
 
     const [checkInH, checkInM] = this.airbnb.checkInTime;
     const [checkOutH, checkOutM] = this.airbnb.checkOutTime;
@@ -34,28 +34,31 @@ export class iCalService {
 
   public updateEvents(bookings: Booking[]) {
     this.calendar.clear();
-
-    bookings.forEach((booking) => {
-      if (!booking.isBlockedOff) {
-        const start = new Date(`${booking.checkIn}T${this.bookingStartTime}:00`);
-        const end = new Date(`${booking.checkOut}T${this.bookingEndTime}:00`);
-
-        const event: ICalEventData = {
-          start: start.toUTCString(),
-          end: end.toUTCString(),
-          summary: 'Airbnb Booking',
-          location: this.airbnb.listingTitle,
-          url: this.airbnb.listingUrl,
-        };
-
-        if (booking.createdAt) {
-          event.description = `Booked On: ${new Date(booking.createdAt).toLocaleString()}`;
-        }
-
-        this.calendar.createEvent(event);
-      }
-    });
+    bookings.forEach(this.addEvent);
   }
+
+  public addEvent = (booking: Booking): ICalEvent | undefined => {
+    if (booking.isBlockedOff) {
+      return;
+    }
+
+    const start = new Date(`${booking.checkIn}T${this.bookingStartTime}:00`);
+    const end = new Date(`${booking.checkOut}T${this.bookingEndTime}:00`);
+
+    const event: ICalEventData = {
+      start: start.toUTCString(),
+      end: end.toUTCString(),
+      summary: 'Airbnb Booking',
+      location: this.airbnb.listingTitle,
+      url: this.airbnb.listingUrl,
+    };
+
+    if (booking.createdAt) {
+      event.description = `Booked On: ${new Date(booking.createdAt).toLocaleString()}`;
+    }
+
+    return this.calendar.createEvent(event);
+  };
 
   private startServer() {
     this.server.get(`/${ICS_FILE}`, (req, res) => {

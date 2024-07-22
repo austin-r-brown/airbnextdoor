@@ -67,13 +67,12 @@ export const createNotifications = (buffer: NotificationBuffer): string[] => {
   const notifications: string[] = [];
   const grouped: Record<string, Booking[]> = {};
 
-  buffer.forEach((n) => {
-    const [title, booking, change] = n;
-    if (!change) {
+  buffer.forEach(([title, booking, change]) => {
+    if (change?.firstNight || change?.lastNight) {
+      notifications.push(formatNotification(title, [booking], change));
+    } else {
       const current = grouped[title] ?? [];
       grouped[title] = current.concat(booking);
-    } else {
-      notifications.push(formatNotification(title, [booking], change));
     }
   });
 
