@@ -9,7 +9,7 @@ import { EmailService } from './services/email.service';
 import { LogService } from './services/log.service';
 import { AirbnbService } from './services/airbnb.service';
 import { DateService } from './services/date.service';
-import { SEND_DEBOUNCE_TIME } from './constants/constants';
+import { NOTIFY_DEBOUNCE_TIME } from './constants/constants';
 import { WatchdogService } from './services/watchdog.service';
 import { SchedulerService } from './services/scheduler.service';
 import { iCalService } from './services/ical.service';
@@ -30,7 +30,7 @@ export class App {
   private bookings: Booking[] = [];
 
   /** Used for debouncing notifications sent and JSON backups saved */
-  private sendDebounceTimer?: NodeJS.Timeout;
+  private notifyDebounceTimer?: NodeJS.Timeout;
   private notificationBuffer: NotificationBuffer = [];
 
   public async init() {
@@ -72,9 +72,9 @@ export class App {
       this.notificationBuffer.push([title, new Booking(booking), change]);
     }
 
-    clearTimeout(this.sendDebounceTimer);
+    clearTimeout(this.notifyDebounceTimer);
 
-    this.sendDebounceTimer = setTimeout(() => {
+    this.notifyDebounceTimer = setTimeout(() => {
       const bookings = this.sortAndSaveBookings();
       const notifications = createNotifications(this.notificationBuffer);
 
@@ -87,7 +87,7 @@ export class App {
         this.email.send(subject, notifications, footer);
         this.notificationBuffer = [];
       }
-    }, SEND_DEBOUNCE_TIME);
+    }, NOTIFY_DEBOUNCE_TIME);
   }
 
   /** Sorts bookings by check in date, updates DB and iCal services with latest bookings */
@@ -157,6 +157,7 @@ export class App {
     const push = (b: Booking, minNights?: number) => {
       const min = minNights ?? calendar.get(b.firstNight)?.minNights ?? 1;
       const totalNights = countDaysBetween(b.checkIn, b.checkOut);
+
       if (totalNights >= min) {
         bookings.push(b);
       } else {
@@ -235,16 +236,13 @@ export class App {
         succeeding = succeedingBooking;
       }
 
-      if (preceding && succeeding) {
-        // Gap between two bookings is likely blocked off
-        this.addBlockedOff(gap);
-      } else if (preceding && !succeeding) {
+      if (preceding && !succeeding) {
         this.changeBookingLength(preceding, { lastNight: gap.lastNight });
       } else if (!preceding && succeeding) {
         this.changeBookingLength(succeeding, { firstNight: gap.firstNight });
       } else {
-        // Orphaned gap may be actual booking
-        this.addBookings([gap]);
+        // Gaps that are either adjacent to two bookings or none at all are most likely blocked off
+        this.addBlockedOff(gap);
       }
     });
   }

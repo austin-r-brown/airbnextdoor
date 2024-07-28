@@ -9,7 +9,7 @@ export const LOCALE: string = 'en';
 export const API_TIMEOUT: number = 10000;
 
 /** Debounce time used for sending notifcations and saving to DB */
-export const SEND_DEBOUNCE_TIME: number = 1000;
+export const NOTIFY_DEBOUNCE_TIME: number = 1000;
 
 /** Interval at which the app runs */
 export const INTERVAL: number = Math.min(
