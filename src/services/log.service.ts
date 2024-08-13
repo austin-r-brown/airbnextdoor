@@ -72,28 +72,25 @@ export class LogService {
   }
 
   public notification(title: string, booking: Booking, change?: BookingChange) {
-    let titleMsg = title,
-      start = 'Check In',
+    let start = 'Check In',
       end = 'Check Out',
-      endDate = booking.checkOut,
       changeMsg: string[] = [];
 
     if (booking.isBlockedOff) {
-      titleMsg = title.replace('Booking', 'Blocked Off Period');
       start = 'Start Date';
       end = 'End Date';
-      endDate = booking.lastNight;
     }
 
-    const bookingMsg = `(${start}: ${formatIsoDate(booking.firstNight)} | ${end}: ${formatIsoDate(endDate)})`;
+    const bookingMsg = `(${start}: ${formatIsoDate(booking.checkIn)} | ${end}: ${formatIsoDate(
+      booking.checkOut
+    )})`;
 
     if (change?.firstNight) {
       changeMsg = [`New ${start}: ${formatIsoDate(change.firstNight)}`];
     } else if (change?.lastNight) {
-      const changeDate = booking.isBlockedOff ? change.lastNight : offsetDay(change.lastNight, 1);
-      changeMsg = [`New ${end}: ${formatIsoDate(changeDate)}`];
+      changeMsg = [`New ${end}: ${formatIsoDate(offsetDay(change.lastNight, 1))}`];
     }
 
-    this.info(...[`${titleMsg}:`, bookingMsg, ...changeMsg]);
+    this.info(...[`${title}:`, bookingMsg, ...changeMsg]);
   }
 }

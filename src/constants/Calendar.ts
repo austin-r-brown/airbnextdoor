@@ -23,6 +23,10 @@ export class Calendar {
     return this.keyOrder.map((key) => this.map.get(key) as CalendarDay);
   }
 
+  get isFullyBooked(): boolean {
+    return this.days.every((day) => day.booked);
+  }
+
   addUnsorted(days: CalendarDay[]) {
     days.forEach((day) => {
       if (!this.map.has(day.date)) {

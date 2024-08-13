@@ -34,10 +34,10 @@ export class iCalService {
 
   public updateEvents(bookings: Booking[]) {
     this.calendar.clear();
-    bookings.forEach(this.addEvent);
+    bookings.forEach(b => this.addEvent(b));
   }
 
-  public addEvent = (booking: Booking): ICalEvent | undefined => {
+  public addEvent(booking: Booking): ICalEvent | undefined {
     if (booking.isBlockedOff) {
       return;
     }

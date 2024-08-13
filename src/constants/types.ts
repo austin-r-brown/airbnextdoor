@@ -64,8 +64,14 @@ export type MerlinCalendarMonth = {
 export type LogItem = [any[], ConsoleType];
 
 export type RunOptions = {
-  isFirstRun?: boolean;
+  isPreMidnightRun?: boolean;
   isPostMidnightRun?: boolean;
+  isReCheck?: boolean;
+};
+
+export type SchedulerEvent = {
+  timer: NodeJS.Timeout;
+  date: number;
 };
 
 export type BackupFile = {

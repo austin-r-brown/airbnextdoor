@@ -1,4 +1,5 @@
-import { getIsoDate, offsetDay } from '../helpers/date.helper';
+import { offsetDay } from '../helpers/date.helper';
+import { DateService } from '../services/date.service';
 import { BookingSerialized } from './types';
 
 export type ISODate = `${string}-${string}-${string}`;
@@ -6,12 +7,13 @@ export type ISODate = `${string}-${string}-${string}`;
 export class Booking {
   firstNight: ISODate;
   isBlockedOff?: boolean;
+  isHidden?: boolean;
   createdAt?: Date;
 
   private _lastNight: ISODate;
   private _checkOut: ISODate;
 
-  constructor({ firstNight, lastNight, isBlockedOff, createdAt }: Partial<Booking>) {
+  constructor({ firstNight, lastNight, isBlockedOff, createdAt, isHidden }: Partial<Booking>) {
     if (!firstNight || !lastNight) {
       throw new Error('Cannot create booking without first and last nights');
     }
@@ -19,6 +21,7 @@ export class Booking {
     this._lastNight = lastNight;
     this._checkOut = offsetDay(lastNight, 1);
     this.isBlockedOff = isBlockedOff;
+    this.isHidden = isHidden;
     this.createdAt = createdAt;
   }
 
@@ -40,7 +43,7 @@ export class Booking {
   }
 
   get isActive(): boolean {
-    const today = getIsoDate(new Date(new Date().toLocaleDateString()));
+    const today = new DateService().today;
     return this.checkIn <= today && this.checkOut >= today;
   }
 
@@ -49,6 +52,7 @@ export class Booking {
       firstNight: this.firstNight,
       lastNight: this.lastNight,
       isBlockedOff: this.isBlockedOff,
+      isHidden: this.isHidden,
       createdAt: this.createdAt,
     };
   }

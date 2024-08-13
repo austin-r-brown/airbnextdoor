@@ -120,8 +120,19 @@ ul {
 }
 
 .booking.active .half {
-    border-color: #41b0fa;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
+}
+
+.booking.blocked-off .half {
+    border-top-color: transparent;
+    border-bottom-color: transparent;
+    &.left {
+    	border-left-color: transparent;
+    }
+    &.right {
+    	border-color: transparent;
+    }
+    opacity: 0.75;
 }
 
 .v-line {
@@ -129,4 +140,9 @@ ul {
     bottom: 36px;
     border-left: 1px solid #333;
     height: 15px;
+}
+
+.error {
+    max-width: 92vw;
+    font-style: italic;
 }

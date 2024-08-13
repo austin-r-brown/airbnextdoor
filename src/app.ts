@@ -9,7 +9,7 @@ import { EmailService } from './services/email.service';
 import { LogService } from './services/log.service';
 import { AirbnbService } from './services/airbnb.service';
 import { DateService } from './services/date.service';
-import { NOTIFY_DEBOUNCE_TIME } from './constants/constants';
+import { API_BUFFER, INTERVAL, MS_IN_MINUTE, NOTIFY_DEBOUNCE_TIME } from './constants/constants';
 import { WatchdogService } from './services/watchdog.service';
 import { SchedulerService } from './services/scheduler.service';
 import { iCalService } from './services/ical.service';
@@ -44,13 +44,14 @@ export class App {
       this.log.info(`Loaded ${savedBookings.length} booking(s) from DB for ${this.airbnb.listingTitle}`);
     }
 
-    await this.run({ isFirstRun: true });
+    await this.run();
     this.scheduler.schedule();
     this.isInitialized = true;
   }
 
   private handleBookingChange(changeType: BookingChangeType, booking: Booking, change?: BookingChange) {
-    this.notify(changeType, booking, change);
+    const title = `${changeType} ${booking.isBlockedOff ? 'Blocked Off Period' : 'Booking'}`;
+    this.notify(title, booking, change);
 
     if (change) {
       Object.assign(booking, change);
@@ -67,8 +68,7 @@ export class App {
   private notify(title: string, booking: Booking, change?: BookingChange) {
     this.log.notification(title, booking, change);
 
-    if (!booking.isBlockedOff) {
-      // Only send email if booking is not blocked off period
+    if (!booking.isHidden) {
       this.notificationBuffer.push([title, new Booking(booking), change]);
     }
 
@@ -81,7 +81,7 @@ export class App {
       if (notifications.length) {
         const count = this.notificationBuffer.length;
         const subject = `${this.airbnb.listingTitle}: ${count} Notification${count > 1 ? 's' : ''}`;
-        const currentBookings = bookings.filter((b) => !b.isBlockedOff && b.checkOut >= this.date.today);
+        const currentBookings = bookings.filter((b) => !b.isHidden && b.checkOut >= this.date.today);
         const footer = formatCurrentBookings(currentBookings);
 
         this.email.send(subject, notifications, footer);
@@ -99,24 +99,16 @@ export class App {
     return bookings;
   }
 
-  /** Sets isBlockedOff property and sends cancelled notification */
-  private changeToBlockedOff(booking: Booking) {
-    this.handleBookingChange(BookingChangeType.Cancelled, booking, { isBlockedOff: true });
-  }
-
-  /** Adds new blocked off period and saves to DB */
-  private addBlockedOff(booking: Booking) {
-    booking.isBlockedOff = true;
-    this.addBookings([booking]);
-  }
-
   /** Adds new bookings and sends notification */
-  private addBookings(bookings: Booking[]) {
+  private addBookings(bookings: Booking[], patch?: BookingChange) {
     const createdAt = new Date();
     bookings.forEach((b) => {
       if (this.isInitialized) {
         // Creation date is unknown if booked when app was not running
         b.createdAt = createdAt;
+      }
+      if (patch) {
+        Object.assign(b, patch);
       }
       this.bookings.push(b);
       this.handleBookingChange(BookingChangeType.New, b);
@@ -199,7 +191,7 @@ export class App {
     let endingToday;
 
     for (const b of this.bookings) {
-      if (!b.isBlockedOff) {
+      if (!b.isHidden) {
         if (b.checkIn === this.date.today) {
           startingToday = b;
         } else if (b.checkOut === this.date.today) {
@@ -236,13 +228,16 @@ export class App {
         succeeding = succeedingBooking;
       }
 
-      if (preceding && !succeeding) {
+      if (preceding && succeeding) {
+        // Gap between two bookings is most likely not a booking
+        this.addBookings([gap], { isBlockedOff: true, isHidden: true });
+      } else if (preceding && !succeeding) {
         this.changeBookingLength(preceding, { lastNight: gap.lastNight });
       } else if (!preceding && succeeding) {
         this.changeBookingLength(succeeding, { firstNight: gap.firstNight });
       } else {
-        // Gaps that are either adjacent to two bookings or none at all are most likely blocked off
-        this.addBlockedOff(gap);
+        // Orphaned gap may be actual booking
+        this.addBookings([gap], { isBlockedOff: true });
       }
     });
   }
@@ -302,8 +297,8 @@ export class App {
           if (totalNights >= minNights || b.isBlockedOff) {
             this.changeBookingLength(b, { firstNight, lastNight });
           } else {
-            // Consider blocked off if booking is now shorter than minimum length requirement
-            this.changeToBlockedOff(b);
+            // Hide/cancel booking if it is now shorter than minimum length requirement
+            this.handleBookingChange(BookingChangeType.Cancelled, b, { isBlockedOff: true, isHidden: true });
           }
         }
 
@@ -317,26 +312,45 @@ export class App {
     return existingBookings;
   }
 
-  public run = async (options: RunOptions = {}) => {
+  public run = async (options: RunOptions = {}): Promise<boolean> => {
     this.date.set(); // Set today's date
     const calendar = await this.airbnb.fetchCalendar(); // Fetch latest data from Airbnb
 
-    if (calendar) {
-      if (calendar.size) {
-        // Check for new or altered bookings
-        const existingBookings = this.checkExistingBookings(calendar);
-        const [newBookings, gaps] = this.checkForNewBookings(calendar, existingBookings);
-
-        if (options.isPostMidnightRun || (newBookings.length > 1 && calendar.days.every((d) => d.booked))) {
-          // If new booking appears right after midnight, or if suddenly the entire calendar is booked, it is most likely blocked off
-          gaps.concat(newBookings).forEach((gap) => this.addBlockedOff(gap));
-        } else {
-          this.addBookings(newBookings);
-          this.checkAdjacentBookings(gaps, existingBookings);
-        }
-      }
-      // Indicate process has successfully completed
-      this.watchdog.success();
+    if (!calendar) {
+      return false;
     }
+
+    if (calendar.size) {
+      // Check for new or altered bookings
+      const existingBookings = this.checkExistingBookings(calendar);
+      const [newBookings, gaps] = this.checkForNewBookings(calendar, existingBookings);
+
+      if (calendar.isFullyBooked) {
+        if (!options.isReCheck && calendar.size - existingBookings.size > 10) {
+          // If suddenly the entire calendar is booked, wait at least 20 mins to confirm that these are actual bookings
+          const reCheckTime = Math.max(20 * MS_IN_MINUTE, INTERVAL + API_BUFFER);
+          options.isReCheck = this.scheduler.setReCheck(reCheckTime);
+        }
+      } else if (options.isReCheck) {
+        // If the calendar is no longer fully booked during the re-check period, disable re-check flag
+        options.isReCheck = this.scheduler.setReCheck(null);
+      }
+
+      if (!options.isReCheck) {
+        this.addBookings(newBookings);
+
+        if (options.isPostMidnightRun && gaps.length) {
+          // If a booking gap appears right after midnight and starts today, it is most likely not a bo
+          const blockedOff = gaps[0].firstNight === this.date.today && gaps.shift();
+          if (blockedOff) {
+            this.addBookings([blockedOff], { isBlockedOff: true, isHidden: true });
+          }
+        }
+        this.checkAdjacentBookings(gaps, existingBookings);
+      }
+    }
+    // Indicate process has successfully completed
+    this.watchdog.success();
+    return true;
   };
 }

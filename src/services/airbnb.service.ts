@@ -86,16 +86,12 @@ export class AirbnbService {
 
         listingTitle = sectionsMap.AvailabilityCalendarSection?.listingTitle;
 
-        const houseRules: string[] = sectionsMap.PoliciesSection?.houseRules.map((r: any) => r.title);
-        houseRules.forEach((rule) => {
-          const time = getTimeFromString(rule);
+        sectionsMap.PoliciesSection?.houseRules.forEach(({ title }: any) => {
+          const time = getTimeFromString(title);
           if (time) {
-            const checkInRegex = /check[\s-]?in/i;
-            const checkOutRegex = /check[\s-]?out/i;
-
-            if (checkInRegex.test(rule)) {
+            if (/check[\s-]?in/i.test(title)) {
               checkInTime = time;
-            } else if (checkOutRegex.test(rule)) {
+            } else if (/check[\s-]?out/i.test(title)) {
               checkOutTime = time;
             }
           }

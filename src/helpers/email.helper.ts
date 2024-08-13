@@ -6,12 +6,9 @@ import { formatIsoDate, offsetDay } from './date.helper';
 /** Generates HTML for booking, with optional CSS class or partial booking to indicate a change to a booking */
 export const formatBooking = (booking: Booking, cssClass?: string, change?: BookingChange): string => {
   const [checkIn, checkOut] = [booking.checkIn, booking.checkOut].map(formatIsoDate);
+  const classes = [cssClass, booking.isActive && 'active', booking.isBlockedOff && 'blocked-off'];
 
-  if (!cssClass && booking.isActive) {
-    cssClass = 'active';
-  }
-
-  const bookingHtml = `<div class="booking ${change ? '' : cssClass ?? ''}">
+  const bookingHtml = `<div class="booking ${classes.filter(Boolean).join(' ')}">
       <div class="left half">
         <span class="text">Check In:</span>
         <span class="text date">${checkIn}</span>
@@ -57,7 +54,7 @@ export const formatCurrentBookings = (bookings: Booking[]): string | undefined =
     const bookingsHtml = bookings.map((b) => formatBooking(b)).join(`
       `);
 
-    return `<span class="title">Current Bookings</span>
+    return `<span class="title">Upcoming</span>
       ${bookingsHtml}`;
   }
 };
@@ -85,12 +82,12 @@ export const createNotifications = (buffer: NotificationBuffer): string[] => {
 
 /** Generates HTML for a notification to be sent via email */
 export const formatNotification = (title: string, bookings: Booking[], change?: BookingChange): string => {
-  const [changeType] = Object.entries(BookingChangeType).find(([, c]) => c === title) ?? [];
+  const changeType = Object.values(BookingChangeType).find((c) => title.startsWith(c));
   // Use BookingChange enum keys as CSS class names
   const bookingHtml = bookings.map((b) => formatBooking(b, changeType?.toLowerCase(), change)).join(`
     `);
 
-  return `<span class="title">${bookings.length > 1 ? title.replace('Booking', 'Bookings') : title}</span>
+  return `<span class="title">${bookings.length > 1 ? `${title}s` : title}</span>
     ${bookingHtml}`;
 };
 
