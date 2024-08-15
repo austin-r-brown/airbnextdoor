@@ -18,7 +18,6 @@ export class App {
   private isInitialized: boolean = false;
 
   private readonly date: DateService = new DateService();
-  private readonly log: LogService = new LogService();
   private readonly email: EmailService = new EmailService(this.log);
   private readonly watchdog: WatchdogService = new WatchdogService(this.log, this.email);
   private readonly airbnb: AirbnbService = new AirbnbService(this.log, this.date, this.email);
@@ -32,6 +31,8 @@ export class App {
   /** Used for debouncing notifications sent and JSON backups saved */
   private notifyDebounceTimer?: NodeJS.Timeout;
   private notificationBuffer: NotificationBuffer = [];
+
+  constructor(private readonly log: LogService = new LogService()) {}
 
   public async init() {
     await this.airbnb.init();

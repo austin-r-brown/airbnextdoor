@@ -5,7 +5,8 @@
   "scripts": {
     "start": "node -r ./dist/app.js -e \"new (require('./dist/app.js').App)().init()\"",
     "build": "npx tsc",
-    "postinstall": "node createEnv.js && npm run build"
+    "postinstall": "node createEnv.js && npm run build",
+    "test": "npx jest"
   },
   "dependencies": {
     "axios": "^1.6.5",
@@ -17,6 +18,10 @@
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
-    "@types/node": "^20.11.16"
+    "@types/jest": "^29.5.12",
+    "@types/node": "^20.11.16",
+    "axios-mock-adapter": "^2.0.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.4"
   }
 }
