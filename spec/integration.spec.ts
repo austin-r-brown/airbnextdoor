@@ -3,7 +3,7 @@ import MockAdapter from 'axios-mock-adapter';
 import { App } from '../src/app';
 import { LogService } from '../src/services/log.service';
 import { airbnbGetResonse, generateCalendar } from './mock-data';
-import { MS_IN_MINUTE, NOTIFY_DEBOUNCE_TIME } from '../src/constants/constants';
+import { MS_IN_DAY, MS_IN_MINUTE, NOTIFY_DEBOUNCE_TIME } from '../src/constants/constants';
 import { BookingChangeType } from '../src/constants/enums';
 
 const mockListingId = '12345';
@@ -22,6 +22,12 @@ describe('App', () => {
   let emailApiMock: jest.Mock;
 
   let logServiceSpy: jest.Mocked<LogService>;
+  let icalInitSpy: jest.SpyInstance;
+  let icalAddEventSpy: jest.SpyInstance;
+  let icalUpdateEventsSpy: jest.SpyInstance;
+  let dbLoadSpy: jest.SpyInstance;
+  let dbSaveSpy: jest.SpyInstance;
+  let watchdogSendSpy: jest.SpyInstance;
 
   const mockCalendarResponse = (
     startDaysFromToday: number = 0,
@@ -71,11 +77,16 @@ describe('App', () => {
     emailApiMock = jest.fn().mockResolvedValue({});
 
     app = new App(logServiceSpy);
+
     Object.assign(app['email'], { api: { sendTransacEmail: emailApiMock } });
     axiosMock.onGet(`https://www.airbnb.com/rooms/${mockListingId}`).reply(200, airbnbGetResonse);
-    jest.spyOn(app['ical'], 'init').mockImplementationOnce(() => {});
-    jest.spyOn(app['ical'], 'addEvent').mockImplementation(() => undefined);
-    jest.spyOn(app['ical'], 'updateEvents').mockImplementation(() => {});
+
+    icalInitSpy = jest.spyOn(app['ical'], 'init').mockImplementationOnce(() => {});
+    icalAddEventSpy = jest.spyOn(app['ical'], 'addEvent').mockImplementation(() => undefined);
+    icalUpdateEventsSpy = jest.spyOn(app['ical'], 'updateEvents').mockImplementation(() => {});
+    dbLoadSpy = jest.spyOn(app['db'], 'load').mockImplementation(() => []);
+    dbSaveSpy = jest.spyOn(app['db'], 'save').mockImplementation(async () => {});
+    watchdogSendSpy = jest.spyOn(app['watchdog'], 'sendNotification' as any).mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -133,22 +144,63 @@ describe('App', () => {
 
   it('should send emails about calendar changes', async () => {
     mockCalendarResponse(0, 5, 1);
+    jest.spyOn(app, 'run');
     await app.init();
     jest.advanceTimersByTime(NOTIFY_DEBOUNCE_TIME);
 
+    expect(app.run).toHaveBeenCalledTimes(1);
     expect(emailApiMock).toHaveBeenCalledWith(
       expect.objectContaining({
         htmlContent: expect.stringContaining(BookingChangeType.New),
       })
     );
 
-    // mockCalendarResponse(0, 0, 0);
-    // jest.advanceTimersByTime(intervalTime + NOTIFY_DEBOUNCE_TIME * 2);
+    mockCalendarResponse(0, 0, 0);
+    jest.advanceTimersByTime(intervalTime + NOTIFY_DEBOUNCE_TIME);
+    expect(app.run).toHaveBeenCalledTimes(2);
 
     // expect(emailApiMock).toHaveBeenCalledWith(
     //   expect.objectContaining({
     //     htmlContent: expect.stringContaining(BookingChangeType.Cancelled),
     //   })
     // );
+  });
+
+  it('should send an email in the morning if a booking starts that day', async () => {
+    const time = new Date();
+    time.setHours(8);
+    jest.setSystemTime(time);
+    mockCalendarResponse(0, 5, 1);
+
+    await app.init();
+    jest.advanceTimersByTime(NOTIFY_DEBOUNCE_TIME);
+    emailApiMock.mockClear();
+    jest.advanceTimersByTime(MS_IN_MINUTE * 60);
+
+    expect(emailApiMock).toHaveBeenCalledTimes(1);
+    expect(emailApiMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        htmlContent: expect.stringContaining('<span class="title">Starting Today</span>'),
+      })
+    );
+  });
+
+  it('should send an email in the morning if a booking ends that day', async () => {
+    mockCalendarResponse(0, 2, 1);
+    await app.init();
+    jest.advanceTimersByTime(NOTIFY_DEBOUNCE_TIME);
+    emailApiMock.mockClear();
+
+    const time = new Date(Date.now() + MS_IN_DAY * 2);
+    time.setHours(8);
+    jest.setSystemTime(time);
+    jest.advanceTimersByTime(MS_IN_DAY);
+
+    expect(emailApiMock).toHaveBeenCalledTimes(1);
+    expect(emailApiMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        htmlContent: expect.stringContaining('<span class="title">Ending Today</span>'),
+      })
+    );
   });
 });

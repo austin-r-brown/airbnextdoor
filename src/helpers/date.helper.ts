@@ -20,7 +20,7 @@ export const timeUntil = ([hour, minute, seconds]: Time): number => {
     target.setDate(target.getDate() + 1);
   }
 
-  return target.getTime() - now.getTime();
+  return target.getTime() - now.getTime() || MS_IN_DAY;
 };
 
 /** Returns a promise that resolves at specified time (24 hr) */
