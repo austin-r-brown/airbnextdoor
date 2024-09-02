@@ -47,6 +47,10 @@ export class Booking {
     return this.checkIn <= today && this.checkOut >= today;
   }
 
+  isEqualTo(booking: Booking): boolean {
+    return JSON.stringify(booking.toJSON()) === JSON.stringify(this.toJSON());
+  }
+
   toJSON(): BookingSerialized {
     return {
       firstNight: this.firstNight,

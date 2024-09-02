@@ -76,16 +76,13 @@ export class App {
     clearTimeout(this.notifyDebounceTimer);
 
     this.notifyDebounceTimer = setTimeout(() => {
-      const bookings = this.sortAndSaveBookings();
+      this.sortAndSaveBookings()
       const notifications = createNotifications(this.notificationBuffer);
 
       if (notifications.length) {
         const count = this.notificationBuffer.length;
         const subject = `${this.airbnb.listingTitle}: ${count} Notification${count > 1 ? 's' : ''}`;
-        const currentBookings = bookings.filter((b) => !b.isHidden && b.checkOut >= this.date.today);
-        const footer = formatCurrentBookings(currentBookings);
-
-        this.email.send(subject, notifications, footer);
+        this.email.send(subject, notifications, this.getFooter());
         this.notificationBuffer = [];
       }
     }, NOTIFY_DEBOUNCE_TIME);
@@ -98,6 +95,17 @@ export class App {
     );
     this.db.save(bookings);
     return bookings;
+  }
+
+  private getFooter(): string | undefined {
+    const currentBookings = this.bookings.filter((b) => !b.isHidden && b.checkOut > this.date.today);
+    if (
+      this.notificationBuffer.length === currentBookings.length &&
+      this.notificationBuffer.every((n, i) => n[1].isEqualTo(currentBookings[i]))
+    ) {
+      return;
+    }
+    return formatCurrentBookings(currentBookings);
   }
 
   /** Adds new bookings and sends notification */
@@ -341,7 +349,7 @@ export class App {
         this.addBookings(newBookings);
 
         if (options.isPostMidnightRun && gaps.length) {
-          // If a booking gap appears right after midnight and starts today, it is most likely not a bo
+          // If a booking gap appears right after midnight and starts today, it is most likely not a booking
           const blockedOff = gaps[0].firstNight === this.date.today && gaps.shift();
           if (blockedOff) {
             this.addBookings([blockedOff], { isBlockedOff: true, isHidden: true });

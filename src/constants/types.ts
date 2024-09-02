@@ -5,7 +5,7 @@ export type Time = [number, number?, number?];
 
 export type BookingMap = Map<ISODate, Booking>;
 
-export type BookingSerialized = Omit<Booking, 'checkIn' | 'checkOut' | 'isActive' | 'toJSON'>;
+export type BookingSerialized = Omit<Booking, 'checkIn' | 'checkOut' | 'isActive' | 'isEqualTo' | 'toJSON'>;
 
 export type BookingChange = Partial<BookingSerialized>;
 
