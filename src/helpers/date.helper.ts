@@ -27,9 +27,14 @@ export const timeUntil = ([hour, minute, seconds]: Time): number => {
 export const waitUntil = ([hour, minute, seconds]: Time): Promise<void> => {
   const ms = timeUntil([hour, minute, seconds]);
   return new Promise<void>((resolve) => {
-    setTimeout(() => {
-      resolve();
-    }, ms);
+    setTimeout(() => resolve(), ms);
+  });
+};
+
+/** Returns a promise that resolves after a specified number of miliseconds */
+export const waitFor = (ms: number): Promise<void> => {
+  return new Promise<void>((resolve) => {
+    setTimeout(() => resolve(), ms);
   });
 };
 
