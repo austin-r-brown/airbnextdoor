@@ -5,7 +5,7 @@ import { LogService } from './log.service';
 import express from 'express';
 import { getIPAddress } from '../helpers/network.helper';
 
-const PORT = 3000;
+const PORT = 3001;
 const ICS_FILE = 'calendar.ics';
 
 /** Service for generating/hosting iCal data for calendar subscription */
