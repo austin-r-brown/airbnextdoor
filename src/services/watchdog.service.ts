@@ -14,7 +14,7 @@ export class WatchdogService {
 
   public success() {
     this.email.clearErrors();
-    this.log.info('Airbnb dates checked successfully');
+    this.log.success();
     this.lastSuccessfulRun = Date.now();
     this.notificationSent = false;
   }
