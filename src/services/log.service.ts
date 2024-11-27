@@ -55,12 +55,7 @@ export class LogService {
   }
 
   public success() {
-    const [[lastItem]] = this.logged[this.logged.length - 1];
-    if (typeof lastItem === 'string' && (lastItem.startsWith(SUCCESS_MSG) || lastItem.startsWith('...'))) {
-      this.info('...');
-    } else {
-      this.info(SUCCESS_MSG);
-    }
+    process.stdout.write(`\r${SUCCESS_MSG} ${this.timestamp}`);
   }
 
   public notification(title: string, booking: Booking, change?: BookingChange) {
