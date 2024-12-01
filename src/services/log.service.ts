@@ -12,8 +12,12 @@ const SUCCESS_MSG = 'Airbnb dates checked successfully';
 export class LogService {
   private readonly logged: LogItem[] = [];
 
-  private get timestamp() {
+  private get timestamp(): string {
     return `[${new Date().toLocaleString()}]`;
+  }
+
+  private get isLinuxService(): boolean {
+    return process.env.INVOCATION_ID !== undefined;
   }
 
   constructor() {
@@ -56,6 +60,12 @@ export class LogService {
 
   public success() {
     process.stdout.write(`\r${SUCCESS_MSG} ${this.timestamp}`);
+
+    if (this.isLinuxService) {
+      const [[lastItem]] = this.logged[this.logged.length - 1];
+      if (typeof lastItem === 'string' && lastItem.startsWith(SUCCESS_MSG)) console.info('');
+      else this.info(SUCCESS_MSG);
+    }
   }
 
   public notification(title: string, booking: Booking, change?: BookingChange) {
