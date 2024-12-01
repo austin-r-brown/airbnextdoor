@@ -61,7 +61,7 @@ export class LogService {
   public success() {
     if (this.isLinuxService) {
       const [[lastItem]] = this.logged[this.logged.length - 1];
-      if (typeof lastItem === 'string' && lastItem.startsWith(SUCCESS_MSG)) console.info('');
+      if (typeof lastItem === 'string' && lastItem.startsWith(SUCCESS_MSG)) console.info(this.timestamp);
       else this.info(SUCCESS_MSG);
     } else {
       process.stdout.write(`\r${SUCCESS_MSG} ${this.timestamp}`);
