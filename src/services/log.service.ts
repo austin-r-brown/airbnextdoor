@@ -23,8 +23,6 @@ export class LogService {
   constructor() {
     const { version } = JSON.parse(readFileSync('package.json', 'utf-8'));
     this.info(`${START_MSG} v${version}`);
-    console.log('Check 1:', this.isLinuxService);
-    console.log('Check 2:', !process.stdin.isTTY);
   }
 
   private log(values: any[], type: ConsoleType) {
@@ -61,12 +59,12 @@ export class LogService {
   }
 
   public success() {
-    process.stdout.write(`\r${SUCCESS_MSG} ${this.timestamp}`);
-
     if (this.isLinuxService) {
       const [[lastItem]] = this.logged[this.logged.length - 1];
       if (typeof lastItem === 'string' && lastItem.startsWith(SUCCESS_MSG)) console.info('');
       else this.info(SUCCESS_MSG);
+    } else {
+      process.stdout.write(`\r${SUCCESS_MSG} ${this.timestamp}`);
     }
   }
 
