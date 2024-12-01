@@ -23,6 +23,8 @@ export class LogService {
   constructor() {
     const { version } = JSON.parse(readFileSync('package.json', 'utf-8'));
     this.info(`${START_MSG} v${version}`);
+    console.log('Check 1:', this.isLinuxService);
+    console.log('Check 2:', !process.stdin.isTTY);
   }
 
   private log(values: any[], type: ConsoleType) {
