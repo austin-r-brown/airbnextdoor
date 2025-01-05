@@ -119,18 +119,20 @@ ul {
     }
 }
 
-.booking.active .half {
+.main .booking.active .half,
+#footer .booking.active .right {
     box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
 }
 
-.booking.blocked-off .half {
+.booking.blocked-off .half,
+#footer .active .left {
     border-top-color: transparent;
     border-bottom-color: transparent;
     &.left {
-    	border-left-color: transparent;
+        border-left-color: transparent;
     }
     &.right {
-    	border-color: transparent;
+        border-color: transparent;
     }
     opacity: 0.75;
 }

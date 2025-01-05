@@ -100,13 +100,21 @@ export class App {
   }
 
   private getFooter(): string | undefined {
-    const currentBookings = this.bookings.filter((b) => !b.isHidden && b.checkOut > this.date.today);
-    if (
-      this.notificationBuffer.length === currentBookings.length &&
-      this.notificationBuffer.every((n, i) => n[1].isEqualTo(currentBookings[i]))
-    ) {
+    const currentBookings = this.bookings.filter((b) => {
+      if (b.isHidden || b.checkOut <= this.date.today)
+        // Omit bookings that are hidden or have already ended
+        return false;
+      if (b.checkIn <= this.date.today && this.notificationBuffer.find(([, n]) => n.isEqualTo(b)))
+        // Omit currently active booking if it is included in the notifications
+        return false;
+
+      return true;
+    });
+
+    if (currentBookings.every((b) => this.notificationBuffer.find(([, n]) => n.isEqualTo(b))))
+      // Omit footer entirely if all current bookings are included in notifications
       return;
-    }
+
     return formatCurrentBookings(currentBookings);
   }
 

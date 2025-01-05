@@ -31,7 +31,7 @@ export class EmailService {
   public send(subject: string, notifications: string[], footer?: string) {
     if (this.smtpConfig) {
       const footerHtml = footer ? `<div class="notification" id="footer">${footer}</div>` : '';
-      const bodyHtml = notifications.map((n) => `<div class="notification">${n}</div>`).join(`
+      const bodyHtml = notifications.map((n) => `<div class="notification main">${n}</div>`).join(`
       `);
 
       this.smtpConfig.subject = subject;
