@@ -125,7 +125,7 @@ ul {
 }
 
 .booking.blocked-off .half,
-#footer .active .left {
+#footer .active:not(.starts-today) .left {
     border-top-color: transparent;
     border-bottom-color: transparent;
     &.left {

@@ -1,7 +1,7 @@
 import { Booking } from '../constants/Booking';
 import { BookingChangeType } from '../constants/enums';
 import { BookingChange, NotificationBuffer } from '../constants/types';
-import { formatIsoDate, offsetDay } from './date.helper';
+import { formatIsoDate, getIsoDate, offsetDay } from './date.helper';
 
 /** Generates HTML for booking, with optional CSS class or partial booking to indicate a change to a booking */
 export const formatBooking = (booking: Booking, cssClass?: string, change?: BookingChange): string => {
@@ -51,7 +51,9 @@ export const formatBooking = (booking: Booking, cssClass?: string, change?: Book
 /** Generates HTML for Current Bookings summary that is appended to each email */
 export const formatCurrentBookings = (bookings: Booking[]): string | undefined => {
   if (bookings.length) {
-    const bookingsHtml = bookings.map((b) => formatBooking(b)).join(`
+    const bookingsHtml = bookings.map((b) =>
+      formatBooking(b, b.checkIn === getIsoDate() ? 'starts-today' : '')
+    ).join(`
       `);
 
     return `<span class="title">Upcoming</span>

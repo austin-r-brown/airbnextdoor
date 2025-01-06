@@ -3,7 +3,7 @@ import { MS_IN_DAY } from '../constants/constants';
 import { Time } from '../constants/types';
 
 /** Converts Date object to 'YYYY-MM-DD' formatted string */
-export const getIsoDate = (date: Date): ISODate => date.toISOString().split('T')[0] as ISODate;
+export const getIsoDate = (date: Date = new Date()): ISODate => date.toISOString().split('T')[0] as ISODate;
 
 /** Converts 'YYYY-MM-DD' formatted string to 'MM/DD/YY' for better readability */
 export const formatIsoDate = (date: string): string => {
