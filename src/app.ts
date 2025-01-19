@@ -109,14 +109,14 @@ export class App {
       if (b.isHidden || b.checkOut <= this.date.today)
         // Omit bookings that are hidden or have already ended
         return false;
-      if (b.checkIn <= this.date.today && this.notificationBuffer.find(([, n]) => n.isEqualTo(b)))
+      if (b.checkIn <= this.date.today && this.notificationBuffer.find(([, n]) => n.isSameAs(b)))
         // Omit currently active booking if it is included in the notifications
         return false;
 
       return true;
     });
 
-    if (currentBookings.every((b) => this.notificationBuffer.find(([, n]) => n.isEqualTo(b))))
+    if (currentBookings.every((b) => this.notificationBuffer.find(([, n]) => n.isSameAs(b))))
       // Omit footer entirely if all current bookings are included in notifications
       return;
 
