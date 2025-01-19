@@ -54,7 +54,12 @@ export class App {
 
   private handleBookingChange(changeType: BookingChangeType, booking: Booking, change?: BookingChange) {
     const title = `${changeType} ${booking.isBlockedOff ? 'Blocked Off Period' : 'Booking'}`;
-    this.notify(title, booking, change);
+    let notifiedChange;
+    if ([BookingChangeType.Shortened, BookingChangeType.Extended].includes(changeType)) {
+      notifiedChange = change;
+    }
+
+    this.notify(title, booking, notifiedChange);
 
     if (change) {
       Object.assign(booking, change);
@@ -160,8 +165,11 @@ export class App {
     });
   }
 
-  /** Returns tuple of newly found bookings and newly found gaps that are too short to be bookings */
-  private checkForNewBookings(calendar: Calendar, existingBookings: BookingMap): [Booking[], Booking[]] {
+  /** Returns newly found bookings and newly found blocked off gaps that are too short to be bookings */
+  private checkForNewBookings(
+    calendar: Calendar,
+    existingBookings: BookingMap
+  ): { bookings: Booking[]; gaps: Booking[] } {
     const bookings: Booking[] = [];
     const gaps: Booking[] = [];
 
@@ -201,7 +209,7 @@ export class App {
     if (firstNight && lastNight) {
       push(new Booking({ firstNight, lastNight }));
     }
-    return [bookings, gaps];
+    return { bookings, gaps };
   }
 
   /** Sends notification when guests are arriving or leaving today */
@@ -238,21 +246,22 @@ export class App {
 
       const precedingDate = offsetDay(gap.firstNight, -1);
       const precedingBooking = existingBookings.get(precedingDate);
-      if (precedingBooking?.lastNight === precedingDate && !precedingBooking.isBlockedOff) {
+      if (precedingBooking?.lastNight === precedingDate) {
         preceding = precedingBooking;
       }
 
       const succeedingBooking = existingBookings.get(gap.checkOut);
-      if (succeedingBooking?.checkIn === gap.checkOut && !succeedingBooking.isBlockedOff) {
+      if (succeedingBooking?.checkIn === gap.checkOut) {
         succeeding = succeedingBooking;
       }
 
-      if (preceding && succeeding) {
-        // Gap between two bookings is most likely not a booking
+      if (succeeding && (preceding || gap.firstNight === this.date.today)) {
+        // Blocked off gap with no open dates before or after is most likely not a booking
         this.addBookings([gap], { isBlockedOff: true, isHidden: true });
-      } else if (preceding && !succeeding) {
+      } else if (preceding) {
+        // If there is only one booking (preceding or succeeding) assume that it is being extended
         this.changeBookingLength(preceding, { lastNight: gap.lastNight });
-      } else if (!preceding && succeeding) {
+      } else if (succeeding) {
         this.changeBookingLength(succeeding, { firstNight: gap.firstNight });
       } else {
         // Orphaned gap may be actual booking
@@ -317,7 +326,12 @@ export class App {
             this.changeBookingLength(b, { firstNight, lastNight });
           } else {
             // Hide/cancel booking if it is now shorter than minimum length requirement
-            this.handleBookingChange(BookingChangeType.Cancelled, b, { isBlockedOff: true, isHidden: true });
+            this.handleBookingChange(BookingChangeType.Cancelled, b, {
+              isBlockedOff: true,
+              isHidden: true,
+              firstNight,
+              lastNight,
+            });
           }
         }
 
@@ -352,7 +366,7 @@ export class App {
     if (calendar.size) {
       // Check for new or altered bookings
       const existingBookings = this.checkExistingBookings(calendar);
-      const [newBookings, gaps] = this.checkForNewBookings(calendar, existingBookings);
+      const { bookings, gaps } = this.checkForNewBookings(calendar, existingBookings);
 
       if (calendar.isFullyBooked) {
         if (!options.isReCheck && calendar.size - existingBookings.size > 10) {
@@ -366,15 +380,7 @@ export class App {
       }
 
       if (!options.isReCheck) {
-        this.addBookings(newBookings);
-
-        if (options.isPostMidnightRun && gaps.length) {
-          // If a booking gap appears right after midnight and starts today, it is most likely not a booking
-          const blockedOff = gaps[0].firstNight === this.date.today && gaps.shift();
-          if (blockedOff) {
-            this.addBookings([blockedOff], { isBlockedOff: true, isHidden: true });
-          }
-        }
+        this.addBookings(bookings);
         this.checkAdjacentBookings(gaps, existingBookings);
       }
     }

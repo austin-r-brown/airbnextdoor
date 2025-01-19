@@ -64,8 +64,6 @@ export type MerlinCalendarMonth = {
 export type LogItem = [any[], ConsoleType];
 
 export type RunOptions = {
-  isPreMidnightRun?: boolean;
-  isPostMidnightRun?: boolean;
   isReCheck?: boolean;
 };
 

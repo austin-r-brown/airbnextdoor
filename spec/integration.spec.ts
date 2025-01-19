@@ -79,7 +79,9 @@ describe('App', () => {
     app = new App(logServiceSpy);
 
     Object.assign(app['email'], { api: { sendTransacEmail: emailApiMock } });
+
     axiosMock.onGet(`https://www.airbnb.com/rooms/${mockListingId}`).reply(200, airbnbGetResonse);
+    axiosMock.onGet('https://www.google.com').reply(200, {});
 
     icalInitSpy = jest.spyOn(app['ical'], 'init').mockImplementationOnce(() => {});
     icalAddEventSpy = jest.spyOn(app['ical'], 'addEvent').mockImplementation(() => undefined);
