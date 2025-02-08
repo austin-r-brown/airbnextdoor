@@ -255,8 +255,8 @@ export class App {
         succeeding = succeedingBooking;
       }
 
-      if (succeeding && (preceding || gap.firstNight === this.date.today)) {
-        // Blocked off gap with no open dates before or after is most likely not a booking
+      if ((succeeding && preceding) || gap.firstNight === this.date.today) {
+        // Blocked off gap that either starts today or has no open dates before/after is most likely not a booking
         this.addBookings([gap], { isBlockedOff: true, isHidden: true });
       } else if (preceding) {
         // If there is only one booking (preceding or succeeding) assume that it is being extended
@@ -264,7 +264,7 @@ export class App {
       } else if (succeeding) {
         this.changeBookingLength(succeeding, { firstNight: gap.firstNight });
       } else {
-        // Orphaned gap may be actual booking
+        // Orphaned future gap may be actual booking
         this.addBookings([gap], { isBlockedOff: true });
       }
     });
