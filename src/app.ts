@@ -88,7 +88,10 @@ export class App {
 
       if (notifications.length) {
         const count = this.notificationBuffer.length;
-        const subject = `${this.airbnb.listingTitle}: ${count} Notification${count > 1 ? 's' : ''}`;
+        const subject = `${this.airbnb.listingTitle}: ${
+          // If there is single notification, use its title for the email subject
+          count === 1 ? this.notificationBuffer[0][0] : `${count} Notifications`
+        }`;
         this.email.send(subject, notifications, this.getFooter());
         this.notificationBuffer = [];
       }
