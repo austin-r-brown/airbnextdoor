@@ -24,7 +24,7 @@ export class App {
   private readonly airbnb: AirbnbService = new AirbnbService(this.log, this.date, this.email);
   private readonly db: DbService = new DbService(this.log, this.airbnb);
   private readonly ical: iCalService = new iCalService(this.log, this.airbnb);
-  private readonly scheduler: SchedulerService = new SchedulerService(this);
+  private readonly scheduler: SchedulerService = new SchedulerService(this, this.date);
 
   /** All known bookings and blocked off periods */
   private bookings: Booking[] = [];
@@ -177,7 +177,15 @@ export class App {
       const min = minNights ?? calendar.get(b.firstNight)?.minNights ?? 1;
       const totalNights = countDaysBetween(b.checkIn, b.checkOut);
 
-      if (totalNights >= min) {
+      if (
+        totalNights === min + 1 && // Just long enough to be a booking
+        b.checkIn === this.date.today &&
+        this.airbnb.isAfterCheckInTime() && // It appeared last second
+        existingBookings.get(b.checkOut) // Another booking immediately follows it
+      ) {
+        // Edge case for Airbnb listings that don't allow same day booking past a certain time
+        gaps.push(b);
+      } else if (totalNights >= min) {
         bookings.push(b);
       } else {
         gaps.push(b);
@@ -238,31 +246,31 @@ export class App {
     }
   }
 
-  /** Extends adjacent booking with gap if one adjacent booking exists, otherwise blocks off gap from future bookings */
-  private checkAdjacentBookings(gaps: Booking[], existingBookings: BookingMap) {
+  /** Checks the assumed blocked off gaps in Calendar to see if any may be extensions of existing bookings */
+  private checkGaps(gaps: Booking[], existingBookings: BookingMap) {
     gaps.forEach((gap) => {
-      let preceding;
-      let succeeding;
-
       const precedingDate = offsetDay(gap.firstNight, -1);
+
       const precedingBooking = existingBookings.get(precedingDate);
-      if (precedingBooking?.lastNight === precedingDate) {
-        preceding = precedingBooking;
-      }
-
       const succeedingBooking = existingBookings.get(gap.checkOut);
-      if (succeedingBooking?.checkIn === gap.checkOut) {
-        succeeding = succeedingBooking;
-      }
 
-      if ((succeeding && preceding) || gap.firstNight === this.date.today) {
-        // Blocked off gap that either starts today or has no open dates before/after is most likely not a booking
+      if (gap.firstNight === this.date.today) {
+        if (this.airbnb.isAfterCheckInTime()) {
+          // Any gaps starting today and appearing after check in time are most likely not bookings
+          this.addBookings([gap], { isBlockedOff: true, isHidden: true });
+        } else if (succeedingBooking) {
+          this.changeBookingLength(succeedingBooking, { firstNight: gap.firstNight });
+        } else {
+          this.addBookings([gap], { isBlockedOff: true });
+        }
+      } else if (succeedingBooking && precedingBooking) {
+        // Blocked off gap between two bookings is most likely not a booking
         this.addBookings([gap], { isBlockedOff: true, isHidden: true });
-      } else if (preceding) {
+      } else if (precedingBooking) {
         // If there is only one booking (preceding or succeeding) assume that it is being extended
-        this.changeBookingLength(preceding, { lastNight: gap.lastNight });
-      } else if (succeeding) {
-        this.changeBookingLength(succeeding, { firstNight: gap.firstNight });
+        this.changeBookingLength(precedingBooking, { lastNight: gap.lastNight });
+      } else if (succeedingBooking) {
+        this.changeBookingLength(succeedingBooking, { firstNight: gap.firstNight });
       } else {
         // Orphaned future gap may be actual booking
         this.addBookings([gap], { isBlockedOff: true });
@@ -381,7 +389,7 @@ export class App {
 
       if (!options.isReCheck) {
         this.addBookings(bookings);
-        this.checkAdjacentBookings(gaps, existingBookings);
+        this.checkGaps(gaps, existingBookings);
       }
     }
     // Indicate process has successfully completed

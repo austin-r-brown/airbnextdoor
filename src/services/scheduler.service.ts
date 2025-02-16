@@ -1,14 +1,14 @@
 import { App } from '../app';
 import { INTERVAL } from '../constants/constants';
-import { timeUntil } from '../helpers/date.helper';
 import { RunOptions, SchedulerEvent } from '../constants/types';
+import { DateService } from './date.service';
 
 /** Service for scheduling recurring processes in main App */
 export class SchedulerService {
   private nextEvent: SchedulerEvent | null = null;
   private reCheckUntil: number | null = null;
 
-  constructor(private readonly app: App) {}
+  constructor(private readonly app: App, private readonly date: DateService) {}
 
   public schedule() {
     this.setNextRun();
@@ -46,6 +46,6 @@ export class SchedulerService {
     setTimeout(() => {
       this.app.guestChangeNotification();
       this.morningActivities();
-    }, timeUntil([9] /* 9:00 AM */));
+    }, this.date.timeUntil([9] /* 9:00 AM */));
   }
 }

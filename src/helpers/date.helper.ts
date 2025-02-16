@@ -1,6 +1,5 @@
 import { ISODate, Booking } from '../constants/Booking';
 import { MS_IN_DAY } from '../constants/constants';
-import { Time } from '../constants/types';
 
 /** Converts Date object to 'YYYY-MM-DD' formatted string */
 export const getIsoDate = (date: Date = new Date()): ISODate => date.toISOString().split('T')[0] as ISODate;
@@ -9,26 +8,6 @@ export const getIsoDate = (date: Date = new Date()): ISODate => date.toISOString
 export const formatIsoDate = (date: string): string => {
   const [y, m, d] = date.split('-');
   return `${Number(m)}/${Number(d)}/${y.slice(2)}`;
-};
-
-/** Returns number of ms until specified time (24 hr) */
-export const timeUntil = ([hour, minute, seconds]: Time): number => {
-  const now = new Date();
-  const target = new Date(now);
-  target.setHours(hour, minute ?? 0, seconds ?? 0, 0);
-  if (target.getTime() < now.getTime()) {
-    target.setDate(target.getDate() + 1);
-  }
-
-  return target.getTime() - now.getTime() || MS_IN_DAY;
-};
-
-/** Returns a promise that resolves at specified time (24 hr) */
-export const waitUntil = ([hour, minute, seconds]: Time): Promise<void> => {
-  const ms = timeUntil([hour, minute, seconds]);
-  return new Promise<void>((resolve) => {
-    setTimeout(() => resolve(), ms);
-  });
 };
 
 /** Returns a promise that resolves after a specified number of miliseconds */

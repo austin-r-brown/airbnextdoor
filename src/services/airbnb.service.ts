@@ -27,6 +27,8 @@ export class AirbnbService {
   public checkInTime: Time = [15];
   public checkOutTime: Time = [11];
 
+  public isAfterCheckInTime = (): boolean => this.date.isTimePast(this.checkInTime);
+
   private previousResponse?: string;
 
   /** Furthest date in the future ever known to be bookable */
