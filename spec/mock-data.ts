@@ -7,7 +7,7 @@ export const generateCalendar = (
   bookingLength: number,
   numberOfBookings: number
 ): MerlinCalendarMonth[] => {
-  const today = new DateService().date;
+  const today = new Date(new DateService().today);
   const endDate = new Date(today);
   endDate.setMonth(today.getMonth() + 6);
 
