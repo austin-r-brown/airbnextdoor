@@ -54,7 +54,14 @@ export class iCalService {
     };
 
     if (booking.createdAt) {
-      event.description = `Booked On: ${new Date(booking.createdAt).toLocaleString()}`;
+      event.description = `Booked On: ${new Date(booking.createdAt).toLocaleString(undefined, {
+        year: 'numeric',
+        month: 'numeric',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      })}`;
     }
 
     return this.calendar.createEvent(event);
