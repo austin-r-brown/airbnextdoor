@@ -5,7 +5,7 @@ This application is designed to keep track of a specified Airbnb listing's booki
 - Guests expected to be arriving or leaving
 - Every notification includes a full list of current/future bookings
 
-Additionally, an iCal file is hosted which can be subscribed to for bookings to be shown as calendar events on iPhone calendar.
+Additionally, an iCal file is hosted which can be used to view the bookings on your preferred calendar app.
 
 ### Installation
 
@@ -13,7 +13,7 @@ Additionally, an iCal file is hosted which can be subscribed to for bookings to 
 
 - Next, you will need to run the `npm install` command from your terminal. If on Windows, you may simply open the `Install.bat` file in the folder labeled 'setup' and this command will be run automatically.
 
-- After running the install command, there should now be a file called `.env` in the main folder. (If it is not visible, try opening the main folder in a text editor like Sublime Text (https://www.sublimetext.com) and then selecting `.env` from the left pane. On Windows, it can be opened with Notepad)
+- After running the install command, there should now be a file called `.env` in the main folder which should open automatically after the installation completes. (If it does not and you are unable to find it, try opening the main folder in a text editor like Sublime Text (https://www.sublimetext.com) and then selecting `.env` from the left pane. On Windows, it can be opened with Notepad.)
 
 - Here is what the file contents should look like. Some of these values will need to be filled in which I will guide you through below.
 
@@ -56,14 +56,14 @@ This number determines how many minutes the app will wait between each time it c
 
 ### Starting The App
 
-Once you've filled these in and saved to the .env file, the application should be ready to go. Now you may run the `npm start` command from your terminal, or if on Windows simply open the `Start.bat` file in the folder labeled 'setup'. You'll want it running on a machine that is always on. I have this running on my Plex Server. The booking data retrieved from Airbnb is saved to the hard disk and will be restored automatically should the application be restarted.
+Once you've filled these in and saved to the .env file, the application should be ready to go. Now you may run the `npm start` command from your terminal, or if on Windows simply open the `Start.bat` file in the folder labeled 'setup'. You'll want it running on a machine that is always on. I personally use a Raspberry Pi to run it as a service. The booking data retrieved from Airbnb is saved to the hard disk and will be restored automatically should the application be restarted.
 
 ### Setup: iCal Calendar Events
 
-After you start the app, there should be an iCal file hosted from your servers localhost at port 3000, and can be used to automatically update your iPhone calendar with events representing the Airbnb bookings. To set this up, simply add a new calendar from your iPhone's calendar app, choose the subscription option, and enter the url shown from the console where this app is running. Since it is being hosted locally, this will only work when both devices are on the same network. Port forwarding can be utilized for access outside the network.
+After you start the app, there should be an iCal file hosted from your servers localhost at port 3001. This can be used to automatically update your preferred calendar app with events representing the Airbnb bookings. To set this up on an iPhone, simply add a new calendar on the Calendar app, choose the subscription option, and enter the url shown from the console where this app is running. Since it is being hosted locally, this will only work when both devices are on the same network. Port forwarding can be utilized for access outside the network.
 
 ### A couple other things to note
 
 - This is a beta application providing only a best approximation using the data from the calendar shown when booking your stay via Airbnb.com.
-- If multiple stays are already booked back to back before running this for the first time, or if multiple stays are booked back to back within however many minutes that the interval is set to, then the application will register it as a single booking.
-- If dates are blocked off by Airbnb for any other reason, the app may show inaccurate results.
+- The application may register multiple bookings as a single booking if there are back to back bookings that are either booked while the application is not running or during the interval period (default 5 minutes).
+- If dates are blocked off by Airbnb or the host for any other reason, the app may show inaccurate results.
