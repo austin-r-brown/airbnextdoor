@@ -1,7 +1,7 @@
 body {
     font-family: Arial, sans-serif;
     background-color: #f2f2f2;
-    margin: 0px 5px;
+    margin: 0 5px;
     min-width: 355px;
 }
 
@@ -11,14 +11,20 @@ body {
     font-weight: bold;
 }
 
+#no-events {
+    opacity: 0.75;
+    margin-bottom: 0;
+    font-size: 15px;
+}
+
 ul {
-    margin-bottom: 0px;
+    margin-bottom: 0;
 }
 
 .notification {
     color: black;
     font-size: 17px;
-    margin: 15px 0px;
+    margin: 15px 0;
     padding: 15px 10px;
     background-color: #fff;
     border-radius: 10px;
@@ -47,7 +53,7 @@ ul {
 
 .half {
     display: flex;
-    padding: 8px 0px;
+    padding: 8px 0;
     border: 1px solid #525252;
     background-color: #fcfcfc;
     font-weight: bold;
