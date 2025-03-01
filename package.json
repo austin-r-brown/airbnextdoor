@@ -1,6 +1,6 @@
 {
   "name": "airbnextdoor",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "main": "app.ts",
   "scripts": {
     "start": "node -r ./dist/app.js -e \"new (require('./dist/app.js').App)().init()\"",
