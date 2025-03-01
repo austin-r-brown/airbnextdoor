@@ -108,7 +108,7 @@ export class App {
   }
 
   private getFooter(): string | undefined {
-    const currentBookings = this.bookings.filter((b) => {
+    let currentBookings = this.bookings.filter((b) => {
       if (b.isHidden || b.checkOut <= this.date.today)
         // Omit bookings that are hidden or have already ended
         return false;
@@ -120,8 +120,8 @@ export class App {
     });
 
     if (currentBookings.every((b) => this.notificationBuffer.find(([, n]) => n.isSameAs(b))))
-      // Omit footer entirely if all current bookings are included in notifications
-      return;
+      // Omit all bookings from footer if all current bookings are included in notifications
+      currentBookings = [];
 
     return formatCurrentBookings(currentBookings);
   }

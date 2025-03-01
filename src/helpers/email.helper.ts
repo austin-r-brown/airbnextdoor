@@ -49,16 +49,18 @@ export const formatBooking = (booking: Booking, cssClass?: string, change?: Book
 };
 
 /** Generates HTML for Current Bookings summary that is appended to each email */
-export const formatCurrentBookings = (bookings: Booking[]): string | undefined => {
+export const formatCurrentBookings = (bookings: Booking[]): string => {
+  const titleHtml = (text: string) => `<span class="title">${text}</span>`;
   if (bookings.length) {
     const bookingsHtml = bookings.map((b) =>
       formatBooking(b, b.checkIn === getIsoDate() ? 'starts-today' : '')
     ).join(`
       `);
 
-    return `<span class="title">Upcoming</span>
+    return `${titleHtml('Upcoming Events')}
       ${bookingsHtml}`;
   }
+  return titleHtml('No Other Events');
 };
 
 /** Groups notifications from notification buffer by title and returns array of HTML notification strings */

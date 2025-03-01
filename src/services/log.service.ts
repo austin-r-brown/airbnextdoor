@@ -6,7 +6,7 @@ import { ConsoleType } from '../constants/enums';
 import { readFileSync } from 'fs';
 
 const START_MSG = 'Starting application';
-const SUCCESS_MSG = 'Airbnb dates checked successfully';
+const SUCCESS_MSG = 'Airbnb listing checked successfully';
 
 /** Service for handling console log messages */
 export class LogService {
