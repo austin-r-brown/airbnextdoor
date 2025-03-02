@@ -1,4 +1,3 @@
-import { getBookingDateRange } from '../helpers/date.helper';
 import { Booking, ISODate } from './Booking';
 import { CalendarDay } from './types';
 
@@ -63,7 +62,8 @@ export class Calendar {
       if (booking.lastNight < firstDate) {
         return false;
       } else {
-        const pastDays = getBookingDateRange(booking)
+        const pastDays = booking
+          .getDateRange()
           .filter((d) => d < firstDate)
           .map((d) => ({ date: d, booked: true, minNights: 1 }));
         this.addUnsorted(pastDays);
@@ -73,7 +73,8 @@ export class Calendar {
       if (booking.firstNight > lastDate) {
         return false;
       } else {
-        const futureDays = getBookingDateRange(booking)
+        const futureDays = booking
+          .getDateRange()
           .filter((d) => d > lastDate)
           .map((d) => ({ date: d, booked: true, minNights: 1 }));
         this.addUnsorted(futureDays);

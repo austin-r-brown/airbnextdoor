@@ -11,12 +11,12 @@ export class SchedulerService {
   constructor(private readonly app: App, private readonly date: DateService) {}
 
   public schedule() {
-    this.setNextRun();
-    this.morningActivities();
+    this.scheduleNextRun();
+    this.scheduleMorningNotification();
   }
 
   /** Determines when app will run next and schedules it */
-  private setNextRun(delay: number = INTERVAL, options: RunOptions = {}) {
+  private scheduleNextRun(delay: number = INTERVAL, options: RunOptions = {}) {
     if (this.nextEvent) {
       clearTimeout(this.nextEvent.timer);
     }
@@ -30,7 +30,7 @@ export class SchedulerService {
         await this.app.run(options);
 
         this.nextEvent = null;
-        this.setNextRun();
+        this.scheduleNextRun();
       }, delay),
       date: Date.now() + delay,
     };
@@ -42,10 +42,10 @@ export class SchedulerService {
   }
 
   /** Schedules anything that should occur in the morning */
-  private morningActivities() {
+  private scheduleMorningNotification() {
     setTimeout(() => {
       this.app.guestChangeNotification();
-      this.morningActivities();
+      this.scheduleMorningNotification();
     }, this.date.timeUntil([9] /* 9:00 AM */));
   }
 }

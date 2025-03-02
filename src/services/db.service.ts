@@ -52,12 +52,18 @@ export class DbService {
     } catch (err) {
       this.log.error(`Error reading DB file: "${err}"`);
     }
+
     if (!result.length) {
       const backup = this.restoreBackup();
       if (backup) {
         result = backup;
       }
     }
+
+    if (result.length) {
+      this.log.info(`Loaded ${result.length} booking(s) from DB for ${this.airbnb.listingTitle}`);
+    }
+
     return result.map((b) => new Booking(b));
   }
 

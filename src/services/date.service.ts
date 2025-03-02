@@ -44,7 +44,7 @@ export class DateService {
   }
 
   /** Returns whether or not now is past a specified time (24 hr) */
-  public isTimePast([hour, minute, seconds]: Time): boolean {
+  public isTimeAfter([hour, minute, seconds]: Time): boolean {
     const target = new Date(this.now);
     const now = target.getTime();
     target.setHours(hour, minute ?? 0, seconds ?? 0, 0);

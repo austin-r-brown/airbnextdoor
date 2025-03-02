@@ -27,7 +27,7 @@ export class AirbnbService {
   public checkInTime: Time = [15];
   public checkOutTime: Time = [11];
 
-  public isAfterCheckInTime = (): boolean => this.date.isTimePast(this.checkInTime);
+  public isAfterCheckInTime = (): boolean => this.date.isTimeAfter(this.checkInTime);
 
   private previousResponse?: string;
 

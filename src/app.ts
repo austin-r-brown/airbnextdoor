@@ -2,7 +2,7 @@ import { Booking, ISODate } from './constants/Booking';
 import { Calendar } from './constants/Calendar';
 import { CalendarDay, BookingMap, NotificationBuffer, RunOptions, BookingChange } from './constants/types';
 import { BookingChangeType } from './constants/enums';
-import { countDaysBetween, offsetDay, getBookingDateRange, waitFor } from './helpers/date.helper';
+import { countDaysBetween, offsetDay } from './helpers/date.helper';
 import { formatCurrentBookings, createNotifications } from './helpers/email.helper';
 import { DbService } from './services/db.service';
 import { EmailService } from './services/email.service';
@@ -13,17 +13,18 @@ import { API_BUFFER, INTERVAL, MS_IN_MINUTE, NOTIFY_DEBOUNCE_TIME } from './cons
 import { WatchdogService } from './services/watchdog.service';
 import { SchedulerService } from './services/scheduler.service';
 import { iCalService } from './services/ical.service';
-import { isOnline } from './helpers/network.helper';
+import { NetworkService } from './services/network.service';
 
 export class App {
   private isInitialized: boolean = false;
 
   private readonly date: DateService = new DateService();
+  private readonly network: NetworkService = new NetworkService(this.log);
   private readonly email: EmailService = new EmailService(this.log);
   private readonly watchdog: WatchdogService = new WatchdogService(this.log, this.email);
   private readonly airbnb: AirbnbService = new AirbnbService(this.log, this.date, this.email);
   private readonly db: DbService = new DbService(this.log, this.airbnb);
-  private readonly ical: iCalService = new iCalService(this.log, this.airbnb);
+  private readonly ical: iCalService = new iCalService(this.log, this.airbnb, this.network);
   private readonly scheduler: SchedulerService = new SchedulerService(this, this.date);
 
   /** All known bookings and blocked off periods */
@@ -36,16 +37,13 @@ export class App {
   constructor(private readonly log: LogService = new LogService()) {}
 
   public async init() {
-    await this.waitUntilOnline();
+    await this.network.waitUntilOnline();
     await this.airbnb.init();
     this.ical.init();
 
     const savedBookings = this.db.load();
-    if (savedBookings.length) {
-      this.bookings = savedBookings;
-      this.ical.updateEvents(savedBookings);
-      this.log.info(`Loaded ${savedBookings.length} booking(s) from DB for ${this.airbnb.listingTitle}`);
-    }
+    this.bookings = savedBookings;
+    this.ical.updateEvents(savedBookings);
 
     await this.run();
     this.scheduler.schedule();
@@ -181,7 +179,7 @@ export class App {
       const totalNights = countDaysBetween(b.checkIn, b.checkOut);
 
       if (
-        totalNights === min + 1 && // Just long enough to be a booking
+        totalNights === min && // Just long enough to be a booking
         b.checkIn === this.date.today &&
         this.airbnb.isAfterCheckInTime() && // It appeared last second
         existingBookings.get(b.checkOut) // Another booking immediately follows it
@@ -290,7 +288,7 @@ export class App {
       if (!calendar.isBookingInRange(b)) {
         return;
       }
-      const dates = getBookingDateRange(b);
+      const dates = b.getDateRange();
 
       let newFirst: CalendarDay | undefined;
       let newLast: CalendarDay | undefined;
@@ -356,17 +354,8 @@ export class App {
     return existingBookings;
   }
 
-  private async waitUntilOnline() {
-    let online = await isOnline();
-    while (!online) {
-      this.log.warn('No internet connection detected. Retrying in 30 seconds...');
-      await waitFor(30000);
-      online = await isOnline();
-    }
-  }
-
   public run = async (options: RunOptions = {}): Promise<boolean> => {
-    if (this.isInitialized) await this.waitUntilOnline(); // Verify internet connection
+    await this.network.waitUntilOnline();
     this.date.set(); // Set today's date
     const calendar = await this.airbnb.fetchCalendar(); // Fetch latest data from Airbnb
 

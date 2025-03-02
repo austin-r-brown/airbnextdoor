@@ -1,6 +1,6 @@
-import { offsetDay } from '../helpers/date.helper';
+import { getIsoDate, offsetDay } from '../helpers/date.helper';
 import { DateService } from '../services/date.service';
-import { BookingSerialized } from './types';
+import { BookingJSON } from './types';
 
 export type ISODate = `${string}-${string}-${string}`;
 
@@ -47,11 +47,25 @@ export class Booking {
     return this.checkIn <= today && this.checkOut >= today;
   }
 
+  /** Returns array of ISO dates which includes all nights occupied in booking */
+  getDateRange(): ISODate[] {
+    const dateArray: ISODate[] = [];
+    let currentDate = new Date(this.firstNight);
+
+    while (currentDate <= new Date(this.lastNight)) {
+      dateArray.push(getIsoDate(currentDate));
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    return dateArray;
+  }
+
+  /** Bookings sharing at least one equal date (check in or check out) are considered equal */
   isSameAs(booking: Booking): boolean {
     return booking.firstNight === this.firstNight || booking.lastNight === this.lastNight;
   }
 
-  toJSON(): BookingSerialized {
+  toJSON(): BookingJSON {
     return {
       firstNight: this.firstNight,
       lastNight: this.lastNight,

@@ -3,7 +3,7 @@ import { AirbnbService } from './airbnb.service';
 import { Booking } from '../constants/Booking';
 import { LogService } from './log.service';
 import express from 'express';
-import { getIPAddress } from '../helpers/network.helper';
+import { NetworkService } from './network.service';
 
 const PORT = 3001;
 const ICS_FILE = 'calendar.ics';
@@ -16,7 +16,11 @@ export class iCalService {
   private bookingStartTime: string = '';
   private bookingEndTime: string = '';
 
-  constructor(private log: LogService, private airbnb: AirbnbService) {}
+  constructor(
+    private readonly log: LogService,
+    private readonly airbnb: AirbnbService,
+    private readonly network: NetworkService
+  ) {}
 
   public init() {
     this.calendar.name(`Airbnb: ${this.airbnb.listingTitle}`);
@@ -75,7 +79,7 @@ export class iCalService {
     });
 
     this.server.listen(PORT, () => {
-      this.log.info(`iCal file available at http://${getIPAddress()}:${PORT}/${ICS_FILE}`);
+      this.log.info(`iCal file available at http://${this.network.ipAddress}:${PORT}/${ICS_FILE}`);
     });
   }
 }

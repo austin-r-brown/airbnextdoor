@@ -5,9 +5,12 @@ export type Time = [number, number?, number?];
 
 export type BookingMap = Map<ISODate, Booking>;
 
-export type BookingSerialized = Omit<Booking, 'checkIn' | 'checkOut' | 'isActive' | 'isSameAs' | 'toJSON'>;
+export type BookingJSON = Omit<
+  Booking,
+  'checkIn' | 'checkOut' | 'isActive' | 'getDateRange' | 'isSameAs' | 'toJSON'
+>;
 
-export type BookingChange = Partial<BookingSerialized>;
+export type BookingChange = Partial<BookingJSON>;
 
 export type NotificationBuffer = [string, Booking, BookingChange?][];
 

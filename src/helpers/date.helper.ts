@@ -1,11 +1,12 @@
-import { ISODate, Booking } from '../constants/Booking';
+import { ISODate } from '../constants/Booking';
 import { MS_IN_DAY } from '../constants/constants';
+import { Time } from '../constants/types';
 
-/** Converts Date object to 'YYYY-MM-DD' formatted string */
+/** Converts Date object to 'YYYY-MM-DD' formatted string used by Airbnb API */
 export const getIsoDate = (date: Date = new Date()): ISODate => date.toISOString().split('T')[0] as ISODate;
 
-/** Converts 'YYYY-MM-DD' formatted string to 'MM/DD/YY' for better readability */
-export const formatIsoDate = (date: string): string => {
+/** Converts 'YYYY-MM-DD' formatted string to 'MM/DD/YY' for better readability in notifications */
+export const formatIsoDate = (date: ISODate): string => {
   const [y, m, d] = date.split('-');
   return `${Number(m)}/${Number(d)}/${y.slice(2)}`;
 };
@@ -28,20 +29,7 @@ export const offsetDay = (date: Date | ISODate, days: number): ISODate => {
   return getIsoDate(new Date(dateObject.valueOf() + ms));
 };
 
-/** Returns array of ISO dates which includes all nights occupied in specified booking */
-export const getBookingDateRange = (booking: Booking): ISODate[] => {
-  const dateArray: ISODate[] = [];
-  let currentDate = new Date(booking.firstNight);
-
-  while (currentDate <= new Date(booking.lastNight)) {
-    dateArray.push(getIsoDate(currentDate));
-    currentDate.setDate(currentDate.getDate() + 1);
-  }
-
-  return dateArray;
-};
-
-export const getTimeFromString = (str: string): [number, number] | null => {
+export const getTimeFromString = (str: string): Time | null => {
   const timeMatch = str.match(/(?<!\d)\d{1,2}:\d{2}(?!\d)/g);
 
   if (timeMatch) {
