@@ -12,17 +12,16 @@ export class NetworkService {
 
   public get ipAddress(): string {
     const interfaces = os.networkInterfaces();
-    for (const iface in interfaces) {
-      const ifaceInfo = interfaces[iface];
-      if (ifaceInfo) {
-        for (const alias of ifaceInfo) {
-          if (alias.family === 'IPv4' && !alias.internal && alias.address.startsWith('192.168')) {
-            return alias.address;
-          }
-        }
-      }
-    }
-    return '127.0.0.1';
+    const [address] = Object.values(interfaces)
+      .flatMap((ifaceInfos) => ifaceInfos || [])
+      .filter((alias) => alias.family === 'IPv4' && !alias.internal)
+      .map((alias) => alias.address)
+      .sort((a, b) => {
+        const [numA, numB] = [a, b].map((val) => Number(val.split('.')[0]));
+        return numB - numA;
+      });
+
+    return address || '127.0.0.1';
   }
 
   public async waitUntilOnline() {
@@ -44,9 +43,11 @@ export class NetworkService {
 
     let result = false;
     try {
-      await axios.get('https://www.google.com', { timeout: NETWORK_TIMEOUT });
+      await axios.get('https://www.cloudflare.com', { timeout: NETWORK_TIMEOUT });
       result = true;
-    } catch {}
+    } catch (e) {
+      this.log.error(e);
+    }
 
     this.lastOnlineCheckResult = result;
     this.lastOnlineCheckTime = Date.now();
