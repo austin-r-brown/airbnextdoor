@@ -1,6 +1,6 @@
 import { Booking, ISODate } from './constants/Booking';
 import { Calendar } from './constants/Calendar';
-import { CalendarDay, BookingMap, NotificationBuffer, RunOptions, BookingChange } from './constants/types';
+import { CalendarDay, BookingMap, NotificationBuffer, BookingChange } from './constants/types';
 import { BookingChangeType } from './constants/enums';
 import { countDaysBetween, offsetDay } from './helpers/date.helper';
 import { formatCurrentBookings, createNotifications } from './helpers/email.helper';
@@ -9,7 +9,7 @@ import { EmailService } from './services/email.service';
 import { LogService } from './services/log.service';
 import { AirbnbService } from './services/airbnb.service';
 import { DateService } from './services/date.service';
-import { NETWORK_TIMEOUT, INTERVAL, MS_IN_MINUTE, NOTIFY_DEBOUNCE_TIME } from './constants/constants';
+import { NOTIFY_DEBOUNCE_TIME } from './constants/constants';
 import { WatchdogService } from './services/watchdog.service';
 import { SchedulerService } from './services/scheduler.service';
 import { iCalService } from './services/ical.service';
@@ -354,7 +354,7 @@ export class App {
     return existingBookings;
   }
 
-  public run = async (options: RunOptions = {}): Promise<boolean> => {
+  public run = async (): Promise<boolean> => {
     await this.network.waitUntilOnline();
     this.date.set(); // Set today's date
     const calendar = await this.airbnb.fetchCalendar(); // Fetch latest data from Airbnb
@@ -368,17 +368,9 @@ export class App {
       const existingBookings = this.checkExistingBookings(calendar);
       const { bookings, gaps } = this.checkForNewBookings(calendar, existingBookings);
 
-      if (calendar.isFullyBooked) {
-        if (!options.isReCheck && calendar.size - existingBookings.size > 10) {
-          // If suddenly the entire calendar is booked, wait at least 20 mins to confirm that these are actual bookings
-          options.isReCheck = this.scheduler.setReCheck(true);
-        }
-      } else if (options.isReCheck) {
-        // If the calendar is no longer fully booked during the re-check period, disable re-check flag
-        options.isReCheck = this.scheduler.setReCheck(false);
-      }
-
-      if (!options.isReCheck) {
+      if (calendar.isFullyBooked && calendar.size - existingBookings.size > 10) {
+        this.log.info('Ignoring fully booked calendar');
+      } else {
         this.addBookings(bookings);
         this.checkGaps(gaps, existingBookings);
       }

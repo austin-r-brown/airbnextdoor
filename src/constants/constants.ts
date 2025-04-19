@@ -18,7 +18,5 @@ export const INTERVAL: number = Math.min(
   720 * MS_IN_MINUTE
 );
 
-export const RECHECK_TIME = Math.max(1 * MS_IN_MINUTE, INTERVAL + NETWORK_TIMEOUT);
-
 /** Amount of time app is considered timed out after no activity */
 export const WATCHDOG_TIMEOUT: number = Math.max(INTERVAL * 3, 600000);

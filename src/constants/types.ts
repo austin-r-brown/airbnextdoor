@@ -66,11 +66,6 @@ export type MerlinCalendarMonth = {
 
 export type LogItem = [any[], ConsoleType];
 
-export type RunOptions = {
-  isReCheck?: boolean;
-  completedReCheck?: boolean;
-};
-
 export type SchedulerEvent = {
   timer: NodeJS.Timeout;
   date: number;

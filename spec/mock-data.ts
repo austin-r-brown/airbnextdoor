@@ -44,7 +44,7 @@ export const generateCalendar = (
     if (!months[month]) months[month] = { month: Number(month), year: 0, days: [] };
     months[month].days.push(d);
   });
-  return Object.values(months);
+  return Object.values(months).sort((a, b) => a.month - b.month);
 };
 
 export const airbnbGetResonse = `<!doctype html>

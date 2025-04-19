@@ -1,12 +1,11 @@
 import { App } from '../app';
-import { INTERVAL, RECHECK_TIME } from '../constants/constants';
-import { RunOptions, SchedulerEvent } from '../constants/types';
+import { INTERVAL } from '../constants/constants';
+import { SchedulerEvent } from '../constants/types';
 import { DateService } from './date.service';
 
 /** Service for scheduling recurring processes in main App */
 export class SchedulerService {
   private nextEvent: SchedulerEvent | null = null;
-  private reCheckUntil: number | null = null;
 
   constructor(private readonly app: App, private readonly date: DateService) {}
 
@@ -16,29 +15,20 @@ export class SchedulerService {
   }
 
   /** Determines when app will run next and schedules it */
-  private scheduleNextRun(delay: number = INTERVAL, options: RunOptions = {}) {
+  private scheduleNextRun(delay: number = INTERVAL) {
     if (this.nextEvent) {
       clearTimeout(this.nextEvent.timer);
     }
 
     this.nextEvent = {
       timer: setTimeout(async () => {
-        if (this.reCheckUntil && Date.now() < this.reCheckUntil) {
-          // If re-check is in progress, set the re-check flag
-          options.isReCheck = true;
-        }
-        await this.app.run(options);
+        await this.app.run();
 
         this.nextEvent = null;
         this.scheduleNextRun();
       }, delay),
       date: Date.now() + delay,
     };
-  }
-
-  public setReCheck(value: boolean): boolean {
-    this.reCheckUntil = value ? Date.now() + RECHECK_TIME : null;
-    return value;
   }
 
   /** Schedules anything that should occur in the morning */
