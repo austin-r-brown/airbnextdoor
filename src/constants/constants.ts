@@ -6,7 +6,7 @@ export const MS_IN_MINUTE: number = 60000;
 export const LOCALE: string = 'en';
 
 /** Longest amount of time expected for API calls */
-export const API_BUFFER: number = 10000;
+export const NETWORK_TIMEOUT: number = 10000;
 
 /** Debounce time used for sending notifcations and saving to DB */
 export const NOTIFY_DEBOUNCE_TIME: number = 1000;
@@ -14,9 +14,11 @@ export const NOTIFY_DEBOUNCE_TIME: number = 1000;
 /** Interval at which the app runs */
 export const INTERVAL: number = Math.min(
   // Default of 5 minutes, minimum of 30 seconds, maximum of 12 hours
-  Math.max((Number(process.env.INTERVAL_MINS) || 5) * MS_IN_MINUTE, API_BUFFER * 3),
+  Math.max((Number(process.env.INTERVAL_MINS) || 5) * MS_IN_MINUTE, NETWORK_TIMEOUT * 3),
   720 * MS_IN_MINUTE
 );
+
+export const RECHECK_TIME = Math.max(1 * MS_IN_MINUTE, INTERVAL + NETWORK_TIMEOUT);
 
 /** Amount of time app is considered timed out after no activity */
 export const WATCHDOG_TIMEOUT: number = Math.max(INTERVAL * 3, 600000);

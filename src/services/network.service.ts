@@ -2,8 +2,7 @@ import axios from 'axios';
 import os from 'os';
 import { LogService } from './log.service';
 import { waitFor } from '../helpers/date.helper';
-
-const NETWORK_TIMEOUT = 5000;
+import { NETWORK_TIMEOUT } from '../constants/constants';
 
 export class NetworkService {
   private lastOnlineCheckTime: number = 0;

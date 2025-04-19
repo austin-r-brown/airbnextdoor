@@ -1,5 +1,5 @@
 import { EmailConfig } from '../constants/types';
-import { API_BUFFER } from '../constants/constants';
+import { NETWORK_TIMEOUT } from '../constants/constants';
 import { LogService } from './log.service';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -59,7 +59,7 @@ export class EmailService {
           if (err?.status === 401) {
             this.smtpConfig = null;
           } else {
-            setTimeout(() => this.send(subject, notifications, footer), API_BUFFER);
+            setTimeout(() => this.send(subject, notifications, footer), NETWORK_TIMEOUT);
           }
         }
       );

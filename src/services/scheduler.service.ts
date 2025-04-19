@@ -1,5 +1,5 @@
 import { App } from '../app';
-import { INTERVAL } from '../constants/constants';
+import { INTERVAL, RECHECK_TIME } from '../constants/constants';
 import { RunOptions, SchedulerEvent } from '../constants/types';
 import { DateService } from './date.service';
 
@@ -36,9 +36,9 @@ export class SchedulerService {
     };
   }
 
-  public setReCheck(delay: number | null): boolean {
-    this.reCheckUntil = delay && Date.now() + delay;
-    return Boolean(delay);
+  public setReCheck(value: boolean): boolean {
+    this.reCheckUntil = value ? Date.now() + RECHECK_TIME : null;
+    return value;
   }
 
   /** Schedules anything that should occur in the morning */

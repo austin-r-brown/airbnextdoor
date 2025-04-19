@@ -9,7 +9,7 @@ import { EmailService } from './services/email.service';
 import { LogService } from './services/log.service';
 import { AirbnbService } from './services/airbnb.service';
 import { DateService } from './services/date.service';
-import { API_BUFFER, INTERVAL, MS_IN_MINUTE, NOTIFY_DEBOUNCE_TIME } from './constants/constants';
+import { NETWORK_TIMEOUT, INTERVAL, MS_IN_MINUTE, NOTIFY_DEBOUNCE_TIME } from './constants/constants';
 import { WatchdogService } from './services/watchdog.service';
 import { SchedulerService } from './services/scheduler.service';
 import { iCalService } from './services/ical.service';
@@ -371,12 +371,11 @@ export class App {
       if (calendar.isFullyBooked) {
         if (!options.isReCheck && calendar.size - existingBookings.size > 10) {
           // If suddenly the entire calendar is booked, wait at least 20 mins to confirm that these are actual bookings
-          const reCheckTime = Math.max(20 * MS_IN_MINUTE, INTERVAL + API_BUFFER);
-          options.isReCheck = this.scheduler.setReCheck(reCheckTime);
+          options.isReCheck = this.scheduler.setReCheck(true);
         }
       } else if (options.isReCheck) {
         // If the calendar is no longer fully booked during the re-check period, disable re-check flag
-        options.isReCheck = this.scheduler.setReCheck(null);
+        options.isReCheck = this.scheduler.setReCheck(false);
       }
 
       if (!options.isReCheck) {
