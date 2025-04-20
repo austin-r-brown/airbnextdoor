@@ -3,10 +3,7 @@ import { formatIsoDate } from '../helpers/date.helper';
 import { Booking } from '../constants/Booking';
 import { BookingChange, LogItem } from '../constants/types';
 import { ConsoleType } from '../constants/enums';
-import { readFileSync } from 'fs';
-
-const START_MSG = 'Starting application';
-const SUCCESS_MSG = 'Airbnb listing checked successfully';
+import packageInfo from '../../package.json';
 
 /** Service for handling console log messages */
 export class LogService {
@@ -21,11 +18,10 @@ export class LogService {
   }
 
   constructor() {
-    const { version } = JSON.parse(readFileSync('package.json', 'utf-8'));
-    this.info(`${START_MSG} v${version}`);
+    this.info(`Starting application v${packageInfo.version}`);
   }
 
-  private log(values: any[], type: ConsoleType) {
+  private log(values: any[], type: ConsoleType): void {
     const [first] = values;
     if (values.length === 1 && typeof first === 'string') {
       values[0] = `${first} ${this.timestamp}`;
@@ -41,32 +37,32 @@ export class LogService {
     this.logged.push(item);
   }
 
-  private display(values: any[], type: ConsoleType) {
+  private display(values: any[], type: ConsoleType): void {
     values.forEach((val: any) => console[type]?.(val));
     console[type]?.('');
   }
 
-  public info(...args: any) {
+  public info(...args: any): void {
     this.log(args, ConsoleType.Info);
   }
 
-  public error(...args: any) {
+  public error(...args: any): void {
     this.log(args, ConsoleType.Error);
   }
 
-  public warn(...args: any) {
+  public warn(...args: any): void {
     this.log(args, ConsoleType.Warn);
   }
 
-  public success() {
+  public success(): void {
     if (this.isLinuxService) {
       console.info(this.timestamp);
     } else {
-      process.stdout.write(`\r${SUCCESS_MSG} ${this.timestamp}`);
+      process.stdout.write(`\rAirbnb listing checked successfully ${this.timestamp}`);
     }
   }
 
-  public notification(title: string, booking: Booking, change?: BookingChange) {
+  public notification(title: string, booking: Booking, change?: BookingChange): void {
     let start = 'Check In',
       end = 'Check Out',
       changeMsg: string[] = [];

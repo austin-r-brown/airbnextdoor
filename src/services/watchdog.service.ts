@@ -12,14 +12,14 @@ export class WatchdogService {
     this.monitor();
   }
 
-  public success() {
+  public success(): void {
     this.email.clearErrors();
     this.log.success();
     this.lastSuccessfulRun = Date.now();
     this.notificationSent = false;
   }
 
-  private monitor() {
+  private monitor(): void {
     setInterval(() => {
       const timeSinceLastRun = Date.now() - this.lastSuccessfulRun;
 
@@ -35,7 +35,7 @@ export class WatchdogService {
     }, WATCHDOG_TIMEOUT);
   }
 
-  private sendNotification(message: string) {
+  private sendNotification(message: string): void {
     const errorsSent = this.email.getRecentErrors();
     const recentErrors = errorsSent.length
       ? ['<span class="title">Recent Errors:</span>' + createHtmlList(errorsSent)]

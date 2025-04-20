@@ -6,7 +6,7 @@ import express from 'express';
 import { NetworkService } from './network.service';
 
 const PORT = 3001;
-const ICS_FILE = 'calendar.ics';
+const ICS_FILENAME = 'calendar.ics';
 
 /** Service for generating/hosting iCal data for calendar subscription */
 export class iCalService {
@@ -22,7 +22,7 @@ export class iCalService {
     private readonly network: NetworkService
   ) {}
 
-  public init() {
+  public init(): void {
     this.calendar.name(`Airbnb: ${this.airbnb.listingTitle}`);
 
     const [checkInH, checkInM] = this.airbnb.checkInTime;
@@ -36,7 +36,7 @@ export class iCalService {
     this.startServer();
   }
 
-  public updateEvents(bookings: Booking[]) {
+  public updateEvents(bookings: Booking[]): void {
     this.calendar.clear();
     bookings.forEach((b) => this.addEvent(b));
   }
@@ -71,15 +71,15 @@ export class iCalService {
     return this.calendar.createEvent(event);
   }
 
-  private startServer() {
-    this.server.get(`/${ICS_FILE}`, (req, res) => {
+  private startServer(): void {
+    this.server.get(`/${ICS_FILENAME}`, (_, res) => {
       res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
-      res.setHeader('Content-Disposition', `attachment; filename="${ICS_FILE}"`);
+      res.setHeader('Content-Disposition', `attachment; filename="${ICS_FILENAME}"`);
       res.send(this.calendar.toString());
     });
 
     this.server.listen(PORT, () => {
-      this.log.info(`iCal file available at http://${this.network.ipAddress}:${PORT}/${ICS_FILE}`);
+      this.log.info(`iCal file available at http://${this.network.ipAddress}:${PORT}/${ICS_FILENAME}`);
     });
   }
 }

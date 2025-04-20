@@ -2,7 +2,7 @@ const fs = require('fs');
 const { exec } = require('child_process');
 const os = require('os');
 
-const fileName = '.env';
+const filename = '.env';
 
 const env =
   `SIB_API_KEY=\r\n` +
@@ -23,14 +23,14 @@ const getOpenCommand = () => {
 };
 
 (() => {
-  if (!fs.existsSync(fileName)) {
-    fs.writeFile(fileName, env, (err) => {
+  if (!fs.existsSync(filename)) {
+    fs.writeFile(filename, env, (err) => {
       if (err) {
         console.error('Error writing .env file:', JSON.stringify(err));
       } else {
         console.info('.env file created successfully');
 
-        const command = `${getOpenCommand()} ${fileName}`;
+        const command = `${getOpenCommand()} ${filename}`;
         exec(command, (err) => {
           if (err) {
             console.error('Error opening .env file:', JSON.stringify(err));

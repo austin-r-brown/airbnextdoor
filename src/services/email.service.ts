@@ -28,7 +28,7 @@ export class EmailService {
     this.smtpConfig = userConfig;
   }
 
-  public send(subject: string, notifications: string[], footer?: string) {
+  public send(subject: string, notifications: string[], footer?: string): void {
     if (this.smtpConfig) {
       const footerHtml = footer ? `<div class="notification" id="footer">${footer}</div>` : '';
       const bodyHtml = notifications.map((n) => `<div class="notification main">${n}</div>`).join(`
@@ -66,7 +66,7 @@ export class EmailService {
     }
   }
 
-  public sendError(message: string, details: any) {
+  public sendError(message: string, details: any): void {
     const email = `<span><b>Error:</b> ${message}</span>
       <br><br>
       <div class="error">${JSON.stringify(details).slice(0, 1000)}</div>`;
@@ -86,11 +86,11 @@ export class EmailService {
     }
   }
 
-  public getRecentErrors() {
+  public getRecentErrors(): string[] {
     return Array.from(this.errorsSent.keys());
   }
 
-  public clearErrors() {
+  public clearErrors(): void {
     this.errorsSent.clear();
   }
 

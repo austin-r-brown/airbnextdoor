@@ -15,7 +15,7 @@ export class SchedulerService {
   }
 
   /** Determines when app will run next and schedules it */
-  private scheduleNextRun(delay: number = INTERVAL) {
+  private scheduleNextRun(delay: number = INTERVAL): void {
     if (this.nextEvent) {
       clearTimeout(this.nextEvent.timer);
     }
@@ -32,7 +32,7 @@ export class SchedulerService {
   }
 
   /** Schedules anything that should occur in the morning */
-  private scheduleMorningNotification() {
+  private scheduleMorningNotification(): void {
     setTimeout(() => {
       this.app.guestChangeNotification();
       this.scheduleMorningNotification();

@@ -29,6 +29,7 @@ export const offsetDay = (date: Date | ISODate, days: number): ISODate => {
   return getIsoDate(new Date(dateObject.valueOf() + ms));
 };
 
+/** Extracts 24 hour time from string */
 export const getTimeFromString = (str: string): Time | null => {
   const timeMatch = str.match(/(?<!\d)\d{1,2}:\d{2}(?!\d)/g);
 

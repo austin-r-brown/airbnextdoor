@@ -205,7 +205,7 @@ export class AirbnbService {
     }
   }
 
-  private handleError = (err: AxiosError, response?: AxiosResponse) => {
+  private handleError = (err: AxiosError, response?: AxiosResponse): void => {
     let description, details;
 
     if (response) {

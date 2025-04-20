@@ -4,6 +4,7 @@ import { LogService } from './log.service';
 import { waitFor } from '../helpers/date.helper';
 import { NETWORK_TIMEOUT } from '../constants/constants';
 
+/** Service for checking network details */
 export class NetworkService {
   private lastOnlineCheckTime: number = 0;
   private lastOnlineCheckResult: boolean = false;
@@ -12,19 +13,17 @@ export class NetworkService {
 
   public get ipAddress(): string {
     const interfaces = os.networkInterfaces();
-    const [address] = Object.values(interfaces)
+    const addresses = Object.values(interfaces)
       .flatMap((ifaceInfos) => ifaceInfos || [])
       .filter((alias) => alias.family === 'IPv4' && !alias.internal)
-      .map((alias) => alias.address)
-      .sort((a, b) => {
-        const [numA, numB] = [a, b].map((val) => Number(val.split('.')[0]));
-        return numB - numA;
-      });
+      .map((alias) => alias.address);
 
-    return address || '127.0.0.1';
+    const preferred = addresses.find((a) => a.startsWith('192.168'));
+
+    return preferred || addresses[0] || '127.0.0.1';
   }
 
-  public async waitUntilOnline() {
+  public async waitUntilOnline(): Promise<void> {
     let online = await this.isOnline();
 
     while (!online) {
@@ -36,7 +35,7 @@ export class NetworkService {
 
   private async isOnline(): Promise<boolean> {
     const timeSinceLastCheck = Date.now() - this.lastOnlineCheckTime;
-    
+
     if (timeSinceLastCheck < NETWORK_TIMEOUT) {
       return this.lastOnlineCheckResult;
     }

@@ -36,7 +36,7 @@ export class App {
 
   constructor(private readonly log: LogService = new LogService()) {}
 
-  public async init() {
+  public async init(): Promise<void> {
     await this.network.waitUntilOnline();
     await this.airbnb.init();
     this.ical.init();
@@ -50,7 +50,7 @@ export class App {
     this.isInitialized = true;
   }
 
-  private handleBookingChange(changeType: BookingChangeType, booking: Booking, change?: BookingChange) {
+  private handleBookingChange(changeType: BookingChangeType, booking: Booking, change?: BookingChange): void {
     const title = `${changeType} ${booking.isBlockedOff ? 'Blocked Off Period' : 'Booking'}`;
     let notifiedChange;
     if ([BookingChangeType.Shortened, BookingChangeType.Extended].includes(changeType)) {
@@ -71,7 +71,7 @@ export class App {
   }
 
   /** Sends all notifications that have accumulated during debounce period */
-  private notify(title: string, booking: Booking, change?: BookingChange) {
+  private notify(title: string, booking: Booking, change?: BookingChange): void {
     this.log.notification(title, booking, change);
 
     if (!booking.isHidden) {
@@ -125,7 +125,7 @@ export class App {
   }
 
   /** Adds new bookings and sends notification */
-  private addBookings(bookings: Booking[], patch?: BookingChange) {
+  private addBookings(bookings: Booking[], patch?: BookingChange): void {
     const createdAt = new Date();
     bookings.forEach((b) => {
       if (this.isInitialized) {
@@ -141,7 +141,7 @@ export class App {
   }
 
   /** Validates changes in booking length, updates booking accordingly and sends notification */
-  private changeBookingLength(booking: Booking, change: BookingChange) {
+  private changeBookingLength(booking: Booking, change: BookingChange): void {
     let changeType: BookingChangeType | undefined;
     const { firstNight, lastNight } = change;
 
@@ -159,7 +159,7 @@ export class App {
   }
 
   /** Removes bookings by index and sends notification */
-  private cancelBookings(indexes: number[]) {
+  private cancelBookings(indexes: number[]): void {
     indexes.forEach((index, i) => {
       const [booking] = this.bookings.splice(index - i, 1);
       this.handleBookingChange(BookingChangeType.Cancelled, booking);
@@ -222,7 +222,7 @@ export class App {
   }
 
   /** Sends notification when guests are arriving or leaving today */
-  public guestChangeNotification() {
+  public guestChangeNotification(): void {
     let startingToday;
     let endingToday;
 
@@ -248,7 +248,7 @@ export class App {
   }
 
   /** Checks the assumed blocked off gaps in Calendar to see if any may be extensions of existing bookings */
-  private checkGaps(gaps: Booking[], existingBookings: BookingMap) {
+  private checkGaps(gaps: Booking[], existingBookings: BookingMap): void {
     gaps.forEach((gap) => {
       const precedingDate = offsetDay(gap.firstNight, -1);
 

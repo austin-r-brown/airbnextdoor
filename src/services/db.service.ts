@@ -17,10 +17,10 @@ export class DbService {
   constructor(private readonly log: LogService, private readonly airbnb: AirbnbService) {
     this.filepath = path.join(DB_ROOT_DIR, `${this.airbnb.listingId}.json`);
     this.backupsDir = path.join(DB_ROOT_DIR, BACKUPS_ROOT_DIR, this.airbnb.listingId);
-    this.createFolders(this.backupsDir);
+    this.createFolders();
   }
 
-  public async save(bookings: Booking[]) {
+  public async save(bookings: Booking[]): Promise<void> {
     if (bookings.length) {
       await this.backup();
       const serialized = bookings.map((b) => b.toJSON());
@@ -130,8 +130,8 @@ export class DbService {
     }
   }
 
-  private createFolders(folderPath: string) {
-    const parts = folderPath.split(path.sep);
+  private createFolders(): void {
+    const parts = this.backupsDir.split(path.sep);
     try {
       for (let i = 1; i <= parts.length; i++) {
         const dir = path.join(...parts.slice(0, i));
