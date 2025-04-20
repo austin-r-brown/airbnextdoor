@@ -44,9 +44,7 @@ export class NetworkService {
     try {
       await axios.get('https://www.cloudflare.com', { timeout: NETWORK_TIMEOUT });
       result = true;
-    } catch (e) {
-      this.log.error(e);
-    }
+    } catch {}
 
     this.lastOnlineCheckResult = result;
     this.lastOnlineCheckTime = Date.now();

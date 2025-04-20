@@ -49,8 +49,8 @@ export class DbService {
           result = jsonData;
         }
       }
-    } catch (err) {
-      this.log.error(`Error reading DB file: "${err}"`);
+    } catch (e: any) {
+      this.log.error(`Error reading DB file: "${e}"`);
     }
 
     if (!result.length) {
@@ -109,8 +109,8 @@ export class DbService {
           this.log.info(`Successfully restored ${date} backup`);
           return backupJson;
         }
-      } catch (err) {
-        this.log.error(`Error reading backup file ${file}: "${err}"`);
+      } catch (e: any) {
+        this.log.error(`Error reading backup file ${file}: "${e}"`);
       }
     }
     return null;
@@ -140,8 +140,8 @@ export class DbService {
           fs.mkdirSync(dir);
         }
       }
-    } catch (err: any) {
-      this.log.error(`Error creating folder: "${err.message}"`);
+    } catch (e: any) {
+      this.log.error(`Error creating folder: "${e.message}"`);
     }
   }
 }

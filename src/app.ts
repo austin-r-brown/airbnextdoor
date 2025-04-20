@@ -10,7 +10,6 @@ import { LogService } from './services/log.service';
 import { AirbnbService } from './services/airbnb.service';
 import { DateService } from './services/date.service';
 import { NOTIFY_DEBOUNCE_TIME } from './constants/constants';
-import { WatchdogService } from './services/watchdog.service';
 import { SchedulerService } from './services/scheduler.service';
 import { iCalService } from './services/ical.service';
 import { NetworkService } from './services/network.service';
@@ -21,11 +20,10 @@ export class App {
   private readonly date: DateService = new DateService();
   private readonly network: NetworkService = new NetworkService(this.log);
   private readonly email: EmailService = new EmailService(this.log);
-  private readonly watchdog: WatchdogService = new WatchdogService(this.log, this.email);
   private readonly airbnb: AirbnbService = new AirbnbService(this.log, this.date, this.email);
   private readonly db: DbService = new DbService(this.log, this.airbnb);
   private readonly ical: iCalService = new iCalService(this.log, this.airbnb, this.network);
-  private readonly scheduler: SchedulerService = new SchedulerService(this, this.date);
+  private readonly scheduler: SchedulerService = new SchedulerService(this, this.log, this.date, this.email);
 
   /** All known bookings and blocked off periods */
   private bookings: Booking[] = [];
@@ -375,8 +373,6 @@ export class App {
         this.checkGaps(gaps, existingBookings);
       }
     }
-    // Indicate process has successfully completed
-    this.watchdog.success();
     return true;
   };
 }

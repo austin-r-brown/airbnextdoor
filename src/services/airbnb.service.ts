@@ -176,16 +176,16 @@ export class AirbnbService {
             this.previousResponse = apiResponseStr;
           }
           result = calendar;
-        } catch (err: any) {
+        } catch (e: any) {
           const errors = response?.data?.errors;
 
           if (errors?.length) {
-            errors.forEach((e: any) => {
-              const message = e?.extensions?.response?.body?.error_message || e?.message;
-              this.handleError(message ? { message } : e);
+            errors.forEach((err: any) => {
+              const message = err?.extensions?.response?.body?.error_message || err?.message;
+              this.handleError(message ? { message } : err);
             });
           } else {
-            this.handleError(err, response);
+            this.handleError(e, response);
           }
         }
       })
