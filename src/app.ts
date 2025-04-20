@@ -195,7 +195,7 @@ export class App {
     let lastNight: ISODate | null = null;
 
     calendar.days.forEach((day) => {
-      if (day.booked && !existingBookings.has(day.date)) {
+      if (day.booked && !existingBookings.has(day.date) && day.date >= this.date.today) {
         // If a booking is in progress, update the end date
         if (firstNight !== null) {
           lastNight = day.date;

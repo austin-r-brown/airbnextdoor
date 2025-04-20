@@ -61,6 +61,9 @@ export class DbService {
     }
 
     if (result.length) {
+      const lastBooking = result[result.length - 1];
+      this.airbnb.setCalendarRange(lastBooking.lastNight);
+
       this.log.info(`Loaded ${result.length} booking(s) from DB for ${this.airbnb.listingTitle}`);
     }
 

@@ -3,8 +3,7 @@ import { NETWORK_TIMEOUT } from '../constants/constants';
 import { LogService } from './log.service';
 import * as fs from 'fs';
 import * as path from 'path';
-
-const SibApiV3Sdk = require('sib-api-v3-sdk');
+import * as SibApiV3Sdk from '@sendinblue/client';
 
 /** Service for handling user notifications via email */
 export class EmailService {
@@ -18,7 +17,7 @@ export class EmailService {
     const userConfig = this.validateUserInput();
 
     if (userConfig) {
-      SibApiV3Sdk.ApiClient.instance.authentications['api-key'].apiKey = userConfig.apiKey;
+      this.api.setApiKey(SibApiV3Sdk.TransactionalEmailsApiApiKeys.apiKey, userConfig.apiKey);
     } else {
       this.log.warn(
         'Valid Email Addresses and API Key must be provided in .env file for emails to be sent. See README.md for more info.'

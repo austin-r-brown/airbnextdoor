@@ -126,6 +126,12 @@ export class AirbnbService {
     }
   }
 
+  public setCalendarRange(date: ISODate) {
+    if (!this.calendarRange || date > this.calendarRange) {
+      this.calendarRange = date;
+    }
+  }
+
   /**
    * Sends Airbnb request for calendar and builds Calendar object from response.
    * Returns empty calendar if no changes were found from previous response, null if request is unsuccessful
@@ -160,17 +166,14 @@ export class AirbnbService {
               if (calendarDate < this.date.today) {
                 break;
               } else {
-                if (bookable && (!this.calendarRange || calendarDate > this.calendarRange)) {
-                  this.calendarRange = calendarDate;
-                }
+                if (bookable) this.setCalendarRange(calendarDate);
 
-                if (this.calendarRange && calendarDate <= this.calendarRange) {
+                if (this.calendarRange && calendarDate <= this.calendarRange)
                   calendar.unshift({
                     booked: !bookable,
                     date: calendarDate,
                     minNights: Number(minNights),
                   });
-                }
               }
             }
             this.previousResponse = apiResponseStr;

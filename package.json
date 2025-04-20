@@ -3,7 +3,7 @@
   "version": "1.4.4",
   "main": "app.ts",
   "scripts": {
-    "start": "node -r ./dist/app.js -e \"new (require('./dist/app.js').App)().init()\"",
+    "start": "node -r ./dist/src/app.js -e \"new (require('./dist/src/app.js').App)().init()\"",
     "build": "npx tsc",
     "postinstall": "node createEnv.js && npm run build",
     "test": "npx jest"
@@ -13,10 +13,10 @@
     "dotenv": "^16.3.2",
     "express": "^4.19.2",
     "ical-generator": "^7.1.0",
-    "sib-api-v3-sdk": "^8.5.0",
     "typescript": "^5.4.3"
   },
   "devDependencies": {
+    "@sendinblue/client": "^3.3.1",
     "@types/express": "^4.17.21",
     "@types/jest": "^29.5.12",
     "@types/node": "^20.11.16",
