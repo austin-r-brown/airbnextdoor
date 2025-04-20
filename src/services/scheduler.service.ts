@@ -34,11 +34,11 @@ export class SchedulerService {
         let success = false;
         try {
           success = await this.app.run();
-          this.nextEvent = null;
-          this.scheduleNextRun();
         } catch (e: any) {
-          this.log.error(`Application Error: "${e}"`);
+          this.log.error('Application Error:', e);
         }
+        this.nextEvent = null;
+        this.scheduleNextRun();
 
         if (success) this.watchdog.success();
       }, delay),
