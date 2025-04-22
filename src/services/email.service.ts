@@ -51,15 +51,15 @@ export class EmailService {
         </html>`;
 
       this.api.sendTransacEmail(this.smtpConfig).then(
-        (data: any) => {
-          this.log.info(`Email sent successfully. Returned data: ${JSON.stringify(data)}`);
-        },
+        (data) => this.log.info(`Email sent successfully. ${data.body.messageId}`),
         (err: any) => {
-          const { message } = JSON.parse(err?.response?.text ?? '{}');
-          this.log.error(`Unable to send email: ${message ? `"${message}"` : err}`);
+          const { message } = err?.response?.body ?? {};
+          this.log.error(`Unable to send email: ${message ? `"${message}"` : JSON.stringify(err)}`);
 
-          if (err?.status !== 401)
+          if (err?.response?.statusCode !== 401) {
+            this.log.error(`Retrying in ${NETWORK_TIMEOUT / 1000} seconds...`);
             setTimeout(() => this.send(subject, notifications, footer), NETWORK_TIMEOUT);
+          }
         }
       );
     }

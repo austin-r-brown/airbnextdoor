@@ -24,11 +24,12 @@ export class NetworkService {
   }
 
   public async waitUntilOnline(): Promise<void> {
+    const retryWaitPeriod = 30000;
     let online = await this.isOnline();
 
     while (!online) {
-      this.log.warn('No internet connection detected. Retrying in 30 seconds...');
-      await waitFor(30000);
+      this.log.warn(`No internet connection detected. Retrying in ${retryWaitPeriod / 1000} seconds...`);
+      await waitFor(retryWaitPeriod);
       online = await this.isOnline();
     }
   }
