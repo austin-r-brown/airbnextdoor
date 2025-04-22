@@ -9,7 +9,7 @@ import { WatchdogService } from './watchdog.service';
 /** Service for scheduling recurring processes in main App */
 export class SchedulerService {
   private nextEvent: SchedulerEvent | null = null;
-  private watchdog: WatchdogService = new WatchdogService(this.log, this.email);
+  private readonly watchdog: WatchdogService = new WatchdogService(this.log, this.email);
 
   constructor(
     private readonly app: App,
@@ -18,7 +18,7 @@ export class SchedulerService {
     private readonly email: EmailService
   ) {}
 
-  public schedule() {
+  public init() {
     this.scheduleNextRun();
     this.scheduleMorningNotification();
   }
@@ -33,7 +33,7 @@ export class SchedulerService {
       timer: setTimeout(async () => {
         let success = false;
         try {
-          success = await this.app.run();
+          success = await this.app.poll();
         } catch (e: any) {
           this.log.error('Application Error:', e);
         }

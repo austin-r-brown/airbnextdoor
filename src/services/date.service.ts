@@ -12,28 +12,28 @@ export class DateService {
   public month!: number;
   public year!: number;
 
-  public set(): boolean {
+  constructor() {
+    this.handleDateChange();
+  }
+
+  private readonly handleDateChange = (): void => {
+    this.set();
+    setTimeout(this.handleDateChange, this.timeUntil([24] /* Midnight */));
+  };
+
+  private set(): void {
     const [m, d, y] = this.now
       .toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' })
       .split('/');
-    const todayIso: ISODate = `${y}-${m}-${d}`;
-    const dateChanged = todayIso !== this.today;
 
-    if (dateChanged) {
-      this.today = todayIso;
-      this.month = Number(m);
-      this.year = Number(y);
-    }
-    return dateChanged;
-  }
-
-  constructor() {
-    this.set();
+    this.today = `${y}-${m}-${d}`;
+    this.month = Number(m);
+    this.year = Number(y);
   }
 
   /** Returns number of ms until specified time (24 hr) */
   public timeUntil([hour, minute, seconds]: Time): number {
-    const target = new Date(this.now);
+    const target = this.now;
     const now = target.getTime();
     target.setHours(hour, minute ?? 0, seconds ?? 0, 0);
     if (target.getTime() < now) {
@@ -45,7 +45,7 @@ export class DateService {
 
   /** Returns whether or not now is past a specified time (24 hr) */
   public isTimeAfter([hour, minute, seconds]: Time): boolean {
-    const target = new Date(this.now);
+    const target = this.now;
     const now = target.getTime();
     target.setHours(hour, minute ?? 0, seconds ?? 0, 0);
 

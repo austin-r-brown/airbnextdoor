@@ -12,7 +12,7 @@ export type BookingJSON = Omit<
 
 export type BookingChange = Partial<BookingJSON>;
 
-export type NotificationBuffer = [string, Booking, BookingChange?][];
+export type NotificationQueue = [string, Booking, BookingChange?][];
 
 export type CalendarDay = {
   booked: boolean;
@@ -40,15 +40,6 @@ export type AirbnbApiConfig = {
     currency?: string;
     variables?: string;
     extensions: string;
-  };
-};
-
-export type AirbnbRequestVariables = {
-  request: {
-    count: number;
-    listingId: string;
-    month: number;
-    year: number;
   };
 };
 

@@ -1,6 +1,6 @@
 import { Booking, ISODate } from './constants/Booking';
 import { Calendar } from './constants/Calendar';
-import { CalendarDay, BookingMap, NotificationBuffer, BookingChange } from './constants/types';
+import { CalendarDay, BookingMap, NotificationQueue, BookingChange } from './constants/types';
 import { BookingChangeType } from './constants/enums';
 import { countDaysBetween, offsetDay } from './helpers/date.helper';
 import { formatCurrentBookings, createNotifications } from './helpers/email.helper';
@@ -17,10 +17,11 @@ import { NetworkService } from './services/network.service';
 export class App {
   private isInitialized: boolean = false;
 
+  private readonly log: LogService = new LogService();
   private readonly date: DateService = new DateService();
   private readonly network: NetworkService = new NetworkService(this.log);
-  private readonly email: EmailService = new EmailService(this.log);
-  private readonly airbnb: AirbnbService = new AirbnbService(this.log, this.date, this.email);
+  private readonly email: EmailService = new EmailService(this.log, this.network);
+  private readonly airbnb: AirbnbService = new AirbnbService(this.log, this.date, this.email, this.network);
   private readonly db: DbService = new DbService(this.log, this.airbnb);
   private readonly ical: iCalService = new iCalService(this.log, this.airbnb, this.network);
   private readonly scheduler: SchedulerService = new SchedulerService(this, this.log, this.date, this.email);
@@ -30,21 +31,17 @@ export class App {
 
   /** Used for debouncing notifications sent and JSON backups saved */
   private notifyDebounceTimer?: NodeJS.Timeout;
-  private notificationBuffer: NotificationBuffer = [];
-
-  constructor(private readonly log: LogService = new LogService()) {}
+  private notificationQueue: NotificationQueue = [];
 
   public async init(): Promise<void> {
-    await this.network.waitUntilOnline();
     await this.airbnb.init();
     this.ical.init();
 
-    const savedBookings = this.db.load();
-    this.bookings = savedBookings;
-    this.ical.updateEvents(savedBookings);
+    this.bookings = this.db.load();
+    this.ical.updateEvents(this.bookings);
 
-    await this.run();
-    this.scheduler.schedule();
+    await this.poll();
+    this.scheduler.init();
     this.isInitialized = true;
   }
 
@@ -73,23 +70,23 @@ export class App {
     this.log.notification(title, booking, change);
 
     if (!booking.isHidden) {
-      this.notificationBuffer.push([title, new Booking(booking), change]);
+      this.notificationQueue.push([title, new Booking(booking), change]);
     }
 
     clearTimeout(this.notifyDebounceTimer);
 
     this.notifyDebounceTimer = setTimeout(() => {
       this.sortAndSaveBookings();
-      const notifications = createNotifications(this.notificationBuffer);
+      const notifications = createNotifications(this.notificationQueue);
 
       if (notifications.length) {
-        const count = this.notificationBuffer.length;
+        const count = this.notificationQueue.length;
         const subject = `${this.airbnb.listingTitle}: ${
           // If there is single notification, use its title for the email subject
-          count === 1 ? this.notificationBuffer[0][0] : `${count} Notifications`
+          count === 1 ? this.notificationQueue[0][0] : `${count} Notifications`
         }`;
         this.email.send(subject, notifications, this.getFooter());
-        this.notificationBuffer = [];
+        this.notificationQueue = [];
       }
     }, NOTIFY_DEBOUNCE_TIME);
   }
@@ -108,14 +105,14 @@ export class App {
       if (b.isHidden || b.checkOut <= this.date.today)
         // Omit bookings that are hidden or have already ended
         return false;
-      if (b.checkIn <= this.date.today && this.notificationBuffer.find(([, n]) => n.isSameAs(b)))
+      if (b.checkIn <= this.date.today && this.notificationQueue.find(([, n]) => n.isSameAs(b)))
         // Omit currently active booking if it is included in the notifications
         return false;
 
       return true;
     });
 
-    if (currentBookings.every((b) => this.notificationBuffer.find(([, n]) => n.isSameAs(b))))
+    if (currentBookings.every((b) => this.notificationQueue.find(([, n]) => n.isSameAs(b))))
       // Omit all bookings from footer if all current bookings are included in notifications
       currentBookings = [];
 
@@ -352,27 +349,24 @@ export class App {
     return existingBookings;
   }
 
-  public run = async (): Promise<boolean> => {
-    await this.network.waitUntilOnline();
-    this.date.set(); // Set today's date
+  public readonly poll = async (): Promise<boolean> => {
     const calendar = await this.airbnb.fetchCalendar(); // Fetch latest data from Airbnb
-
-    if (!calendar) {
-      return false;
-    }
+    if (!calendar) return false; // Skip run if calendar was not successfully retrieved
 
     if (calendar.size) {
-      // Check for new or altered bookings
+      // Check for new or altered bookings if new calendar data was retrieved
       const existingBookings = this.checkExistingBookings(calendar);
-      const { bookings, gaps } = this.checkForNewBookings(calendar, existingBookings);
 
       if (calendar.isFullyBooked && calendar.size - existingBookings.size > 10) {
+        // Ignore changes if calendar is suddenly fully booked
         this.log.info('Ignoring fully booked calendar');
       } else {
+        // Determine if blocked off dates are actual bookings or gaps in availablity
+        const { bookings, gaps } = this.checkForNewBookings(calendar, existingBookings);
         this.addBookings(bookings);
         this.checkGaps(gaps, existingBookings);
       }
     }
-    return true;
+    return true; // Success
   };
 }

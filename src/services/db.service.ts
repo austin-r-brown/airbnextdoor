@@ -10,8 +10,8 @@ const BACKUPS_ROOT_DIR = 'backups';
 
 /** Service for saving and restoring persisted data */
 export class DbService {
-  private filepath: string;
-  private backupsDir: string;
+  private readonly filepath: string;
+  private readonly backupsDir: string;
   private lastSavedFile?: string;
 
   constructor(private readonly log: LogService, private readonly airbnb: AirbnbService) {

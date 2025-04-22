@@ -1,11 +1,5 @@
 import axios, { AxiosError, AxiosResponse } from 'axios';
-import {
-  AirbnbApiConfig,
-  AirbnbRequestVariables,
-  MerlinCalendarDay,
-  MerlinCalendarMonth,
-  Time,
-} from '../constants/types';
+import { AirbnbApiConfig, MerlinCalendarDay, MerlinCalendarMonth, Time } from '../constants/types';
 import { Calendar } from '../constants/Calendar';
 import { LOCALE } from '../constants/constants';
 import { ISODate } from '../constants/Booking';
@@ -13,21 +7,24 @@ import { LogService } from './log.service';
 import { EmailService } from './email.service';
 import { DateService } from './date.service';
 import { getTimeFromString } from '../helpers/date.helper';
+import { NetworkService } from './network.service';
 
-const API_OPERATION = 'PdpAvailabilityCalendar';
-const API_HASH = '8f08e03c7bd16fcad3c92a3592c19a8b559a0d0855a84028d1163d4733ed9ade';
-const API_KEY = 'd306zoyjsyarp7ifhu67rjxn52tv0t20';
+const API_CONSTANTS = {
+  operationName: 'PdpAvailabilityCalendar',
+  hash: '8f08e03c7bd16fcad3c92a3592c19a8b559a0d0855a84028d1163d4733ed9ade',
+  key: 'd306zoyjsyarp7ifhu67rjxn52tv0t20',
+};
 
 /** Service for interacting with Airbnb */
 export class AirbnbService {
-  public listingId: string;
-  public listingUrl: string;
+  public readonly listingId: string;
+  public readonly listingUrl: string;
   public listingTitle: string = 'Airbnb';
 
   public checkInTime: Time = [15];
   public checkOutTime: Time = [11];
 
-  public isAfterCheckInTime = (): boolean => this.date.isTimeAfter(this.checkInTime);
+  public readonly isAfterCheckInTime = (): boolean => this.date.isTimeAfter(this.checkInTime);
 
   private previousResponse?: string;
 
@@ -36,17 +33,17 @@ export class AirbnbService {
 
   private readonly apiConfig: AirbnbApiConfig = {
     method: 'get',
-    url: `https://www.airbnb.com/api/v3/${API_OPERATION}/${API_HASH}`,
+    url: `https://www.airbnb.com/api/v3/${API_CONSTANTS.operationName}/${API_CONSTANTS.hash}`,
     headers: {
-      'X-Airbnb-Api-Key': API_KEY,
+      'X-Airbnb-Api-Key': API_CONSTANTS.key,
     },
     params: {
-      operationName: API_OPERATION,
+      operationName: API_CONSTANTS.operationName,
       locale: LOCALE,
       extensions: JSON.stringify({
         persistedQuery: {
           version: 1,
-          sha256Hash: API_HASH,
+          sha256Hash: API_CONSTANTS.hash,
         },
       }),
     },
@@ -55,7 +52,8 @@ export class AirbnbService {
   constructor(
     private readonly log: LogService,
     private readonly date: DateService,
-    private readonly email: EmailService
+    private readonly email: EmailService,
+    private readonly network: NetworkService
   ) {
     const listingId = this.validateListingId();
     if (!listingId) {
@@ -68,6 +66,8 @@ export class AirbnbService {
   }
 
   public async init(): Promise<void> {
+    await this.network.waitUntilOnline();
+
     let listingTitle,
       checkInTime,
       checkOutTime,
@@ -91,36 +91,22 @@ export class AirbnbService {
         sectionsMap.PoliciesSection?.houseRules.forEach(({ title }: any) => {
           const time = getTimeFromString(title);
           if (time) {
-            if (/check[\s-]?in/i.test(title)) {
-              checkInTime = time;
-            } else if (/check[\s-]?out/i.test(title)) {
-              checkOutTime = time;
-            }
+            if (/check[\s-]?in/i.test(title)) checkInTime = time;
+            else if (/check[\s-]?out/i.test(title)) checkOutTime = time;
           }
         });
       }
 
-      if (listingTitle) {
-        this.listingTitle = listingTitle;
-      } else {
-        throwErrors.push('Title');
-      }
+      if (listingTitle) this.listingTitle = listingTitle;
+      else throwErrors.push('Title');
 
-      if (checkInTime) {
-        this.checkInTime = checkInTime;
-      } else {
-        throwErrors.push('Check In Time');
-      }
+      if (checkInTime) this.checkInTime = checkInTime;
+      else throwErrors.push('Check In Time');
 
-      if (checkOutTime) {
-        this.checkOutTime = checkOutTime;
-      } else {
-        throwErrors.push('Check Out Time');
-      }
+      if (checkOutTime) this.checkOutTime = checkOutTime;
+      else throwErrors.push('Check Out Time');
 
-      if (throwErrors.length) {
-        throw new Error(`Unable to find the following: ${throwErrors.join(', ')}`);
-      }
+      if (throwErrors.length) throw new Error(`Unable to find the following: ${throwErrors.join(', ')}`);
     } catch (e: any) {
       this.log.error(`Error fetching Airbnb listing details for ID ${this.listingId}:`, e?.message);
     }
@@ -137,15 +123,16 @@ export class AirbnbService {
    * Returns empty calendar if no changes were found from previous response, null if request is unsuccessful
    */
   public async fetchCalendar(): Promise<Calendar | null> {
-    const requestVariables: AirbnbRequestVariables = {
+    await this.network.waitUntilOnline();
+
+    this.apiConfig.params.variables = JSON.stringify({
       request: {
         count: 12,
         listingId: this.listingId,
         month: this.date.month,
         year: this.date.year,
       },
-    };
-    this.apiConfig.params.variables = JSON.stringify(requestVariables);
+    });
 
     let result: Calendar | null = null;
 
@@ -163,18 +150,16 @@ export class AirbnbService {
             for (let i = apiResponse.length - 1; i >= 0; i--) {
               const { calendarDate, bookable, minNights } = apiResponse[i];
 
-              if (calendarDate < this.date.today) {
-                break;
-              } else {
-                if (bookable) this.setCalendarRange(calendarDate);
+              if (calendarDate < this.date.today) break;
 
-                if (this.calendarRange && calendarDate <= this.calendarRange)
-                  calendar.unshift({
-                    booked: !bookable,
-                    date: calendarDate,
-                    minNights: Number(minNights),
-                  });
-              }
+              if (bookable) this.setCalendarRange(calendarDate);
+
+              if (this.calendarRange && calendarDate <= this.calendarRange)
+                calendar.unshift({
+                  booked: !bookable,
+                  date: calendarDate,
+                  minNights: Number(minNights),
+                });
             }
             this.previousResponse = apiResponseStr;
           }
@@ -208,7 +193,7 @@ export class AirbnbService {
     }
   }
 
-  private handleError = (err: AxiosError, response?: AxiosResponse): void => {
+  private readonly handleError = (err: AxiosError, response?: AxiosResponse): void => {
     let description, details;
 
     if (response) {

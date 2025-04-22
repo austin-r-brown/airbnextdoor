@@ -4,6 +4,7 @@ import { LogService } from './log.service';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as SibApiV3Sdk from '@sendinblue/client';
+import { NetworkService } from './network.service';
 
 /** Service for handling user notifications via email */
 export class EmailService {
@@ -11,9 +12,9 @@ export class EmailService {
   private readonly css = fs.readFileSync(path.join('src', 'styles.css'), 'utf8');
   private readonly errorsSent = new Map<string, boolean>();
 
-  private smtpConfig: EmailConfig | null;
+  private readonly smtpConfig: EmailConfig | null;
 
-  constructor(private readonly log: LogService) {
+  constructor(private readonly log: LogService, private readonly network: NetworkService) {
     const userConfig = this.validateUserInput();
 
     if (userConfig) {
@@ -27,8 +28,10 @@ export class EmailService {
     this.smtpConfig = userConfig;
   }
 
-  public send(subject: string, notifications: string[], footer?: string): void {
+  public async send(subject: string, notifications: string[], footer?: string): Promise<void> {
     if (this.smtpConfig) {
+      await this.network.waitUntilOnline();
+
       const footerHtml = footer ? `<div class="notification" id="footer">${footer}</div>` : '';
       const bodyHtml = notifications.map((n) => `<div class="notification main">${n}</div>`).join(`
       `);
@@ -55,11 +58,8 @@ export class EmailService {
           const { message } = JSON.parse(err?.response?.text ?? '{}');
           this.log.error(`Unable to send email: ${message ? `"${message}"` : err}`);
 
-          if (err?.status === 401) {
-            this.smtpConfig = null;
-          } else {
+          if (err?.status !== 401)
             setTimeout(() => this.send(subject, notifications, footer), NETWORK_TIMEOUT);
-          }
         }
       );
     }

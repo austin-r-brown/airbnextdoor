@@ -4,7 +4,7 @@ import { LogService } from './log.service';
 import { waitFor } from '../helpers/date.helper';
 import { NETWORK_TIMEOUT } from '../constants/constants';
 
-/** Service for checking network details */
+/** Service for monitoring network details */
 export class NetworkService {
   private lastOnlineCheckTime: number = 0;
   private lastOnlineCheckResult: boolean = false;

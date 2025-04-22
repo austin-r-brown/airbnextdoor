@@ -1,6 +1,6 @@
 import { Booking } from '../constants/Booking';
 import { BookingChangeType } from '../constants/enums';
-import { BookingChange, NotificationBuffer } from '../constants/types';
+import { BookingChange, NotificationQueue } from '../constants/types';
 import { formatIsoDate, getIsoDate, offsetDay } from './date.helper';
 
 /** Generates HTML for booking, with optional CSS class or partial booking to indicate a change to a booking */
@@ -59,16 +59,16 @@ export const formatCurrentBookings = (bookings: Booking[]): string => {
     return `<span class="title">Upcoming Events</span>
       ${bookingsHtml}`;
   }
-  
+
   return `<span class="title" id="no-events">No Other Events</span>`;
 };
 
-/** Groups notifications from notification buffer by title and returns array of HTML notification strings */
-export const createNotifications = (buffer: NotificationBuffer): string[] => {
+/** Groups notifications from notification queue by title and returns array of HTML notification strings */
+export const createNotifications = (queue: NotificationQueue): string[] => {
   const notifications: string[] = [];
   const grouped: Record<string, Booking[]> = {};
 
-  buffer.forEach(([title, booking, change]) => {
+  queue.forEach(([title, booking, change]) => {
     if (change?.firstNight || change?.lastNight) {
       notifications.push(formatNotification(title, [booking], change));
     } else {
