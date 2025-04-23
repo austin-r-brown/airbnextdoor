@@ -28,11 +28,11 @@ export class SchedulerService {
     private readonly email: EmailService
   ) {}
 
-  public init() {
+  public async init() {
     this.scheduleDateChange();
-    this.runApp();
     this.scheduleNextRun();
     this.scheduleMorningNotification();
+    await this.runApp();
   }
 
   /** Schedules the date service to update its values each day at midnight */
