@@ -19,8 +19,17 @@ export class SchedulerService {
   ) {}
 
   public init() {
+    this.scheduleDateChange();
     this.scheduleNextRun();
     this.scheduleMorningNotification();
+  }
+
+  /** Schedules the date service to update its values each day at midnight */
+  private scheduleDateChange(): void {
+    setTimeout(() => {
+      this.date.set();
+      this.scheduleDateChange();
+    }, this.date.timeUntil([24] /* Midnight */));
   }
 
   /** Determines when app will run next and schedules it */

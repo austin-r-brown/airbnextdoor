@@ -13,15 +13,10 @@ export class DateService {
   public year!: number;
 
   constructor() {
-    this.handleDateChange();
+    this.set();
   }
 
-  private readonly handleDateChange = (): void => {
-    this.set();
-    setTimeout(this.handleDateChange, this.timeUntil([24] /* Midnight */));
-  };
-
-  private set(): void {
+  public set(): void {
     const [m, d, y] = this.now
       .toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' })
       .split('/');

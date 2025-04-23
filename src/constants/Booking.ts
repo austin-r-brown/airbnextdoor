@@ -10,16 +10,12 @@ export class Booking {
   isHidden?: boolean;
   createdAt?: Date;
 
-  private _lastNight: ISODate;
-  private _checkOut: ISODate;
+  private _lastNight!: ISODate;
+  private _checkOut!: ISODate;
 
-  constructor({ firstNight, lastNight, isBlockedOff, createdAt, isHidden }: Partial<Booking>) {
-    if (!firstNight || !lastNight) {
-      throw new Error('Cannot create booking without first and last nights');
-    }
+  constructor({ firstNight, lastNight, isBlockedOff, createdAt, isHidden }: BookingJSON) {
     this.firstNight = firstNight;
-    this._lastNight = lastNight;
-    this._checkOut = offsetDay(lastNight, 1);
+    this.lastNight = lastNight;
     this.isBlockedOff = isBlockedOff;
     this.isHidden = isHidden;
     this.createdAt = createdAt;
@@ -43,7 +39,7 @@ export class Booking {
   }
 
   get isActive(): boolean {
-    const today = new DateService().today;
+    const { today } = new DateService();
     return this.checkIn <= today && this.checkOut >= today;
   }
 
