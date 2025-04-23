@@ -56,7 +56,7 @@ export type MerlinCalendarMonth = {
 
 export type SchedulerEvent = {
   timer: NodeJS.Timeout;
-  date: number;
+  executesAt: number;
 };
 
 export type BackupFile = {

@@ -34,7 +34,7 @@ export class LogService {
 
   private display(values: any[], type: ConsoleType): void {
     values.forEach((val: any) => console[type]?.(val));
-    console[type]?.('\r');
+    console[type]?.('');
   }
 
   public info(...args: any): void {

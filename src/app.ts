@@ -40,7 +40,6 @@ export class App {
     this.bookings = this.db.load();
     this.ical.updateEvents(this.bookings);
 
-    await this.poll();
     this.scheduler.init();
     this.isInitialized = true;
   }

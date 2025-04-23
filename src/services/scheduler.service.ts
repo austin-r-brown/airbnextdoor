@@ -6,10 +6,20 @@ import { EmailService } from './email.service';
 import { LogService } from './log.service';
 import { WatchdogService } from './watchdog.service';
 
-/** Service for scheduling recurring processes that make the app function */
+/** Service for scheduling and executing recurring processes that make the app function */
 export class SchedulerService {
   private nextEvent: SchedulerEvent | null = null;
   private readonly watchdog: WatchdogService = new WatchdogService(this.log, this.email);
+
+  private readonly runApp = async () => {
+    let success = false;
+    try {
+      success = await this.app.poll();
+    } catch (e: any) {
+      this.log.error('Application Error:', e);
+    }
+    if (success) this.watchdog.success();
+  };
 
   constructor(
     private readonly app: App,
@@ -20,6 +30,7 @@ export class SchedulerService {
 
   public init() {
     this.scheduleDateChange();
+    this.runApp();
     this.scheduleNextRun();
     this.scheduleMorningNotification();
   }
@@ -39,19 +50,12 @@ export class SchedulerService {
     }
 
     this.nextEvent = {
-      timer: setTimeout(async () => {
-        let success = false;
-        try {
-          success = await this.app.poll();
-        } catch (e: any) {
-          this.log.error('Application Error:', e);
-        }
+      timer: setTimeout(() => {
+        this.runApp;
         this.nextEvent = null;
         this.scheduleNextRun();
-
-        if (success) this.watchdog.success();
       }, delay),
-      date: Date.now() + delay,
+      executesAt: Date.now() + delay,
     };
   }
 
