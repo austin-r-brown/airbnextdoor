@@ -51,7 +51,7 @@ export class SchedulerService {
 
     this.nextEvent = {
       timer: setTimeout(() => {
-        this.runApp;
+        this.runApp();
         this.nextEvent = null;
         this.scheduleNextRun();
       }, delay),
