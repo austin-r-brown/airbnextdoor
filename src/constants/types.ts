@@ -1,5 +1,4 @@
 import { ISODate, Booking } from './Booking';
-import { ConsoleType } from './enums';
 
 export type Time = [number, number?, number?];
 
@@ -54,8 +53,6 @@ export type MerlinCalendarMonth = {
   year: number;
   days: MerlinCalendarDay[];
 };
-
-export type LogItem = [any[], ConsoleType];
 
 export type SchedulerEvent = {
   timer: NodeJS.Timeout;

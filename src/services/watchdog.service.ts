@@ -3,7 +3,7 @@ import { createHtmlList } from '../helpers/email.helper';
 import { EmailService } from './email.service';
 import { LogService } from './log.service';
 
-/** Service for monitoring app for consistent successful completion */
+/** Service for monitoring the app for errors */
 export class WatchdogService {
   private lastSuccessfulRun: number = 0;
   private notificationSent: boolean = false;

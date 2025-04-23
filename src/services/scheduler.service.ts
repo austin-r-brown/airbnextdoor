@@ -6,7 +6,7 @@ import { EmailService } from './email.service';
 import { LogService } from './log.service';
 import { WatchdogService } from './watchdog.service';
 
-/** Service for scheduling recurring processes in main App */
+/** Service for scheduling recurring processes that make the app function */
 export class SchedulerService {
   private nextEvent: SchedulerEvent | null = null;
   private readonly watchdog: WatchdogService = new WatchdogService(this.log, this.email);

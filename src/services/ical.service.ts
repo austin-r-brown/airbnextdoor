@@ -8,7 +8,7 @@ import { NetworkService } from './network.service';
 const PORT = 3001;
 const ICS_FILENAME = 'calendar.ics';
 
-/** Service for generating/hosting iCal data for calendar subscription */
+/** Service for generating and serving iCal data for calendar subscription */
 export class iCalService {
   private readonly calendar: ICalCalendar = ical({ method: ICalCalendarMethod.REQUEST });
   private readonly server = express();

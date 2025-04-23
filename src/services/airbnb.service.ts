@@ -15,7 +15,7 @@ const API_CONSTANTS = {
   key: 'd306zoyjsyarp7ifhu67rjxn52tv0t20',
 };
 
-/** Service for interacting with Airbnb */
+/** Service for fetching and processing data from Airbnb API */
 export class AirbnbService {
   public readonly listingId: string;
   public readonly listingUrl: string;

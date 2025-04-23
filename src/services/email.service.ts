@@ -6,7 +6,7 @@ import * as path from 'path';
 import * as SibApiV3Sdk from '@sendinblue/client';
 import { NetworkService } from './network.service';
 
-/** Service for handling user notifications via email */
+/** Service for generating and sending email notifications */
 export class EmailService {
   private readonly api = new SibApiV3Sdk.TransactionalEmailsApi();
   private readonly css = fs.readFileSync(path.join('src', 'styles.css'), 'utf8');

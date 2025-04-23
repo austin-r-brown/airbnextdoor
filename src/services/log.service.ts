@@ -1,20 +1,16 @@
 import { offsetDay } from '../helpers/date.helper';
 import { formatIsoDate } from '../helpers/date.helper';
 import { Booking } from '../constants/Booking';
-import { BookingChange, LogItem } from '../constants/types';
+import { BookingChange } from '../constants/types';
 import { ConsoleType } from '../constants/enums';
 import packageInfo from '../../package.json';
 
 /** Service for handling console log messages */
 export class LogService {
-  private readonly logged: LogItem[] = [];
+  private readonly isLinuxService = process.env.INVOCATION_ID !== undefined;
 
   private get timestamp(): string {
     return `[${new Date().toLocaleString()}]`;
-  }
-
-  private get isLinuxService(): boolean {
-    return process.env.INVOCATION_ID !== undefined;
   }
 
   constructor() {
@@ -29,17 +25,16 @@ export class LogService {
       values.push(this.timestamp);
     }
 
-    const item: LogItem = [
-      values.map((val) => (typeof val === 'object' ? JSON.parse(JSON.stringify(val)) : val)),
-      type,
-    ];
-    this.display(...item);
-    this.logged.push(item);
+    const clonedValues = values.map((val) =>
+      typeof val === 'object' ? JSON.parse(JSON.stringify(val)) : val
+    );
+
+    this.display(clonedValues, type);
   }
 
   private display(values: any[], type: ConsoleType): void {
     values.forEach((val: any) => console[type]?.(val));
-    console[type]?.('');
+    console[type]?.('\r');
   }
 
   public info(...args: any): void {

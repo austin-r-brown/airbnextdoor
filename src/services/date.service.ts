@@ -2,7 +2,7 @@ import { ISODate } from '../constants/Booking';
 import { MS_IN_DAY } from '../constants/constants';
 import { Time } from '../constants/types';
 
-/** Service for keeping track of the date and time */
+/** Service for keeping track of the current date and time */
 export class DateService {
   public get now(): Date {
     return new Date();
