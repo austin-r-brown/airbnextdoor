@@ -2,14 +2,12 @@ import { App } from '../app';
 import { INTERVAL } from '../constants/constants';
 import { SchedulerEvent } from '../constants/types';
 import { DateService } from './date.service';
-import { EmailService } from './email.service';
 import { LogService } from './log.service';
 import { WatchdogService } from './watchdog.service';
 
 /** Service for scheduling and executing recurring processes that make the app function */
 export class SchedulerService {
   private nextEvent: SchedulerEvent | null = null;
-  private readonly watchdog: WatchdogService = new WatchdogService(this.log, this.email);
 
   private readonly runApp = async () => {
     let success = false;
@@ -25,7 +23,7 @@ export class SchedulerService {
     private readonly app: App,
     private readonly log: LogService,
     private readonly date: DateService,
-    private readonly email: EmailService
+    private readonly watchdog: WatchdogService
   ) {}
 
   public async init() {

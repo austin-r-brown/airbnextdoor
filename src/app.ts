@@ -13,18 +13,20 @@ import { NOTIFY_DEBOUNCE_TIME } from './constants/constants';
 import { SchedulerService } from './services/scheduler.service';
 import { iCalService } from './services/ical.service';
 import { NetworkService } from './services/network.service';
+import { WatchdogService } from './services/watchdog.service';
 
 export class App {
   private isInitialized: boolean = false;
 
-  private readonly log: LogService = new LogService();
-  private readonly date: DateService = new DateService();
-  private readonly network: NetworkService = new NetworkService(this.log);
-  private readonly email: EmailService = new EmailService(this.log, this.network);
-  private readonly airbnb: AirbnbService = new AirbnbService(this.log, this.date, this.email, this.network);
-  private readonly db: DbService = new DbService(this.log, this.airbnb);
-  private readonly ical: iCalService = new iCalService(this.log, this.airbnb, this.network);
-  private readonly scheduler: SchedulerService = new SchedulerService(this, this.log, this.date, this.email);
+  private readonly log = new LogService();
+  private readonly date = new DateService();
+  private readonly network = new NetworkService(this.log);
+  private readonly email = new EmailService(this.log, this.network);
+  private readonly watchdog = new WatchdogService(this.log, this.email);
+  private readonly airbnb = new AirbnbService(this.log, this.date, this.watchdog, this.network);
+  private readonly db = new DbService(this.log, this.airbnb);
+  private readonly ical = new iCalService(this.log, this.airbnb, this.network);
+  private readonly scheduler = new SchedulerService(this, this.log, this.date, this.watchdog);
 
   /** All known bookings and blocked off periods */
   private bookings: Booking[] = [];
