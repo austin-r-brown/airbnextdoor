@@ -4,7 +4,7 @@ import { Calendar } from '../constants/Calendar';
 import { LOCALE } from '../constants/constants';
 import { ISODate } from '../constants/Booking';
 import { LogService } from './log.service';
-import { EmailService } from './email.service';
+import { WatchdogService } from './watchdog.service';
 import { DateService } from './date.service';
 import { getTimeFromString } from '../helpers/date.helper';
 import { NetworkService } from './network.service';
@@ -52,7 +52,7 @@ export class AirbnbService {
   constructor(
     private readonly log: LogService,
     private readonly date: DateService,
-    private readonly email: EmailService,
+    private readonly watchdog: WatchdogService,
     private readonly network: NetworkService
   ) {
     const listingId = this.validateListingId();
@@ -199,13 +199,11 @@ export class AirbnbService {
     if (response) {
       description = 'Airbnb API response is in unexpected format';
       details = response.data;
-      this.log.error(`${description}:`, details);
     } else {
       description = err.isAxiosError ? 'Unable to reach Airbnb API' : 'Airbnb API responded with an error';
       details = err?.message || err;
-      this.log.error(`${description}: "${details}"`);
     }
 
-    this.email.sendError(description, details);
+    this.watchdog.handleApplicationError(description, details);
   };
 }

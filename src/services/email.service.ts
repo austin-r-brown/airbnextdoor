@@ -10,7 +10,6 @@ import { NetworkService } from './network.service';
 export class EmailService {
   private readonly api = new SibApiV3Sdk.TransactionalEmailsApi();
   private readonly css = fs.readFileSync(path.join('src', 'styles.css'), 'utf8');
-  private readonly errorsSent = new Map<string, boolean>();
 
   private readonly smtpConfig: EmailConfig | null;
 
@@ -63,34 +62,6 @@ export class EmailService {
         }
       );
     }
-  }
-
-  public sendError(message: string, details: any): void {
-    const email = `<span><b>Error:</b> ${message}</span>
-      <br><br>
-      <div class="error">${JSON.stringify(details).slice(0, 1000)}</div>`;
-
-    const previouslySent = this.errorsSent.get(email);
-
-    switch (previouslySent) {
-      case undefined:
-        // Save error to map if it hasn't been saved
-        this.errorsSent.set(email, false);
-        break;
-      case false:
-        // Send email if error has previously occurred but not yet sent
-        this.send('Error Notification', [email]);
-        this.errorsSent.set(email, true);
-        break;
-    }
-  }
-
-  public getRecentErrors(): string[] {
-    return Array.from(this.errorsSent.keys());
-  }
-
-  public clearErrors(): void {
-    this.errorsSent.clear();
   }
 
   private validateUserInput(): EmailConfig | null {
