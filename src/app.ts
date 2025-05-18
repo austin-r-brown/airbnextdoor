@@ -121,16 +121,14 @@ export class App {
   }
 
   /** Adds new bookings and sends notification */
-  private addBookings(bookings: Booking[], patch?: BookingChange): void {
-    const createdAt = new Date();
+  private addBookings(bookings: Booking[], patch: BookingChange = {}): void {
+    const bookedAt = new Date();
     bookings.forEach((b) => {
       if (this.isInitialized) {
-        // Creation date is unknown if booked when app was not running
-        b.createdAt = createdAt;
+        // Booked at date is unknown if booked when app was not running
+        patch.bookedAt = bookedAt;
       }
-      if (patch) {
-        Object.assign(b, patch);
-      }
+      Object.assign(b, patch);
       this.bookings.push(b);
       this.handleBookingChange(BookingChangeType.New, b);
     });

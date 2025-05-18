@@ -5,20 +5,23 @@ import { BookingJSON } from './types';
 export type ISODate = `${string}-${string}-${string}`;
 
 export class Booking {
+  readonly createdAt: Date;
+
   firstNight: ISODate;
   isBlockedOff?: boolean;
   isHidden?: boolean;
-  createdAt?: Date;
+  bookedAt?: Date;
 
   private _lastNight!: ISODate;
   private _checkOut!: ISODate;
 
-  constructor({ firstNight, lastNight, isBlockedOff, createdAt, isHidden }: BookingJSON) {
+  constructor({ firstNight, lastNight, isBlockedOff, bookedAt, createdAt, isHidden }: BookingJSON) {
     this.firstNight = firstNight;
     this.lastNight = lastNight;
     this.isBlockedOff = isBlockedOff;
     this.isHidden = isHidden;
-    this.createdAt = createdAt;
+    this.bookedAt = bookedAt;
+    this.createdAt = createdAt ?? new Date();
   }
 
   get checkIn(): ISODate {
@@ -67,6 +70,7 @@ export class Booking {
       lastNight: this.lastNight,
       isBlockedOff: this.isBlockedOff,
       isHidden: this.isHidden,
+      bookedAt: this.bookedAt,
       createdAt: this.createdAt,
     };
   }

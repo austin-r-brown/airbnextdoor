@@ -4,10 +4,9 @@ export type Time = [number, number?, number?];
 
 export type BookingMap = Map<ISODate, Booking>;
 
-export type BookingJSON = Omit<
-  Booking,
-  'checkIn' | 'checkOut' | 'isActive' | 'getDateRange' | 'isSameAs' | 'toJSON'
->;
+export type BookingJSON = {
+  createdAt?: Date;
+} & Omit<Booking, 'checkIn' | 'checkOut' | 'isActive' | 'getDateRange' | 'isSameAs' | 'toJSON' | 'createdAt'>;
 
 export type BookingChange = Partial<BookingJSON>;
 

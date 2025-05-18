@@ -57,8 +57,8 @@ export class iCalService {
       url: this.airbnb.listingUrl,
     };
 
-    if (booking.createdAt) {
-      event.description = `Booked On: ${new Date(booking.createdAt).toLocaleString(undefined, {
+    if (booking.bookedAt) {
+      event.description = `Booked On: ${new Date(booking.bookedAt).toLocaleString(undefined, {
         year: 'numeric',
         month: 'numeric',
         day: 'numeric',
