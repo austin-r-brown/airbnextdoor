@@ -2,7 +2,6 @@ import { App } from '../app';
 import { INTERVAL } from '../constants/constants';
 import { SchedulerEvent } from '../constants/types';
 import { DateService } from './date.service';
-import { LogService } from './log.service';
 import { WatchdogService } from './watchdog.service';
 
 /** Service for scheduling and executing recurring processes that make the app function */
@@ -14,14 +13,13 @@ export class SchedulerService {
     try {
       success = await this.app.poll();
     } catch (e: any) {
-      this.log.error('Application Error:', e);
+      this.watchdog.handleApplicationError('Application Error:', e?.message || e);
     }
     if (success) this.watchdog.success();
   };
 
   constructor(
     private readonly app: App,
-    private readonly log: LogService,
     private readonly date: DateService,
     private readonly watchdog: WatchdogService
   ) {}

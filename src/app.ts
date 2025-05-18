@@ -26,7 +26,7 @@ export class App {
   private readonly airbnb = new AirbnbService(this.log, this.date, this.watchdog, this.network);
   private readonly db = new DbService(this.log, this.airbnb);
   private readonly ical = new iCalService(this.log, this.airbnb, this.network);
-  private readonly scheduler = new SchedulerService(this, this.log, this.date, this.watchdog);
+  private readonly scheduler = new SchedulerService(this, this.date, this.watchdog);
 
   /** All known bookings and blocked off periods */
   private bookings: Booking[] = [];
@@ -92,13 +92,13 @@ export class App {
     }, NOTIFY_DEBOUNCE_TIME);
   }
 
-  /** Sorts bookings by check in date, updates DB and iCal services with latest bookings */
-  private sortAndSaveBookings(): Booking[] {
-    const bookings = this.bookings.sort(
-      (a, b) => new Date(a.firstNight).valueOf() - new Date(b.firstNight).valueOf()
-    );
-    this.db.save(bookings);
-    return bookings;
+  /** Sorts and filters bookings, saves bookings to DB */
+  private sortAndSaveBookings(): void {
+    this.bookings = this.bookings
+      .filter((b) => !(b.isHidden && b.checkOut <= this.date.today))
+      .sort((a, b) => new Date(a.firstNight).valueOf() - new Date(b.firstNight).valueOf());
+
+    this.db.save(this.bookings);
   }
 
   private getFooter(): string | undefined {
