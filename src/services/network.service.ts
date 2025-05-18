@@ -34,7 +34,7 @@ export class NetworkService {
     }
   }
 
-  private async isOnline(): Promise<boolean> {
+  public async isOnline(): Promise<boolean> {
     const timeSinceLastCheck = Date.now() - this.lastOnlineCheckTime;
 
     if (timeSinceLastCheck < NETWORK_TIMEOUT) {

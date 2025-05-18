@@ -2,6 +2,7 @@ import { MS_IN_MINUTE, WATCHDOG_TIMEOUT } from '../constants/constants';
 import { createHtmlList } from '../helpers/email.helper';
 import { EmailService } from './email.service';
 import { LogService } from './log.service';
+import { NetworkService } from './network.service';
 
 /** Service for monitoring the app for errors */
 export class WatchdogService {
@@ -10,7 +11,11 @@ export class WatchdogService {
 
   private readonly errors = new Map<string, { isSent: boolean; email: string }>();
 
-  constructor(private readonly log: LogService, private readonly email: EmailService) {
+  constructor(
+    private readonly log: LogService,
+    private readonly network: NetworkService,
+    private readonly email: EmailService
+  ) {
     this.monitor();
   }
 
@@ -21,7 +26,7 @@ export class WatchdogService {
     this.timeoutNotificationSent = false;
   }
 
-  public handleApplicationError(message: string, details: any): void {
+  public async handleApplicationError(message: string, details: any): Promise<void> {
     this.log.error(`${message}:`, details);
     if (this.timeoutNotificationSent) return;
 
@@ -39,13 +44,13 @@ export class WatchdogService {
         break;
       case false:
         // Send email if error has previously occurred but not yet sent
-        this.email.send('Error Notification', [email]);
-        this.errors.set(key, { isSent: true, email });
+        const isSent = await this.notify([email]);
+        this.errors.set(key, { isSent, email });
         break;
     }
   }
 
-  private handleTimeoutError(message: string): void {
+  private async handleTimeoutError(message: string): Promise<void> {
     this.log.error(message);
     if (this.timeoutNotificationSent) return;
 
@@ -54,9 +59,7 @@ export class WatchdogService {
       ? ['<span class="title">Recent Errors:</span>' + createHtmlList(errorsSent)]
       : [];
 
-    this.email.send('Error Notification', [message, ...recentErrors]);
-
-    this.timeoutNotificationSent = true;
+    this.timeoutNotificationSent = await this.notify([message, ...recentErrors]);
   }
 
   private monitor(): void {
@@ -71,5 +74,13 @@ export class WatchdogService {
         this.handleTimeoutError(message);
       }
     }, WATCHDOG_TIMEOUT);
+  }
+
+  private async notify(notifications: string[]): Promise<boolean> {
+    if (await this.network.isOnline()) {
+      this.email.send('Error Notification', notifications);
+      return true;
+    }
+    return false;
   }
 }

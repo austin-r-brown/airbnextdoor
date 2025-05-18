@@ -22,7 +22,7 @@ export class App {
   private readonly date = new DateService();
   private readonly network = new NetworkService(this.log);
   private readonly email = new EmailService(this.log, this.network);
-  private readonly watchdog = new WatchdogService(this.log, this.email);
+  private readonly watchdog = new WatchdogService(this.log, this.network, this.email);
   private readonly airbnb = new AirbnbService(this.log, this.date, this.watchdog, this.network);
   private readonly db = new DbService(this.log, this.airbnb);
   private readonly ical = new iCalService(this.log, this.airbnb, this.network);
