@@ -80,7 +80,7 @@ export class AirbnbService {
       if (match?.length > 1) {
         const json = JSON.parse(match[1]);
         const { sections } =
-          json.niobeMinimalClientData[0][1].data.presentation.stayProductDetailPage.sections;
+          json.niobeClientData[0][1].data.presentation.stayProductDetailPage.sections;
 
         const sectionsMap = Object.fromEntries(
           sections.map((s: any) => s.section).map((s: any) => [s?.__typename, s])
