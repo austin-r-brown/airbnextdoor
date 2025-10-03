@@ -113,9 +113,12 @@ export class App {
       return true;
     });
 
-    if (currentBookings.every((b) => this.notificationQueue.find(([, n]) => n.isSameAs(b))))
-      // Omit all bookings from footer if all current bookings are included in notifications
-      currentBookings = [];
+    for (const [, n] of this.notificationQueue) {
+      // Remove bookings from the front of currentBookings that are already included in the notification queue
+      const c = currentBookings[0];
+      if (c && n.isSameAs(c)) currentBookings.shift();
+      else break;
+    }
 
     return formatCurrentBookings(currentBookings);
   }
