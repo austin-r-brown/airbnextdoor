@@ -1,5 +1,6 @@
 import { getIsoDate, offsetDay } from '../helpers/date.helper';
 import { DateService } from '../services/date.service';
+import { MS_IN_DAY } from './constants';
 import { BookingJSON } from './types';
 
 export type ISODate = `${string}-${string}-${string}`;
@@ -44,6 +45,10 @@ export class Booking {
   get isActive(): boolean {
     const { today } = new DateService();
     return this.checkIn <= today && this.checkOut >= today;
+  }
+
+  get totalNights(): number {
+    return Math.abs(new Date(this.checkIn).valueOf() - new Date(this.checkOut).valueOf()) / MS_IN_DAY;
   }
 
   /** Returns array of ISO dates which includes all nights occupied in booking */

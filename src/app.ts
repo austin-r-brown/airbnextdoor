@@ -2,7 +2,7 @@ import { Booking, ISODate } from './constants/Booking';
 import { Calendar } from './constants/Calendar';
 import { CalendarDay, BookingMap, NotificationQueue, BookingChange } from './constants/types';
 import { BookingChangeType } from './constants/enums';
-import { countDaysBetween, offsetDay } from './helpers/date.helper';
+import { offsetDay } from './helpers/date.helper';
 import { formatCurrentBookings, createNotifications } from './helpers/email.helper';
 import { DbService } from './services/db.service';
 import { EmailService } from './services/email.service';
@@ -168,44 +168,24 @@ export class App {
     calendar: Calendar,
     existingBookings: BookingMap
   ): { bookings: Booking[]; gaps: Booking[] } {
-    const bookings: Booking[] = [];
-    const gaps: Booking[] = [];
-
-    const push = (b: Booking, minNights?: number) => {
-      const min = minNights ?? calendar.get(b.firstNight)?.minNights ?? 1;
-      const totalNights = countDaysBetween(b.checkIn, b.checkOut);
-
-      if (
-        totalNights === min && // Just long enough to be a booking
-        b.checkIn === this.date.today &&
-        this.airbnb.isAfterCheckInTime() && // It appeared last second
-        existingBookings.get(b.checkOut) // Another booking immediately follows it
-      ) {
-        // Edge case for Airbnb listings that don't allow same day booking past a certain time
-        gaps.push(b);
-      } else if (totalNights >= min) {
-        bookings.push(b);
-      } else {
-        gaps.push(b);
-      }
-    };
+    const toProcess: Booking[] = [];
 
     let firstNight: ISODate | null = null;
     let lastNight: ISODate | null = null;
 
-    calendar.days.forEach((day) => {
-      if (day.booked && !existingBookings.has(day.date) && day.date >= this.date.today) {
+    calendar.days.forEach(({ date, booked }) => {
+      if (booked && !existingBookings.has(date) && date >= this.date.today) {
         // If a booking is in progress, update the end date
         if (firstNight !== null) {
-          lastNight = day.date;
+          lastNight = date;
         } else {
           // Otherwise, start a new booking
-          firstNight = day.date;
-          lastNight = day.date;
+          firstNight = date;
+          lastNight = date;
         }
       } else if (firstNight && lastNight) {
         // If a booking was in progress and now it's not, save it
-        push(new Booking({ firstNight, lastNight }), day.minNights);
+        toProcess.push(new Booking({ firstNight, lastNight }));
         firstNight = null;
         lastNight = null;
       }
@@ -213,9 +193,29 @@ export class App {
 
     // Add a booking if a booking was in progress at the end of the loop
     if (firstNight && lastNight) {
-      push(new Booking({ firstNight, lastNight }));
+      toProcess.push(new Booking({ firstNight, lastNight }));
     }
-    return { bookings, gaps };
+
+    return toProcess.reduce(
+      (acc, b) => {
+        const minNights = calendar.get(b.firstNight)?.minNights ?? 1;
+        if (
+          b.totalNights === minNights && // Just long enough to be a booking
+          b.checkIn === this.date.today &&
+          this.airbnb.isAfterCheckInTime() && // It appeared last second
+          existingBookings.get(b.checkOut) // Another booking immediately follows it
+        ) {
+          // Edge case for Airbnb listings that don't allow same day booking past a certain time
+          acc.gaps.push(b);
+        } else if (b.totalNights >= minNights) {
+          acc.bookings.push(b);
+        } else {
+          acc.gaps.push(b);
+        }
+        return acc;
+      },
+      { bookings: [] as Booking[], gaps: [] as Booking[] }
+    );
   }
 
   /** Sends notification when guests are arriving or leaving today */
@@ -326,9 +326,8 @@ export class App {
           const minNights = newFirst?.minNights ?? calendar.get(b.firstNight)?.minNights ?? 1;
           const firstNight = newFirst?.date ?? b.firstNight;
           const lastNight = newLast?.date ?? b.lastNight;
-          const totalNights = countDaysBetween(firstNight, lastNight) + 1;
 
-          if (totalNights >= minNights || b.isBlockedOff) {
+          if (b.totalNights >= minNights || b.isBlockedOff) {
             this.changeBookingLength(b, { firstNight, lastNight });
           } else {
             // Hide/cancel booking if it is now shorter than minimum length requirement

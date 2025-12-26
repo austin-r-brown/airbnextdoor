@@ -18,10 +18,6 @@ export const waitFor = (ms: number): Promise<void> => {
   });
 };
 
-/** Returns total number of days between two dates */
-export const countDaysBetween = (dateA: ISODate, dateB: ISODate): number =>
-  Math.abs(new Date(dateB).valueOf() - new Date(dateA).valueOf()) / MS_IN_DAY;
-
 /** Adds or subtracts specified number of days to provided date, returns ISO date */
 export const offsetDay = (date: Date | ISODate, days: number): ISODate => {
   const dateObject = new Date(date);
