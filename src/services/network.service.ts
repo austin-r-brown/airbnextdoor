@@ -1,8 +1,9 @@
-import axios from 'axios';
+import axios, { AxiosResponse } from 'axios';
 import os from 'os';
 import { LogService } from './log.service';
 import { waitFor } from '../helpers/date.helper';
 import { NETWORK_TIMEOUT } from '../constants/constants';
+import { AirbnbApiConfig } from '../constants/types';
 
 /** Service for monitoring network details */
 export class NetworkService {
@@ -23,15 +24,18 @@ export class NetworkService {
     return preferred || addresses[0] || '127.0.0.1';
   }
 
-  public async waitUntilOnline(): Promise<void> {
+  public async waitUntilOnline(): Promise<boolean> {
     const retryWaitPeriod = 30000;
     let online = await this.isOnline();
+    let initialCheck = online;
 
     while (!online) {
       this.log.warn(`No internet connection detected. Retrying in ${retryWaitPeriod / 1000} seconds...`);
       await waitFor(retryWaitPeriod);
       online = await this.isOnline();
     }
+
+    return initialCheck;
   }
 
   public async isOnline(): Promise<boolean> {
@@ -51,5 +55,18 @@ export class NetworkService {
     this.lastOnlineCheckTime = Date.now();
 
     return result;
+  }
+
+  async sendRequest(request: AirbnbApiConfig | string): Promise<AxiosResponse<any, any>> {
+    try {
+      return typeof request === 'string' ? axios.get(request) : axios.request(request);
+    } catch (err: any) {
+      const wasOnline = await this.waitUntilOnline();
+      if (!wasOnline) {
+        return this.sendRequest(request);
+      } else {
+        throw err;
+      }
+    }
   }
 }

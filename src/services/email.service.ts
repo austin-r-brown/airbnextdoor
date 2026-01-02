@@ -28,39 +28,44 @@ export class EmailService {
   }
 
   public async send(subject: string, notifications: string[], footer?: string): Promise<void> {
-    if (this.smtpConfig) {
-      await this.network.waitUntilOnline();
+    if (!this.smtpConfig) return;
 
-      const footerHtml = footer ? `<div class="notification" id="footer">${footer}</div>` : '';
-      const bodyHtml = notifications.map((n) => `<div class="notification main">${n}</div>`).join(`
-      `);
+    const footerHtml = footer ? `<div class="notification" id="footer">${footer}</div>` : '';
+    const bodyHtml = notifications.map((n) => `<div class="notification main">${n}</div>`).join(`
+    `);
 
-      this.smtpConfig.subject = subject;
-      this.smtpConfig.htmlContent = `<!DOCTYPE html>
-        <html lang="en">
-          <head>
-            <style>
-              ${this.css}
-            </style>
-          </head>
-          <body>
-            ${bodyHtml}
-            ${footerHtml}
-          </body>
-        </html>`;
+    this.smtpConfig.subject = subject;
+    this.smtpConfig.htmlContent = `<!DOCTYPE html>
+      <html lang="en">
+        <head>
+          <style>
+            ${this.css}
+          </style>
+        </head>
+        <body>
+          ${bodyHtml}
+          ${footerHtml}
+        </body>
+      </html>`;
 
-      this.api.sendTransacEmail(this.smtpConfig).then(
-        (data) => this.log.info(`Email sent successfully. ${data.body.messageId}`),
-        (err: any) => {
-          const { message } = err?.response?.body ?? {};
-          this.log.error(`Unable to send email: ${message ? `"${message}"` : JSON.stringify(err)}`);
+    this.api.sendTransacEmail(this.smtpConfig).then(
+      (data) => this.log.info(`Email sent successfully. ${data.body.messageId}`),
+      (err) => this.handleSendError(err, [subject, notifications, footer])
+    );
+  }
 
-          if (err?.response?.statusCode !== 401) {
-            this.log.error(`Retrying in ${NETWORK_TIMEOUT / 1000} seconds...`);
-            setTimeout(() => this.send(subject, notifications, footer), NETWORK_TIMEOUT);
-          }
-        }
-      );
+  private async handleSendError(err: any, args: Parameters<EmailService['send']>): Promise<void> {
+    const wasOnline = await this.network.waitUntilOnline();
+    if (!wasOnline) {
+      return this.send(...args);
+    }
+
+    const { message } = err?.response?.body ?? {};
+    this.log.error(`Unable to send email: ${message ? `"${message}"` : JSON.stringify(err)}`);
+
+    if (err?.response?.statusCode !== 401) {
+      this.log.error(`Retrying in ${NETWORK_TIMEOUT / 1000} seconds...`);
+      setTimeout(() => this.send(...args), NETWORK_TIMEOUT);
     }
   }
 

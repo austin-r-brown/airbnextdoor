@@ -7,11 +7,12 @@ export type ISODate = `${string}-${string}-${string}`;
 
 export class Booking {
   readonly createdAt: Date;
+  readonly bookedAt?: Date;
+
+  readonly isBlockedOff?: boolean;
+  readonly isHidden?: boolean;
 
   firstNight: ISODate;
-  isBlockedOff?: boolean;
-  isHidden?: boolean;
-  bookedAt?: Date;
 
   private _lastNight!: ISODate;
   private _checkOut!: ISODate;
@@ -48,7 +49,7 @@ export class Booking {
   }
 
   get totalNights(): number {
-    return Math.abs(new Date(this.checkIn).valueOf() - new Date(this.checkOut).valueOf()) / MS_IN_DAY;
+    return new Date(this.checkOut).valueOf() - new Date(this.checkIn).valueOf() / MS_IN_DAY;
   }
 
   /** Returns array of ISO dates which includes all nights occupied in booking */

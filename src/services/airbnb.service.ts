@@ -1,4 +1,4 @@
-import axios, { AxiosError, AxiosResponse } from 'axios';
+import { AxiosError, AxiosResponse } from 'axios';
 import { AirbnbApiConfig, MerlinCalendarDay, MerlinCalendarMonth, Time } from '../constants/types';
 import { Calendar } from '../constants/Calendar';
 import { LOCALE } from '../constants/constants';
@@ -66,21 +66,18 @@ export class AirbnbService {
   }
 
   public async init(): Promise<void> {
-    await this.network.waitUntilOnline();
-
     let listingTitle,
       checkInTime,
       checkOutTime,
       throwErrors = [];
 
     try {
-      const response = await axios.get(this.listingUrl);
+      const response = await this.network.sendRequest(this.listingUrl);
       const match = response.data.match(/<script\s+id="data-deferred-state-0"\s+[^>]*>([\s\S]*?)<\/script>/i);
 
       if (match?.length > 1) {
         const json = JSON.parse(match[1]);
-        const { sections } =
-          json.niobeClientData[0][1].data.presentation.stayProductDetailPage.sections;
+        const { sections } = json.niobeClientData[0][1].data.presentation.stayProductDetailPage.sections;
 
         const sectionsMap = Object.fromEntries(
           sections.map((s: any) => s.section).map((s: any) => [s?.__typename, s])
@@ -123,8 +120,6 @@ export class AirbnbService {
    * Returns empty calendar if no changes were found from previous response, null if request is unsuccessful
    */
   public async fetchCalendar(): Promise<Calendar | null> {
-    await this.network.waitUntilOnline();
-
     this.apiConfig.params.variables = JSON.stringify({
       request: {
         count: 12,
@@ -136,8 +131,8 @@ export class AirbnbService {
 
     let result: Calendar | null = null;
 
-    await axios
-      .request(this.apiConfig)
+    await this.network
+      .sendRequest(this.apiConfig)
       .then((response) => {
         try {
           const { calendarMonths } = response.data.data.merlin.pdpAvailabilityCalendar;
@@ -170,14 +165,14 @@ export class AirbnbService {
           if (errors?.length) {
             errors.forEach((err: any) => {
               const message = err?.extensions?.response?.body?.error_message || err?.message;
-              this.handleError(message ? { message } : err);
+              this.handleFetchError(message ? { message } : err);
             });
           } else {
-            this.handleError(e, response);
+            this.handleFetchError(e, response);
           }
         }
       })
-      .catch(this.handleError);
+      .catch(this.handleFetchError);
 
     return result;
   }
@@ -193,7 +188,7 @@ export class AirbnbService {
     }
   }
 
-  private readonly handleError = (err: AxiosError, response?: AxiosResponse): void => {
+  private readonly handleFetchError = (err: AxiosError, response?: AxiosResponse): void => {
     let description, details;
 
     if (response) {

@@ -11,7 +11,9 @@ export type BookingJSON = {
   'checkIn' | 'checkOut' | 'isActive' | 'getDateRange' | 'totalNights' | 'isSameAs' | 'toJSON' | 'createdAt'
 >;
 
-export type BookingChange = Partial<BookingJSON>;
+export type BookingChange = Partial<{
+  -readonly [K in keyof BookingJSON]: BookingJSON[K];
+}>;
 
 export type NotificationQueue = [string, Booking, BookingChange?][];
 
