@@ -49,7 +49,7 @@ export class Booking {
   }
 
   get totalNights(): number {
-    return new Date(this.checkOut).valueOf() - new Date(this.checkIn).valueOf() / MS_IN_DAY;
+    return (new Date(this.checkOut).valueOf() - new Date(this.checkIn).valueOf()) / MS_IN_DAY;
   }
 
   /** Returns array of ISO dates which includes all nights occupied in booking */
