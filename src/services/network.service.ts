@@ -59,7 +59,7 @@ export class NetworkService {
 
   async sendRequest(request: AirbnbApiConfig | string): Promise<AxiosResponse<any, any>> {
     try {
-      return typeof request === 'string' ? axios.get(request) : axios.request(request);
+      return await (typeof request === 'string' ? axios.get(request) : axios.request(request));
     } catch (err: any) {
       const wasOnline = await this.waitUntilOnline();
       if (!wasOnline) {
