@@ -1,5 +1,5 @@
 import { MS_IN_MINUTE, WATCHDOG_TIMEOUT } from '../constants/constants';
-import { createHtmlList } from '../helpers/email.helper';
+import { getListHtml } from '../helpers/email.helper';
 import { EmailService } from './email.service';
 import { LogService } from './log.service';
 import { NetworkService } from './network.service';
@@ -14,7 +14,7 @@ export class WatchdogService {
   constructor(
     private readonly log: LogService,
     private readonly network: NetworkService,
-    private readonly email: EmailService
+    private readonly email: EmailService,
   ) {
     this.monitor();
   }
@@ -56,7 +56,7 @@ export class WatchdogService {
 
     const errorsSent = Array.from(this.errors.values()).map((e) => e.email);
     const recentErrors = errorsSent.length
-      ? ['<span class="title">Recent Errors:</span>' + createHtmlList(errorsSent)]
+      ? ['<span class="title">Recent Errors:</span>' + getListHtml(errorsSent)]
       : [];
 
     this.timeoutNotificationSent = await this.notify([message, ...recentErrors]);

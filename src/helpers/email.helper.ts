@@ -4,7 +4,7 @@ import { BookingChange, NotificationQueue } from '../constants/types';
 import { formatIsoDate, getIsoDate, offsetDay } from './date.helper';
 
 /** Generates HTML for booking, with optional CSS class or partial booking to indicate a change to a booking */
-export const formatBooking = (booking: Booking, cssClass?: string, change?: BookingChange): string => {
+const formatBooking = (booking: Booking, cssClass?: string, change?: BookingChange): string => {
   const [checkIn, checkOut] = [booking.checkIn, booking.checkOut].map(formatIsoDate);
   const classes = [cssClass, booking.isActive && 'active', booking.isBlockedOff && 'blocked-off'];
 
@@ -48,11 +48,22 @@ export const formatBooking = (booking: Booking, cssClass?: string, change?: Book
   }
 };
 
-/** Generates HTML for Current Bookings summary that is appended to each email */
-export const formatCurrentBookings = (bookings: Booking[]): string => {
+/** Generates HTML for a notification to be sent via email */
+const formatNotification = (title: string, bookings: Booking[], change?: BookingChange): string => {
+  const changeType = Object.values(BookingChangeType).find((c) => title.startsWith(c));
+  // Use BookingChange enum keys as CSS class names
+  const bookingHtml = bookings.map((b) => formatBooking(b, changeType?.toLowerCase(), change)).join(`
+    `);
+
+  return `<span class="title">${bookings.length > 1 ? `${title}s` : title}</span>
+    ${bookingHtml}`;
+};
+
+/** Generates HTML for Upcoming Events summary that is appended to each email */
+export const getFooterHtml = (bookings: Booking[]): string => {
   if (bookings.length) {
     const bookingsHtml = bookings.map((b) =>
-      formatBooking(b, b.checkIn === getIsoDate() ? 'starts-today' : '')
+      formatBooking(b, b.checkIn === getIsoDate() ? 'starts-today' : ''),
     ).join(`
       `);
 
@@ -64,7 +75,7 @@ export const formatCurrentBookings = (bookings: Booking[]): string => {
 };
 
 /** Groups notifications from notification queue by title and returns array of HTML notification strings */
-export const createNotifications = (queue: NotificationQueue): string[] => {
+export const getNotificationsHtml = (queue: NotificationQueue): string[] => {
   const notifications: string[] = [];
   const grouped: Record<string, Booking[]> = {};
 
@@ -78,23 +89,12 @@ export const createNotifications = (queue: NotificationQueue): string[] => {
   });
 
   Object.entries(grouped).forEach(([title, bookings]) =>
-    notifications.push(formatNotification(title, bookings))
+    notifications.push(formatNotification(title, bookings)),
   );
 
   return notifications;
 };
 
-/** Generates HTML for a notification to be sent via email */
-export const formatNotification = (title: string, bookings: Booking[], change?: BookingChange): string => {
-  const changeType = Object.values(BookingChangeType).find((c) => title.startsWith(c));
-  // Use BookingChange enum keys as CSS class names
-  const bookingHtml = bookings.map((b) => formatBooking(b, changeType?.toLowerCase(), change)).join(`
-    `);
-
-  return `<span class="title">${bookings.length > 1 ? `${title}s` : title}</span>
-    ${bookingHtml}`;
-};
-
 /** Generates HTML for unordered list using array of strings */
-export const createHtmlList = (items: string[]): string =>
+export const getListHtml = (items: string[]): string =>
   '<ul>' + items.map((li) => `<li>${li}</li>`).join('<br>') + '</ul>';

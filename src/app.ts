@@ -3,7 +3,7 @@ import { Calendar } from './constants/Calendar';
 import { CalendarDay, BookingMap, NotificationQueue, BookingChange } from './constants/types';
 import { BookingChangeType } from './constants/enums';
 import { offsetDay } from './helpers/date.helper';
-import { formatCurrentBookings, createNotifications } from './helpers/email.helper';
+import { getFooterHtml, getNotificationsHtml } from './helpers/email.helper';
 import { DbService } from './services/db.service';
 import { EmailService } from './services/email.service';
 import { LogService } from './services/log.service';
@@ -78,7 +78,7 @@ export class App {
 
     this.notifyDebounceTimer = setTimeout(() => {
       this.sortAndSaveBookings();
-      const notifications = createNotifications(this.notificationQueue);
+      const notifications = getNotificationsHtml(this.notificationQueue);
 
       if (notifications.length) {
         const count = this.notificationQueue.length;
@@ -102,7 +102,7 @@ export class App {
   }
 
   private getFooter(): string | undefined {
-    let currentBookings = this.bookings.filter((b) => {
+    let upcomingBookings = this.bookings.filter((b) => {
       if (b.isHidden || b.checkOut <= this.date.today)
         // Omit bookings that are hidden or have already ended
         return false;
@@ -113,14 +113,15 @@ export class App {
       return true;
     });
 
-    for (const [, n] of this.notificationQueue) {
-      // Remove bookings from the front of currentBookings that are already included in the notification queue
-      const c = currentBookings[0];
-      if (c && n.isSameAs(c)) currentBookings.shift();
-      else break;
+    for (const [title, booking] of this.notificationQueue) {
+      const [current] = upcomingBookings;
+      // Remove bookings from the top of footer that are already included in the main notifications
+      if (current && booking.isSameAs(current)) upcomingBookings.shift();
+      // Disregard cancelled notifications as these will not be in footer
+      else if (!title.includes(BookingChangeType.Cancelled)) break;
     }
 
-    return formatCurrentBookings(currentBookings);
+    return getFooterHtml(upcomingBookings);
   }
 
   /** Adds new bookings and sends notification */
@@ -166,7 +167,7 @@ export class App {
   /** Returns newly found bookings and newly found blocked off gaps that are too short to be bookings */
   private checkForNewBookings(
     calendar: Calendar,
-    existingBookings: BookingMap
+    existingBookings: BookingMap,
   ): { bookings: Booking[]; gaps: Booking[] } {
     const toProcess: Booking[] = [];
 
@@ -214,7 +215,7 @@ export class App {
         }
         return acc;
       },
-      { bookings: [] as Booking[], gaps: [] as Booking[] }
+      { bookings: [] as Booking[], gaps: [] as Booking[] },
     );
   }
 
