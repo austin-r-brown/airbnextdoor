@@ -14,7 +14,16 @@ export class LogService {
   }
 
   constructor() {
-    this.info(`Starting application v${packageInfo.version}`);
+    this.info(`
+     _    _      _     _   _           _      _                  
+    / \\  (_)_ __| |__ | \\ | | _____  _| |_ __| | ___   ___  _ __ 
+   / _ \\ | | '__| '_ \\|  \\| |/ _ \\ \\/ / __/ _\` |/ _ \\ / _ \\| '__|
+  / ___ \\| | |  | |_) | |\\  |  __/>  <| || (_| | (_) | (_) | |   
+ /_/   \\_\\_|_|  |_.__/|_| \\_|\\___/_/\\_\\\\__\\__,_|\\___/ \\___/|_|
+
+    v${packageInfo.version}
+
+`);
   }
 
   private log(values: any[], type: ConsoleType): void {
@@ -26,7 +35,7 @@ export class LogService {
     }
 
     const clonedValues = values.map((val) =>
-      typeof val === 'object' ? JSON.parse(JSON.stringify(val)) : val
+      typeof val === 'object' ? JSON.parse(JSON.stringify(val)) : val,
     );
 
     this.display(clonedValues, type);
@@ -68,7 +77,7 @@ export class LogService {
     }
 
     const bookingMsg = `(${start}: ${formatIsoDate(booking.checkIn)} | ${end}: ${formatIsoDate(
-      booking.checkOut
+      booking.checkOut,
     )})`;
 
     if (change?.firstNight) {
