@@ -83,7 +83,8 @@ export class AirbnbService {
           sections.map((s: any) => s.section).map((s: any) => [s?.__typename, s])
         );
 
-        listingTitle = sectionsMap.PdpTitleSection?.title;
+        listingTitle =
+          sectionsMap.PdpTitleSection?.title || sectionsMap.AvailabilityCalendarSection?.listingTitle;
 
         sectionsMap.PoliciesSection?.houseRules.forEach(({ title }: any) => {
           const time = getTimeFromString(title);

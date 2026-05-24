@@ -21,7 +21,7 @@ export class LogService {
   / ___ \\| | |  | |_) | |\\  |  __/>  <| || (_| | (_) | (_) | |   
  /_/   \\_\\_|_|  |_.__/|_| \\_|\\___/_/\\_\\\\__\\__,_|\\___/ \\___/|_|
 
-    v${packageInfo.version}
+  v${packageInfo.version}
 
 `);
   }
