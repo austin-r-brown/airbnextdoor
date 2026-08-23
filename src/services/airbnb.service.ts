@@ -53,12 +53,12 @@ export class AirbnbService {
     private readonly log: LogService,
     private readonly date: DateService,
     private readonly watchdog: WatchdogService,
-    private readonly network: NetworkService
+    private readonly network: NetworkService,
   ) {
     const listingId = this.validateListingId();
     if (!listingId) {
       throw new Error(
-        'Valid Airbnb URL or Listing ID must be provided in .env file. See README.md for more info.'
+        'Valid Airbnb URL or Listing ID must be provided in .env file. See README.md for more info.',
       );
     }
     this.listingId = listingId;
@@ -77,22 +77,19 @@ export class AirbnbService {
 
       if (match?.length > 1) {
         const json = JSON.parse(match[1]);
-        const { sections } = json.niobeClientData[0][1].data.presentation.stayProductDetailPage.sections;
+        const { title, rules } = json.niobeClientData[0][1].data.node.pdpPresentation;
 
-        const sectionsMap = Object.fromEntries(
-          sections.map((s: any) => s.section).map((s: any) => [s?.__typename, s])
-        );
+        listingTitle = title?.content?.localizedString || title?.content?.source;
 
-        listingTitle =
-          sectionsMap.PdpTitleSection?.title || sectionsMap.AvailabilityCalendarSection?.listingTitle;
-
-        sectionsMap.PoliciesSection?.houseRules.forEach(({ title }: any) => {
-          const time = getTimeFromString(title);
-          if (time) {
-            if (/check[\s-]?in/i.test(title)) checkInTime = time;
-            else if (/check[\s-]?out/i.test(title)) checkOutTime = time;
-          }
-        });
+        rules?.groupItems
+          ?.flatMap(({ items }: any) => items)
+          ?.forEach(({ title }: any) => {
+            const time = getTimeFromString(title);
+            if (time) {
+              if (/check[\s-]?in/i.test(title)) checkInTime = time;
+              else if (/check[\s-]?out/i.test(title)) checkOutTime = time;
+            }
+          });
       }
 
       if (listingTitle) this.listingTitle = listingTitle;
@@ -184,7 +181,7 @@ export class AirbnbService {
 
     if (airbnbUrl) {
       const isId = /^\d+$/.test(airbnbUrl);
-      const [, idFromUrl] = !isId ? airbnbUrl.match(/airbnb\.com\/rooms\/(\d+)(\?.*)?$/) ?? [] : [];
+      const [, idFromUrl] = !isId ? (airbnbUrl.match(/airbnb\.com\/rooms\/(\d+)(\?.*)?$/) ?? []) : [];
       return isId ? airbnbUrl : idFromUrl;
     }
   }
