@@ -8,12 +8,18 @@ import { WatchdogService } from './watchdog.service';
 import { DateService } from './date.service';
 import { getTimeFromString } from '../helpers/date.helper';
 import { NetworkService } from './network.service';
+import puppeteer from 'puppeteer';
 
 const API_CONSTANTS = {
   operationName: 'PdpAvailabilityCalendar',
   hash: '8f08e03c7bd16fcad3c92a3592c19a8b559a0d0855a84028d1163d4733ed9ade',
   key: 'd306zoyjsyarp7ifhu67rjxn52tv0t20',
 };
+
+const SELECTORS = {
+  title: 'h1',
+  policiesSection: '[data-section-id="POLICIES_DEFAULT"] section'
+}
 
 /** Service for fetching and processing data from Airbnb API */
 export class AirbnbService {
@@ -72,25 +78,22 @@ export class AirbnbService {
       throwErrors = [];
 
     try {
-      const response = await this.network.sendRequest(this.listingUrl);
-      const match = response.data.match(/<script\s+id="data-deferred-state-0"\s+[^>]*>([\s\S]*?)<\/script>/i);
+      const browser = await puppeteer.launch();
+      const page = await browser.newPage();
 
-      if (match?.length > 1) {
-        const json = JSON.parse(match[1]);
-        const { title, rules } = json.niobeClientData[0][1].data.node.pdpPresentation;
+      await page.goto(this.listingUrl);
+      await page.waitForSelector(SELECTORS.policiesSection);
 
-        listingTitle = title?.content?.localizedString || title?.content?.source;
+      listingTitle = await page.$eval(SELECTORS.title, element => element?.textContent?.trim());
 
-        rules?.groupItems
-          ?.flatMap(({ items }: any) => items)
-          ?.forEach(({ title }: any) => {
-            const time = getTimeFromString(title);
-            if (time) {
-              if (/check[\s-]?in/i.test(title)) checkInTime = time;
-              else if (/check[\s-]?out/i.test(title)) checkOutTime = time;
-            }
-          });
-      }
+      const policiesSection = await page.$eval(SELECTORS.policiesSection, element => element?.textContent?.trim());
+      const checkInString = policiesSection?.match(/check[\s-]?in(.*)/i)?.[1]?.trim();
+      const checkOutString = policiesSection?.match(/check[\s-]?out(.*)/i)?.[1]?.trim();
+
+      if (checkInString) checkInTime = getTimeFromString(checkInString);
+      if (checkOutString) checkOutTime = getTimeFromString(checkOutString);
+
+      await browser.close();
 
       if (listingTitle) this.listingTitle = listingTitle;
       else throwErrors.push('Title');
