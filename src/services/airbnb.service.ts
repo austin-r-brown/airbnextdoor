@@ -1,5 +1,5 @@
 import { AxiosError, AxiosResponse } from 'axios';
-import { AirbnbApiConfig, MerlinCalendarDay, MerlinCalendarMonth, Time } from '../constants/types';
+import { AirbnbApiConfig, PdpCalendarDay, PdpCalendarMonth, Time } from '../constants/types';
 import { Calendar } from '../constants/Calendar';
 import { LOCALE } from '../constants/constants';
 import { ISODate } from '../constants/Booking';
@@ -11,8 +11,8 @@ import { NetworkService } from './network.service';
 import puppeteer from 'puppeteer';
 
 const API_CONSTANTS = {
-  operationName: 'PdpAvailabilityCalendar',
-  hash: '8f08e03c7bd16fcad3c92a3592c19a8b559a0d0855a84028d1163d4733ed9ade',
+  operationName: 'PdpAvailabilityCalendarV2Query',
+  hash: '4d4724885b57d91f65be3c50c8b792b92a0dc723a871affb6ee358a0caf6d694',
   key: 'd306zoyjsyarp7ifhu67rjxn52tv0t20',
 };
 
@@ -122,12 +122,12 @@ export class AirbnbService {
    */
   public async fetchCalendar(): Promise<Calendar | null> {
     this.apiConfig.params.variables = JSON.stringify({
-      request: {
+      listingId: btoa(`DemandStayListing:${this.listingId}`),
+      input: {
         count: 12,
-        listingId: this.listingId,
         month: this.date.month,
         year: this.date.year,
-      },
+      }
     });
 
     let result: Calendar | null = null;
@@ -136,8 +136,8 @@ export class AirbnbService {
       .sendRequest(this.apiConfig)
       .then((response) => {
         try {
-          const { calendarMonths } = response.data.data.merlin.pdpAvailabilityCalendar;
-          const apiResponse: MerlinCalendarDay[] = calendarMonths.flatMap((m: MerlinCalendarMonth) => m.days);
+          const { calendarMonths } = response.data.data.node.pdpAvailabilityCalendar;
+          const apiResponse: PdpCalendarDay[] = calendarMonths.flatMap((m: PdpCalendarMonth) => m.days);
           const apiResponseStr = JSON.stringify(apiResponse);
           const calendar = new Calendar();
 

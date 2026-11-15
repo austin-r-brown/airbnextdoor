@@ -46,16 +46,16 @@ export type AirbnbApiConfig = {
   };
 };
 
-export type MerlinCalendarDay = {
+export type PdpCalendarDay = {
   bookable: boolean;
   calendarDate: ISODate;
   minNights: number;
 };
 
-export type MerlinCalendarMonth = {
+export type PdpCalendarMonth = {
   month: number;
   year: number;
-  days: MerlinCalendarDay[];
+  days: PdpCalendarDay[];
 };
 
 export type SchedulerEvent = {
